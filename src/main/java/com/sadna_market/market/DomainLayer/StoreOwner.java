@@ -4,17 +4,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-//owner can manage products in the store
-//owner can manage policies in the store
-//owner can appoint other users to owners
-//owner can remove other users he appointed as owners
-//owner that IS NOT the founder of the store can remove himself from this role
-//owner can appoint other users to managers
-//owner can choose permissions to his appointed managers
-//owner can remove other users he appointed as managers
-//owner can view all the roles in the store + managers permissions
-//owner can respond to requests/questions from the customers
-//owner can view all history orders
+
 public class StoreOwner extends UserStoreRoles {
     private static final Logger logger = LogManager.getLogger(StoreOwner.class);
     private static final long serialVersionUID = 1L;
@@ -35,8 +25,26 @@ public class StoreOwner extends UserStoreRoles {
 
     @Override
     protected void initializePermissions() {
-        // TODO Auto-generated method stub
-
+        //owner can manage products in the store
+        //owner can manage policies in the store
+        //owner can appoint other users to owners
+        //owner can remove other users he appointed as owners
+        //owner that IS NOT the founder of the store can remove himself from this role
+        //owner can appoint other users to managers
+        //owner can choose permissions to his appointed managers
+        //owner can remove other users he appointed as managers
+        //owner can view all the roles in the store + managers permissions
+        //owner can respond to requests/questions from the customers
+        //owner can view all history orders
+        addPermission(Permission.VIEW_STORE_INFO);
+        addPermission(Permission.VIEW_PRODUCT_INFO);
+        addPermission(Permission.MANAGE_DISCOUNT_POLICY);
+        addPermission(Permission.MANAGE_PURCHASE_POLICY);
+        addPermission(Permission.APPOINT_STORE_OWNER);
+        addPermission(Permission.REMOVE_STORE_OWNER);
+        addPermission(Permission.APPOINT_STORE_MANAGER);
+        addPermission(Permission.REMOVE_STORE_MANAGER);
+        addPermission(Permission.VIEW_STORE_PURCHASE_HISTORY);
     }
 
     @Override
