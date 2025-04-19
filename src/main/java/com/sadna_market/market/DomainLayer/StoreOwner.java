@@ -1,5 +1,26 @@
 package com.sadna_market.market.DomainLayer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import java.util.ArrayList;
+import java.util.List;
+
+//owner can manage products in the store
+//owner can manage policies in the store
+//owner can appoint other users to owners
+//owner can remove other users he appointed as owners
+//owner that IS NOT the founder of the store can remove himself from this role
+//owner can appoint other users to managers
+//owner can choose permissions to his appointed managers
+//owner can remove other users he appointed as managers
+//owner can view all the roles in the store + managers permissions
+//owner can respond to requests/questions from the customers
+//owner can view all history orders
 public class StoreOwner extends UserStoreRoles {
+    private static final Logger logger = LogManager.getLogger(StoreOwner.class);
+    private static final long serialVersionUID = 1L;
+    private String appointedBy;
+    private int storeId;
+
     /**
      * Constructor for the StoreOwner class.
      * Initializes the store owner with a username, store ID, and appointed by user.
@@ -17,6 +38,57 @@ public class StoreOwner extends UserStoreRoles {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public void addPermission(Permission permission) {
+        logger.error("Exception in addPermission: store owner already has all the permissions");
+        throw new IllegalStateException("Store owner has all the permissions");
+    }
+
+
+    public boolean isAppointedByUser(String username) {
+        logger.info("Entering isAppointedByUser with username={}", username);
+        boolean result = appointees.contains(username);
+        logger.info("Exiting isAppointedByUser with result={}", result);
+        return result;
+    }
+
+
+
+    @Override
+    public List<String> getAppointees() {
+        logger.info("Entering getAppointers");
+        logger.info("Exiting getAppointers with result={}", appointees);
+        return appointees;
+    }
+
+
+    @Override
+    public String getAppointedBy() {
+        logger.info("Entering getAppointedBy");
+        logger.info("Exiting getApointee with result={}", appointedBy);
+        return appointedBy;
+    }
+
+    @Override
+    public void removePermission(Permission permission) {
+        logger.error("Exception in removePermission: can't remove permissions from a store owner");
+        throw new IllegalStateException("Store owner has all the permissions");
+    }
+
+    @Override
+    public List<Permission> getPermissions() {
+        return new ArrayList<>(permissions);
+    }
+
+    @Override
+    public void addAppointee(String appointee) {
+        logger.info("Entering addAppointers with apointee={}", appointee);
+        appointees.add(appointee);
+        logger.info("Exiting addAppointers");
+    }
+
+
 
     @Override
     public RoleType getRoleType() {
