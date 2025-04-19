@@ -2,8 +2,8 @@ package com.sadna_market.market.DomainLayer;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.Map;
 
 public interface IStoreRepository {
@@ -12,17 +12,16 @@ public interface IStoreRepository {
     /**
      * Finds a store by its ID
      * 
-     * @param id The store ID
+     * @param id The store ID (UUID)
      * @return Optional containing the store if found
-     * 
      */
-    Optional<Store> findById(Long id);
+    Optional<Store> findById(UUID id);
 
     /**
+     * Finds a store by its name
      * 
-     * @param name
-     * @return Store with the given name
-     * 
+     * @param name The store name
+     * @return Optional containing the store if found
      */
     Optional<Store> findByName(String name);
     
@@ -30,33 +29,30 @@ public interface IStoreRepository {
      * Gets all stores in the system
      * 
      * @return List of all stores
-     * 
      */
     List<Store> findAll();
     
     /**
      * Deletes a store by its ID
      * 
-     * @param id The store ID to delete
-     * 
+     * @param id The store ID (UUID) to delete
      */
-    void deleteById(Long id);
+    void deleteById(UUID id);
     
     /**
+     * Checks if a store exists
      * 
-     * @param storeId
-     * @return true if the store exist
-     * 
+     * @param storeId The store ID (UUID)
+     * @return true if the store exists
      */
-    boolean exists(int storeId);
+    boolean exists(UUID storeId);
 
     /**
+     * Saves a store
      * 
-     * @param Store - the store to save
-     * @return the Saved store
-     * 
+     * @param store The store to save
+     * @return The saved store
      */
-
     Store save(Store store);
 
     /**
@@ -67,232 +63,184 @@ public interface IStoreRepository {
      * @param address The physical address of the store
      * @param email The contact email for the store
      * @param phoneNumber The contact phone number for the store
-     * @return The ID of the newly created store
-     * 
+     * @return The UUID of the newly created store
      */
-    int createStore(String founderUsername, String storeName, String address, String email, String phoneNumber);
+    UUID createStore(String founderUsername, String storeName, String address, String email, String phoneNumber);
     
     /**
      * Updates the status (open/closed) of a store
      * 
-     * @param storeId The ID of the store to update
+     * @param storeId The ID of the store (UUID)
      * @param isOpen The new status of the store (true = open, false = closed)
      */
-    void updateStoreStatus(int storeId, boolean isOpen);
+    void updateStoreStatus(UUID storeId, boolean isOpen);
 
     //------------------------------------Store personnel management-----------------------------------
 
     /**
      * Adds a user as an owner of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username of the user to be added as owner
      */
-    void addOwner(int storeId, String username);
+    void addOwner(UUID storeId, String username);
     
     /**
-     * TODO: think where we want it
      * Removes a user from being an owner of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username of the owner to remove
      */
-
-    void removeOwner(int storeId, String username);
+    void removeOwner(UUID storeId, String username);
     
-
     /**
      * Adds a user as a manager of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username of the user to be added as manager
      */
-    void addManager(int storeId, String username);
+    void addManager(UUID storeId, String username);
     
     /**
-     * TODO: think where we want it
      * Removes a user from being a manager of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username of the manager to remove
-    */
-    void removeManager(int storeId, String username);
+     */
+    void removeManager(UUID storeId, String username);
     
-
-    /**
-     * //TODO: need to think if we want this to be in the user repository or here
-
-     * Updates the permissions of a store manager
-     * 
-     * @param storeId The ID of the store
-     * @param username The username of the manager
-     * @param permissions Set of permission keys to be assigned to the manager
-     
-    void updateManagerPermissions(int storeId, String username, Set<String> permissions);
-    */
-
-    /**
-     * TODO: think where we want it
-     * Gets all owners of a store
-     * 
-     * @param storeId The ID of the store
-     * @return Set of usernames of store owners
-     
-    Set<String> getStoreOwners(int storeId);
-    */
-    
-    /**
-     * TODO: think where we want it
-     * Gets all managers of a store
-     * 
-     * @param storeId The ID of the store
-     * @return Set of usernames of store managers
-     
-    Set<String> getStoreManagers(int storeId);
-    */
-    
-    /**
-     * TODO: think where we want it
-     * Gets permissions for all managers of a store
-     * 
-     * @param storeId The ID of the store
-     * @return Map of manager usernames to their permission sets
-     
-    Map<String, Set<String>> getManagerPermissions(int storeId);
-    */
-
     /**
      * Checks if a user is an owner of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username to check
      * @return true if the user is an owner, false otherwise
      */
-    boolean isOwner(int storeId, String username);
+    boolean isOwner(UUID storeId, String username);
     
     /**
      * Checks if a user is a manager of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @param username The username to check
      * @return true if the user is a manager, false otherwise
      */
-    boolean isManager(int storeId, String username);
+    boolean isManager(UUID storeId, String username);
     
     /**
      * Gets all owners of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @return Set of usernames of store owners
      */
-    Set<String> getStoreOwners(int storeId);
+    Set<String> getStoreOwners(UUID storeId);
     
     /**
      * Gets all managers of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @return Set of usernames of store managers
      */
-    Set<String> getStoreManagers(int storeId);
+    Set<String> getStoreManagers(UUID storeId);
     
     /**
      * Gets the founder of a store
      * 
-     * @param storeId The ID of the store
+     * @param storeId The ID of the store (UUID)
      * @return The username of the store founder
      */
-    String getStoreFounder(int storeId);
+    String getStoreFounder(UUID storeId);
 
     //--------------------------Inventory management-----------------------------
 
     /**
      * Checks if a product exists in a store
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product to check
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product to check (UUID)
      * @return true if the product exists in the store, false otherwise
      */
-    boolean hasProduct(int storeId, int productId);
+    boolean hasProduct(UUID storeId, UUID productId);
     
     /**
      * Checks if a product is in stock in the specified quantity
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product (UUID)
      * @param quantity The quantity to check for
      * @return true if the required quantity is available, false otherwise
      */
-    boolean hasProductInStock(int storeId, int productId, int quantity);
+    boolean hasProductInStock(UUID storeId, UUID productId, int quantity);
     
     /**
      * Adds a product to a store with the specified quantity
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product to add
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product to add (UUID)
      * @param quantity The initial quantity of the product
      */
-    void addProduct(int storeId, int productId, int quantity);
+    void addProduct(UUID storeId, UUID productId, int quantity);
     
     /**
      * Removes a product from a store
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product to remove
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product to remove (UUID)
      */
-    void removeProduct(int storeId, int productId);
+    void removeProduct(UUID storeId, UUID productId);
     
     /**
      * Updates the quantity of a product in a store
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product (UUID)
      * @param newQuantity The new quantity value
      */
-    void updateProductQuantity(int storeId, int productId, int newQuantity);
+    void updateProductQuantity(UUID storeId, UUID productId, int newQuantity);
     
     /**
      * Gets the quantity of a product in a store
      * 
-     * @param storeId The ID of the store
-     * @param productId The ID of the product
+     * @param storeId The ID of the store (UUID)
+     * @param productId The ID of the product (UUID)
      * @return The quantity of the product in the store
      */
-    int getProductQuantity(int storeId, int productId);
+    int getProductQuantity(UUID storeId, UUID productId);
     
     /**
      * Gets all products in a store with their quantities
      * 
-     * @param storeId The ID of the store
-     * @return Map of product IDs to their quantities
+     * @param storeId The ID of the store (UUID)
+     * @return Map of product IDs (UUID) to their quantities
      */
-    Map<Integer, Integer> getAllProductsInStore(int storeId);
+    Map<UUID, Integer> getAllProductsInStore(UUID storeId);
 
     //------------------------------Order management-------------------------------
     /**
      * Associates an order with a store
      * 
-     * @param storeId The ID of the store
-     * @param orderId The ID of the order to add
+     * @param storeId The ID of the store (UUID)
+     * @param orderId The ID of the order to add (UUID)
      */
-    void addOrderIdToStore(int storeId, int orderId);
+    void addOrderIdToStore(UUID storeId, UUID orderId);
 
     /**
      * Gets all orders associated with a store
      * 
-     * @param storeId The ID of the store
-     * @return List of order IDs
+     * @param storeId The ID of the store (UUID)
+     * @return List of order IDs (UUIDs)
      */
-    List<Integer> getStoreOrdersIds(int storeId);
+    List<UUID> getStoreOrdersIds(UUID storeId);
 
     //------------------------------Search & Filtering------------------------------
     
     /**
      * Finds stores that sell a specific product
      * 
-     * @param productId The ID of the product
+     * @param productId The ID of the product (UUID)
      * @return Set of stores selling the product
      */
-    Set<Store> findByProductId(int productId);
+    Set<Store> findByProductId(UUID productId);
     
     /**
      * Finds stores that sell products in a specific category
@@ -305,25 +253,16 @@ public interface IStoreRepository {
     /**
      * Gets filtered products from a store
      * 
-     * @param storeId The ID of the store
-     * @param productName The product name to filter by (optional)
+     * @param storeId The ID of the store (UUID)
+     * @param namePattern The product name pattern to filter by (optional)
      * @param category The product category to filter by (optional)
      * @param maxPrice The maximum price to filter by (optional)
      * @param minRating The minimum product rating to filter by (optional)
-     * @return Map of product DTOs to their quantities
+     * @return Set of product IDs (UUIDs) that match the criteria
      */
-    Set<Integer> getFilteredProductIds(int storeId, 
-                                     String namePattern, 
-                                     String category, 
-                                     Double maxPrice, 
-                                     Double minRating);
-
-
-
-
-
-
-
-    
-
-} 
+    Set<UUID> getFilteredProductIds(UUID storeId, 
+                                  String namePattern, 
+                                  String category, 
+                                  Double maxPrice, 
+                                  Double minRating);
+}

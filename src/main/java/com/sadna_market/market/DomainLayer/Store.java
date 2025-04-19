@@ -1,25 +1,17 @@
 package com.sadna_market.market.DomainLayer;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-
 
 @NoArgsConstructor
 public class Store {
-    private static final AtomicLong STORE_ID_GENERATOR = new AtomicLong(1);
-    
+
     @Getter
-    private Long storeId;
+    private UUID storeId;
 
     @Getter @Setter
     private String name;
@@ -32,11 +24,12 @@ public class Store {
     @Getter
     private Date creationDate;
 
-    @Getter StoreFounder founder;
+    @Getter 
+    private StoreFounder founder;
 
     // Using ConcurrentHashMap for thread safety in a multi-user environment
     @Getter
-    private final Map<Long, Integer> productQuantities = new ConcurrentHashMap<>();
+    private final Map<UUID, Integer> productQuantities = new ConcurrentHashMap<>();
     
     // Using ConcurrentHashMap.newKeySet for thread safety
     @Getter
@@ -46,14 +39,13 @@ public class Store {
     private final Set<String> managerUsernames = ConcurrentHashMap.newKeySet();
     
     @Getter
-    private final Set<Long> orderIds = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> orderIds = ConcurrentHashMap.newKeySet();
 
     private final Object activeLock = new Object();
     private final Object productLock = new Object();
     private final Object orderLock = new Object();
     private final Object ownerLock = new Object();
     private final Object managerLock = new Object();
-
 
     /**
      * Constructor for creating a new store
@@ -62,16 +54,15 @@ public class Store {
      * @param description The store description
      * @param founder The user who founded the store
      */
-
     public Store(String name, String description, StoreFounder founder) {
-        this.storeId = STORE_ID_GENERATOR.getAndIncrement();
+        this.storeId = UUID.randomUUID();
         this.name = name;
         this.description = description;
         this.founder = founder;
         this.active = true;
         this.creationDate = new Date();
 
-        //add the founder as the first owner of the store
+        // Add the founder as the first owner of the store
         this.ownerUsernames.add(founder.getUsername());
     }
 
@@ -85,20 +76,17 @@ public class Store {
      * @param creationDate The date the store was created
      * @param founder The user who founded the store
      */
-
-    public Store(Long storeId, String name, String description, boolean active, Date creationDate, StoreFounder founder) {
+    public Store(UUID storeId, String name, String description, boolean active, Date creationDate, StoreFounder founder) {
         this.storeId = storeId;
         this.name = name;
         this.description = description;
         this.active = active;
         this.creationDate = creationDate;
         this.founder = founder;
-        //TODO: finish the owner and manager usernames
-
+        
+        // Add the founder as the first owner of the store
+        this.ownerUsernames.add(founder.getUsername());
     }
-
-
-
 
     /**
      * Gets the store's active status in a thread-safe manner
@@ -118,7 +106,7 @@ public class Store {
      * @param quantity Initial quantity in stock
      * @throws IllegalArgumentException if quantity is negative or product already exists
      */
-    public void addProduct(Long productId, int quantity) {
+    public void addProduct(UUID productId, int quantity) {
         if (quantity < 0) {
             throw new IllegalArgumentException("Product quantity cannot be negative");
         }
@@ -140,7 +128,7 @@ public class Store {
      * @throws IllegalArgumentException if quantity is negative or product doesn't exist
      * @throws IllegalStateException if store is inactive
      */
-    public void updateProductQuantity(Long productId, int newQuantity) {
+    public void updateProductQuantity(UUID productId, int newQuantity) {
         if (newQuantity < 0) {
             throw new IllegalArgumentException("Product quantity cannot be negative");
         }
@@ -165,7 +153,7 @@ public class Store {
      * @throws IllegalStateException if store is inactive
      * @throws IllegalArgumentException if product doesn't exist
      */
-    public void removeProduct(Long productId) {
+    public void removeProduct(UUID productId) {
         synchronized (productLock) {
             if (!isActive()) {
                 throw new IllegalStateException("Cannot remove product from inactive store");
@@ -185,7 +173,7 @@ public class Store {
      * @param productId The product ID to check
      * @return true if the product exists
      */
-    public boolean hasProduct(Long productId) {
+    public boolean hasProduct(UUID productId) {
         return productQuantities.containsKey(productId);
     }
 
@@ -196,7 +184,7 @@ public class Store {
      * @return The quantity in stock
      * @throws IllegalArgumentException if product doesn't exist
      */
-    public int getProductQuantity(Long productId) {
+    public int getProductQuantity(UUID productId) {
         Integer quantity = productQuantities.get(productId);
         if (quantity == null) {
             throw new IllegalArgumentException("Product does not exist in store");
@@ -245,6 +233,55 @@ public class Store {
             }
             
             managerUsernames.add(newManagerUsername);
+        }
+    }
+    
+    /**
+     * Removes a store owner
+     * 
+     * @param ownerUsername The username of the owner to remove
+     * @throws IllegalStateException if store is inactive
+     * @throws IllegalArgumentException if user is not an owner
+     */
+    public void removeStoreOwner(String ownerUsername) {
+        synchronized (ownerLock) {
+            if (!isActive()) {
+                throw new IllegalStateException("Cannot remove owner from inactive store");
+            }
+            
+            // Check if user is the founder
+            if (isFounder(ownerUsername)) {
+                throw new IllegalArgumentException("Cannot remove the founder of the store");
+            }
+            
+            // Check if user is an owner
+            if (!isStoreOwner(ownerUsername)) {
+                throw new IllegalArgumentException("User is not an owner of this store");
+            }
+            
+            ownerUsernames.remove(ownerUsername);
+        }
+    }
+    
+    /**
+     * Removes a store manager
+     * 
+     * @param managerUsername The username of the manager to remove
+     * @throws IllegalStateException if store is inactive
+     * @throws IllegalArgumentException if user is not a manager
+     */
+    public void removeStoreManager(String managerUsername) {
+        synchronized (managerLock) {
+            if (!isActive()) {
+                throw new IllegalStateException("Cannot remove manager from inactive store");
+            }
+            
+            // Check if user is a manager
+            if (!isStoreManager(managerUsername)) {
+                throw new IllegalArgumentException("User is not a manager of this store");
+            }
+            
+            managerUsernames.remove(managerUsername);
         }
     }
 
@@ -319,7 +356,7 @@ public class Store {
      * @throws IllegalStateException if store is inactive
      * @throws IllegalArgumentException if order already exists
      */
-    public void addOrder(Long orderId) {
+    public void addOrder(UUID orderId) {
         synchronized (orderLock) {
             if (!isActive()) {
                 throw new IllegalStateException("Cannot add order to inactive store");
@@ -339,7 +376,7 @@ public class Store {
      * @param items Map of product IDs to quantities
      * @return Set of error messages, empty if all items are available
      */
-    public Set<String> checkCart(Map<Long, Integer> items) {
+    public Set<String> checkCart(Map<UUID, Integer> items) {
         Set<String> errors = new HashSet<>();
         
         synchronized (productLock) {
@@ -348,8 +385,8 @@ public class Store {
                 return errors;
             }
             
-            for (Map.Entry<Long, Integer> entry : items.entrySet()) {
-                Long productId = entry.getKey();
+            for (Map.Entry<UUID, Integer> entry : items.entrySet()) {
+                UUID productId = entry.getKey();
                 Integer requestedQuantity = entry.getValue();
                 
                 if (!productQuantities.containsKey(productId)) {
@@ -371,7 +408,7 @@ public class Store {
      * @param items Map of product IDs to quantities
      * @return Set of error messages, empty if update was successful
      */
-    public Set<String> updateStockAfterPurchase(Map<Long, Integer> items) {
+    public Set<String> updateStockAfterPurchase(Map<UUID, Integer> items) {
         synchronized (productLock) {
             Set<String> checkResult = checkCart(items);
             if (!checkResult.isEmpty()) {
@@ -379,8 +416,8 @@ public class Store {
             }
             
             // Update quantities
-            for (Map.Entry<Long, Integer> entry : items.entrySet()) {
-                Long productId = entry.getKey();
+            for (Map.Entry<UUID, Integer> entry : items.entrySet()) {
+                UUID productId = entry.getKey();
                 Integer purchasedQuantity = entry.getValue();
                 
                 Integer currentQuantity = productQuantities.get(productId);
@@ -391,4 +428,3 @@ public class Store {
         }
     }
 }
-
