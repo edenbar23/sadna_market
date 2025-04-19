@@ -89,14 +89,13 @@ public interface IUserRole {
     void addAppointee(String appointeeUsername);
     
     /**
-     * Accepts a visitor to perform role-specific operations
+     * Processes the removal of this role using the appropriate visitor
+     * This method delegates to the visitor based on the concrete role type
      * 
-     * @param visitor The visitor to accept
-     * @param storeId The store ID
-     * @param member The member associated with this role
+     * @param visitor The visitor to handle the role-specific removal process
+     * @param user The user who has this role
      */
-    //TODO: Implement the visitor pattern for user roles after we have StoreFounder, StoreOwner, and StoreManager classes
-    //void accept(UserRoleVisitor visitor, int storeId, Member member);
+    void processRoleRemoval(UserRoleVisitor visitor, User user);
     
     /**
      * Creates a request for operations related to this role

@@ -120,8 +120,15 @@ public abstract class UserStoreRoles implements IUserRole {
         }
     }
     
-    // TODO: Uncomment and implement this method in subclasses
-    //public abstract void accept(UserRoleVisitor visitor, int storeId, Member member);
+    /**
+     * Abstract method to process the removal of this role
+     * Each concrete role implementation delegates to the appropriate method on the visitor
+     * 
+     * @param visitor The visitor to handle the role-specific removal process
+     * @param user The user with this role
+     */
+    @Override
+    public abstract void processRoleRemoval(UserRoleVisitor visitor, User user);
     
     //TODO: Implement the createRequest method
     @Override
