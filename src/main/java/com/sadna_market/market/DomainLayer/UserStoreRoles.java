@@ -19,7 +19,7 @@ public abstract class UserStoreRoles implements IUserRole {
     protected String appointedBy; // null for founder
     
     // Using thread-safe collections for concurrent access
-    protected List<String> appointers; // users appointed by this role
+    protected List<String> appointees; // users appointed by this role
     protected Set<Permission> permissions;
     
     /**
@@ -37,7 +37,7 @@ public abstract class UserStoreRoles implements IUserRole {
         this.username = username;
         this.storeId = storeId;
         this.appointedBy = appointedBy;
-        this.appointers = new CopyOnWriteArrayList<>();
+        this.appointees = new CopyOnWriteArrayList<>();
         this.permissions = ConcurrentHashMap.newKeySet();
         initializePermissions(); // Initialize role-specific permissions
     }
@@ -108,15 +108,15 @@ public abstract class UserStoreRoles implements IUserRole {
     }
     
     @Override
-    public List<String> getAppointers() {
-        return new ArrayList<>(appointers);
+    public List<String> getAppointees() {
+        return new ArrayList<>(appointees);
     }
     
     @Override
-    public void addAppointer(String appointeeUsername) {
+    public void addAppointee(String appointeeUsername) {
         if (appointeeUsername != null && !appointeeUsername.isEmpty() && 
-            !appointers.contains(appointeeUsername)) {
-            appointers.add(appointeeUsername);
+            !appointees.contains(appointeeUsername)) {
+            appointees.add(appointeeUsername);
         }
     }
     
