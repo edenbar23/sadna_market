@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Abstract base class for all user roles in the market system.
  * Implements common functionality defined in the IUserRole interface.
  */
-public abstract class UserRole implements IUserRole {
+public abstract class UserStoreRoles implements IUserRole {
+    private static final Logger logger = LogManager.getLogger(UserStoreRoles.class);
     protected String username;
     protected int storeId;
     protected String appointedBy; // null for founder
@@ -26,7 +29,7 @@ public abstract class UserRole implements IUserRole {
      * @param storeId The store ID this role is associated with
      * @param appointedBy The username of the user who appointed this role (null for founder)
      */
-    public UserRole(String username, int storeId, String appointedBy) {
+    public UserStoreRoles(String username, int storeId, String appointedBy) {
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
@@ -144,7 +147,7 @@ public abstract class UserRole implements IUserRole {
             return false;
         }
         
-        UserRole other = (UserRole) obj;
+        UserStoreRoles other = (UserStoreRoles) obj;
         return username.equals(other.username) && 
                storeId == other.storeId && 
                getRoleType() == other.getRoleType();
