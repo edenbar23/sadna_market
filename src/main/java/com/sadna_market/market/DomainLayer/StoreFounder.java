@@ -48,4 +48,12 @@ public class StoreFounder extends UserStoreRoles{
 
     }
 
+    @Override
+    public void processRoleRemoval(UserRoleVisitor visitor, User user) {
+        logger.info("Processing role removal for StoreFounder with username={} and storeId={}", 
+                   username, storeId);
+        visitor.processFounderRoleRemoval(this, storeId, user);
+        logger.info("Role removal processing completed for StoreFounder");
+    }
+
 }

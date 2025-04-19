@@ -103,4 +103,12 @@ public class StoreOwner extends UserStoreRoles {
         return RoleType.STORE_OWNER;
     }
 
+    @Override
+    public void processRoleRemoval(UserRoleVisitor visitor, User user) {
+        logger.info("Processing role removal for StoreOwner with username={} and storeId={}", 
+                   username, storeId);
+        visitor.processOwnerRoleRemoval(this, storeId, user);
+        logger.info("Role removal processing completed for StoreOwner");
+    }
+
 }

@@ -179,5 +179,13 @@ public class StoreManager extends UserStoreRoles{
                             getUsername(), getStoreId(), getAppointedBy(), getPermissions());
     }
 
+    @Override
+    public void processRoleRemoval(UserRoleVisitor visitor, User user) {
+        logger.info("Processing role removal for StoreManager with username={} and storeId={}", 
+                   username, storeId);
+        visitor.processManagerRoleRemoval(this, storeId, user);
+        logger.info("Role removal processing completed for StoreManager");
+    }
+
 
 }
