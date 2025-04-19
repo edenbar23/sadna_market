@@ -62,7 +62,7 @@ public interface IUserRole {
     /**
      * Gets the username of the user who appointed this role
      * 
-     * @return The appointer's username or null if not applicable (e.g., for founders)
+     * @return The appointee's username or null if not applicable (e.g., for founders)
      */
     String getAppointedBy();
     
@@ -79,14 +79,14 @@ public interface IUserRole {
      * 
      * @return List of usernames appointed by this role
      */
-    List<String> getAppointers();
+    List<String> getAppointees();
     
     /**
      * Adds an appointee to this role's list of appointed users
      * 
      * @param appointeeUsername The username of the appointee to add
      */
-    void addAppointer(String appointeeUsername);
+    void addAppointee(String appointeeUsername);
     
     /**
      * Accepts a visitor to perform role-specific operations
