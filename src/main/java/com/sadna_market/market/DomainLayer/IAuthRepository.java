@@ -1,5 +1,5 @@
 package com.sadna_market.market.DomainLayer;
 
-public interface IProductRepository {
+public interface IAuthRepository {
     
 }
