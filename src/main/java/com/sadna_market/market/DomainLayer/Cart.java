@@ -1,23 +1,25 @@
 package com.sadna_market.market.DomainLayer;
 
 import java.util.HashMap;
+import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Cart {
     private static final Logger logger = LogManager.getLogger(Cart.class);
     private int cartID; //Cart ID
-    private HashMap<Integer,ShoppingBasket> shoppingBaskets; //Dictionary of shopping baskets, where the key is the storeID
+    private HashMap<UUID,ShoppingBasket> shoppingBaskets; //Dictionary of shopping baskets, where the key is the storeID
 
     public Cart() {
         this.shoppingBaskets = new HashMap<>();
     }
 
-    private boolean isStoreInCart(int storeID) {
+    private boolean isStoreInCart(UUID storeID) {
         return shoppingBaskets.containsKey(storeID);
     }
 
-    public void addToCart(int storeID, int productID, int quantity) {
+    public void addToCart(UUID storeID, UUID productID, int quantity) {
         if (isStoreInCart(storeID)) {
             shoppingBaskets.get(storeID).addProduct(productID, quantity);
         }
@@ -30,7 +32,7 @@ public class Cart {
 
     }
 
-    public void changeProductQuantity(int storeID, int productID, int quantity) {
+    public void changeProductQuantity(UUID storeID, UUID productID, int quantity) {
         if (isStoreInCart(storeID)) {
             shoppingBaskets.get(storeID).changeProductQuantity(productID, quantity);
             logger.info("Product quantity changed in cart");
@@ -40,7 +42,7 @@ public class Cart {
         }
     }
 
-    public void removeFromCart(int storeID, int productID) {
+    public void removeFromCart(UUID storeID, UUID productID) {
         if (isStoreInCart(storeID)) {
             shoppingBaskets.get(storeID).removeProduct(productID);
             logger.info("Product removed from cart");
@@ -50,4 +52,11 @@ public class Cart {
         }
     }
 
+    public HashMap<UUID,ShoppingBasket> getShoppingBaskets() {
+        return shoppingBaskets;
+    }
+
+    public void addProduct(UUID productId, int quantity) {
+
+    }
 }

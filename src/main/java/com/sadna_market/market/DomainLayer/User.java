@@ -3,6 +3,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 public class User extends IUser {
     private static final Logger logger = LogManager.getLogger(User.class);
@@ -15,7 +16,7 @@ public class User extends IUser {
     //private HashMap<String,Role> roles;
     private Cart cart;
     private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
-    private ArrayList<Integer> ordersHistory; // List of order IDs
+    private ArrayList<UUID> ordersHistory; // List of order IDs
 
     public User(String userName, String password, String email, String firstName, String lastName) {
         this.userName = userName;
@@ -116,8 +117,69 @@ public class User extends IUser {
     }
 
 
-    public void addToCart(String productId, int quantity) {
+    public void addToCart(UUID productId, int quantity) {
         logger.info("Adding product {} with quantity {} to cart", productId, quantity);
         cart.addProduct(productId, quantity);
+    }
+
+    public HashMap<UUID, OrderDTO> getOrdersHistory() {
+        HashMap<UUID, OrderDTO> orders = new HashMap<>();
+        for (UUID orderId : ordersHistory) {
+            OrderDTO order = new OrderDTO(orderId);
+            orders.put(order.getOrderID(), order);
+        }
+        return orders;
+    }
+
+    public void removeFromCart(UUID productId) {
+    }
+
+    public void updateCart(UUID productId, int quantity) {
+    }
+
+    public void checkout() {
+    }
+
+    public void saveReview(UUID storeId, UUID productId, int rate, String review) {
+        logger.info("Saving review for product {}: {}", productId, review);
+        // Implement the logic to save the review
+    }
+
+    public void saveRate(UUID storeId, UUID productId, int rate) {
+        logger.info("Saving rate for product {}: {}", productId, rate);
+        // Implement the logic to save the rate
+    }
+
+
+    public void sendMessage(UUID storeId, String message) {
+        logger.info("Sending message to store {}: {}", storeId, message);
+        // Implement the logic to send the message
+    }
+
+    public void reportViolation(UUID storeId,UUID productId, String violation) {
+        logger.info("Reporting violation for store {}: {}", storeId, violation);
+        // Implement the logic to report the violation
+    }
+
+    public void updateInfo(String password, String email, String firstName, String lastName) {
+        logger.info("Updating user info");
+        if (password != null) {
+            this.password = password;
+        }
+        if (email != null) {
+            this.email = email;
+        }
+        if (firstName != null) {
+            this.firstName = firstName;
+        }
+        if (lastName != null) {
+            this.lastName = lastName;
+        }
+        else {
+            logger.error("Exception in updateInfo: object details are null");
+            throw new IllegalArgumentException("Last name cannot be null");
+        }
+        logger.info("User info updated: password={}, email={}, firstName={}, lastName={}", password, email, firstName, lastName);
+
     }
 }

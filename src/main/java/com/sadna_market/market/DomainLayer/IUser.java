@@ -2,6 +2,8 @@ package com.sadna_market.market.DomainLayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.UUID;
+
 /**
  * This is an abstract class representing a user in the system.
  * It serves as a base class for different types of users (i,e User and Guest).
@@ -23,25 +25,25 @@ abstract class IUser {
     public abstract boolean isLoggedIn();
 
     // Regular method
-    public void addProductToCart(int storeId,int productId, int amount) {
+    public void addProductToCart(UUID storeId, UUID productId, int amount) {
         logger.info("add amount of: {} of product id:{} of storeId: {}",amount,productId,storeId);
         cart.addToCart(storeId,productId, amount);
         logger.info("done add amount of: {} of product id:{} of StoreId: {}",amount,productId,storeId);
     }
-    public void removeProductFromCart(int storeId,int productId) {
+    public void removeProductFromCart(UUID storeId,UUID productId) {
         logger.info("remove product id: {} of storeId: {}",productId,storeId);
         cart.removeFromCart(storeId, productId);
         logger.info("done remove product id: {} of storeId: {}",productId,storeId);
 
     }
-    public void changeQuantityCart(int storeId,int productId, int amount) {
+    public void changeQuantityCart(UUID storeId,UUID productId, int amount) {
         logger.info("change amount of: {} of product id:{} of storeId: {}",amount,productId,storeId);
         cart.changeProductQuantity(storeId,productId, amount);
         logger.info("done change amount of: {} of product id:{} of storeId: {}",amount,productId,storeId);
 
     }
-    public Cart getCart(){
+    public CartDTO getCart(){
         logger.info("get cart: {}",cart);
-        return this.cart;
+        return new CartDTO(cart);
     }
 }
