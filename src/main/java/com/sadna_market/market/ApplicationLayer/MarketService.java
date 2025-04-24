@@ -80,9 +80,9 @@ public class MarketService {
     }
 
     //req 2.2 (a)
-    public void searchProduct(SearchRequest search) {
+    public Response searchProduct(ProductSearchRequest search) {
         //search for a product
-        //productService.searchProduct(search);
+        return productService.searchProduct(search);
     }
     //req 2.2 (b)
     public void searchStore(SearchRequest search) {

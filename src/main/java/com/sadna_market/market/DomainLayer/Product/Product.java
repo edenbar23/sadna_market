@@ -65,6 +65,9 @@ public class Product {
     public double getRate() {
         return rate.getRateVal();
     }
+    public int getNumOfRanks() {
+        return rate.getNumOfRanks();
+    }
     public boolean isAvailable() {
         return isAvailable;
     }
