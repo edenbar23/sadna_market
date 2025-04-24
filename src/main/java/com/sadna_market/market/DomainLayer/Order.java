@@ -11,13 +11,7 @@ import org.slf4j.LoggerFactory;
 import lombok.Getter;
 import lombok.Setter;
 
-enum OrderStatus {
-    PENDING,    // Order created but not paid
-    PAID,       // Payment received but not shipped
-    SHIPPED,    // Order has been shipped
-    COMPLETED,  // Order has been delivered
-    CANCELED    // Order was canceled
-}
+
 public class Order {
     private static final Logger logger = LoggerFactory.getLogger(Order.class);
     private static final AtomicLong ORDER_ID_GENERATOR = new AtomicLong(1);

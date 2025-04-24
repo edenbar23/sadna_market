@@ -1,10 +1,14 @@
-package com.sadna_market.market.DomainLayer;
+package com.sadna_market.market.InfrastructureLayer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.sadna_market.market.DomainLayer.IStoreRepository;
+import com.sadna_market.market.DomainLayer.Store;
+import com.sadna_market.market.DomainLayer.StoreFounder;
 
 /**
  * In-memory implementation of IStoreRepository interface for version 1
