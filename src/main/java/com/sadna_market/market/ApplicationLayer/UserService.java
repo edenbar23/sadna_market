@@ -68,11 +68,21 @@ public class UserService {
         //should return a response object of token
     }
 
-    public void addToCart(CartRequest cart, UUID productId, int quantity) {
+    public CartRequest addToCart(CartRequest cart,UUID storeId, UUID productId, int quantity) {
+        // Here we would implement the logic to add a product to a user's cart
+        logger.info("Adding product with ID: {} to guest: {}", productId);
+        //maybe add here a domainService to make sure product in stock
+        logger.info("Product added to cart successfully");
+        return cart.addToCartRequest(storeId, productId, quantity);
     }
 
 
-    public void viewCart(CartRequest cart) {
+    public CartRequest viewCart(CartRequest cart) {
+        // Here we would implement the logic to view a user's cart
+        logger.info("Viewing cart for guest");
+        //maybe use a domainService to check all products still in stock and update it if needed
+        logger.info("Cart viewed successfully");
+        return cart;
     }
 
 
