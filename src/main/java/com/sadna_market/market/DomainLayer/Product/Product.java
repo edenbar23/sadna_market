@@ -22,6 +22,11 @@ public class Product {
         this.category = category;
         this.price = price;
         this.isAvailable = isAvailable;
+        this.rate = new Rate();
+    }
+
+    public UUID getProductId() {
+        return productId;
     }
 
     public String getName() {
@@ -57,6 +62,12 @@ public class Product {
         rate.updateRank(newRank);
     }
 
+    public double getRate() {
+        return rate.getRateVal();
+    }
+    public boolean isAvailable() {
+        return isAvailable;
+    }
 
 
 }
