@@ -5,6 +5,8 @@ import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 
+import java.util.UUID;
+
 //this is going to be the API for the market
 public class MarketService {
 //this MarketService is a proxy for the market's services with the authentication stage
@@ -86,7 +88,7 @@ public class MarketService {
         //storeService.searchStore(search);
     }
     //req 2.3
-    public void addToCart(CartRequest cart, String productId, int quantity) {
+    public void addToCart(CartRequest cart, UUID productId, int quantity) {
         //add a product to the cart
         userService.addToCart(cart,productId,quantity);
     }
@@ -96,12 +98,12 @@ public class MarketService {
         userService.viewCart(cart);
     }
     //req 2.4 (b)
-    public void updateCart(CartRequest cart, String productId, int quantity) {
+    public void updateCart(CartRequest cart, UUID productId, int quantity) {
         //remove a product from the cart
         //userService.removeFromCart(cartId,productId,quantity);
     }
     //req 2.4
-    public void removeFromCart(CartRequest cart, String productId) {
+    public void removeFromCart(CartRequest cart, UUID productId) {
         //remove a product from the cart
         //userService.removeFromCart(productId);
     }
@@ -122,20 +124,20 @@ public class MarketService {
         userService.logoutUser(userName);
     }
     //req 2.1 - 2.5 for registered users
-    public void addToCart(String userName,String token, String productId, int quantity) {
+    public void addToCart(String userName,String token, UUID productId, int quantity) {
         //check if the token is valid
         authenticate(userName,token);
         //if not, throws an exception
         userService.addToCart(userName,productId,quantity);
     }
-    public void removeFromCart(String userName,String token, String productId) {
+    public void removeFromCart(String userName,String token, UUID productId) {
         //remove a product from the cart
         //check if the token is valid
         authenticate(userName,token);
         //if not, throw an exception
         userService.removeFromCart(userName,productId);
     }
-    public void updateCart(String userName,String token, String productId, int quantity) {
+    public void updateCart(String userName,String token, UUID productId, int quantity) {
         //update a product in the cart
         //check if the token is valid
         authenticate(userName,token);
@@ -191,7 +193,7 @@ public class MarketService {
         userService.saveRate(rate);
     }
     //req 3.5
-    public void sendMessageToStore(String username, String token,String storeId, String message) {
+    public void sendMessageToStore(String username, String token,UUID storeId, String message) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception

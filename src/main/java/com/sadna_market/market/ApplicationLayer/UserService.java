@@ -1,15 +1,14 @@
 package com.sadna_market.market.ApplicationLayer;
 
-import com.sadna_market.market.DomainLayer.IUserRepository;
-import com.sadna_market.market.DomainLayer.UserDTO;
+import com.sadna_market.market.DomainLayer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.sadna_market.market.DomainLayer.User;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -69,7 +68,7 @@ public class UserService {
         //should return a response object of token
     }
 
-    public void addToCart(CartRequest cart, String productId, int quantity) {
+    public void addToCart(CartRequest cart, UUID productId, int quantity) {
     }
 
 
@@ -91,7 +90,7 @@ public class UserService {
         }
     }
 
-    public void addToCart(String username, String productId, int quantity) {
+    public void addToCart(String username, UUID productId, int quantity) {
         // Here we would implement the logic to add a product to a user's cart
         logger.info("Adding product with ID: {} to user with username: {}", productId, username);
         Optional<User> user_ = userRepository.findByUsername(username);
@@ -117,20 +116,21 @@ public class UserService {
     }
 
 
-    public List<OrderDTO> getOrdersHistory(String username) {
+    public HashMap<UUID,OrderDTO> getOrdersHistory(String username) {
         // Here we would implement the logic to get a user's order history
         logger.info("Getting order history for user with username: {}", username);
         Optional<User> user_ = userRepository.findByUsername(username);
         if (user_.isPresent()) {
             User user = (User) user_.get();
-            return user.getOrdersHistory();
             logger.info("Order history retrieved successfully");
+            return user.getOrdersHistory();
         } else {
             logger.error("User not found");
+            throw new IllegalArgumentException("User not found");
         }
     }
 
-    public void removeFromCart(String userName, String productId) {
+    public void removeFromCart(String userName, UUID productId) {
         // Here we would implement the logic to remove a product from a user's cart
         logger.info("Removing product with ID: {} from user with username: {}", productId, userName);
         Optional<User> user_ = userRepository.findByUsername(userName);
@@ -143,7 +143,7 @@ public class UserService {
         }
     }
 
-    public void updateCart(String userName, String productId, int quantity) {
+    public void updateCart(String userName, UUID productId, int quantity) {
         // Here we would implement the logic to update a product in a user's cart
         logger.info("Updating product with ID: {} in user with username: {}", productId, userName);
         Optional<User> user_ = userRepository.findByUsername(userName);
@@ -195,7 +195,7 @@ public class UserService {
         }
     }
 
-    public void sendMessage(String username, String storeId, String message) {
+    public void sendMessage(String username, UUID storeId, String message) {
         // Here we would implement the logic to send a message to a store
         logger.info("Sending message to store with ID: {} from user with username: {}", storeId, username);
         Optional<User> user_ = userRepository.findByUsername(username);
@@ -222,18 +222,19 @@ public class UserService {
         }
     }
 
-    public void updateUser(RegisterRequest user) {
-        // Here we would implement the logic to update a user's password
-        logger.info("Updating password for user with username: {}", user);
-        Optional<User> updateUser = userRepository.findByUsername(user.getUserName());
-        if (updateUser.isPresent()) {
-            User userToUpdate = (User) updateUser.get();
-            userRepository.save(userToUpdate);
-            logger.info("User password updated successfully");
-        } else {
-            logger.error("User not found");
-        }
-    }
+//    public void updateUser(RegisterRequest user) {
+//        // Here we would implement the logic to update a user's password
+//        logger.info("Updating user info with username: {}", user);
+//        Optional<User> updateUser = userRepository.findByUsername(user.getUserName());
+//        if (updateUser.isPresent()) {
+//            User userToUpdate = (User) updateUser.get();
+//            userToUpdate.updateInfo(user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
+//            userRepository.save(userToUpdate);
+//            logger.info("User password updated successfully");
+//        } else {
+//            logger.error("User not found");
+//        }
+//    }
 
     public UserDTO returnInfo(String username) {
         // Here we would implement the logic to return a user's information
