@@ -47,7 +47,7 @@ public class MarketService {
     //
     public void deleteUser(String username,String token, String userToDelete) {
         //authenticate the user
-        String realToken = auth.authenticate(username);
+        //authenticateAdmin(username,token);
         //if not, throw an exception
 
         //delete user from the system
@@ -91,8 +91,9 @@ public class MarketService {
     }
     //req 2.3
     public void addToCart(CartRequest cart, UUID productId, int quantity) {
+        UUID storeId = productService.getProductInfo(productId).getStoreId(); //this is not good - probably change the productId to contain also the storeId for convenience
         //add a product to the cart
-        userService.addToCart(cart,productId,quantity);
+        userService.addToCart(cart,storeId,productId,quantity);
     }
     //req 2.4 (a)
     public void viewCart(CartRequest cart) {
