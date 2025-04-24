@@ -1,5 +1,7 @@
 package com.sadna_market.market.ApplicationLayer;
 
+import java.util.UUID;
+
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
@@ -29,7 +31,7 @@ public class MarketService {
 //        this.storeRepository = storeRepository;
         this.userService = new UserService(userRepository);
 //        this.productService = new ProductService(productRepository);
-//        this.storeService = new StoreService(storeRepository);
+        this.storeService = new StoreService(storeRepository);
     }
     //System functions here:
     public void openMarket() {
@@ -74,7 +76,7 @@ public class MarketService {
     //req 2.1 (b)
     public void getStoreInfo(String storeId) {
         //get store info
-        //return storeService.getStoreInfo(storeId);
+        return storeService.getStoreInfo(storeId);
     }
 
     //req 2.2 (a)
@@ -85,7 +87,7 @@ public class MarketService {
     //req 2.2 (b)
     public void searchStore(SearchRequest search) {
         //search for a store
-        //storeService.searchStore(search);
+        storeService.searchStore(search);
     }
     //req 2.3
     public void addToCart(CartRequest cart, UUID productId, int quantity) {
