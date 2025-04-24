@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer.Authentication;
+package com.sadna_market.market.InfrastructureLayer.Authentication;
 
 public class AuthenticationBridge {
     private TokenService tokenService;
@@ -7,7 +7,11 @@ public class AuthenticationBridge {
         this.iAuthRepository = iAuthRepository;
         this.tokenService = new TokenService();
     }
-    public String creatheUserSessionToken(String username, String password) {
+    public AuthenticationBridge() {
+        this.tokenService = new TokenService();
+        this.iAuthRepository = new InMemoryAuthRepository();
+    }
+    public String createUserSessionToken(String username, String password) {
         return authenticate(username,password);
     }
     public String createGuestSessionToken(String username, String password, int guestId) {
@@ -18,6 +22,8 @@ public class AuthenticationBridge {
         // If the user is authenticated, generate a JWT token for the user
         return tokenService.generateToken(username);
     }
+
+    //this method returns the username of the user that is associated with the token
     public String checkSessionToken(String jwt) {
         if(!tokenService.validateToken(jwt)){
             throw new IllegalArgumentException("Invalid token");

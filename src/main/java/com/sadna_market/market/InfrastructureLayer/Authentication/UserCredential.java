@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer.Authentication;
+package com.sadna_market.market.InfrastructureLayer.Authentication;
 
 public class UserCredential {
     private String username;
