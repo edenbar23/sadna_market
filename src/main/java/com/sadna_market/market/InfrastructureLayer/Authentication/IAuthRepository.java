@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer.Authentication;
+package com.sadna_market.market.InfrastructureLayer.Authentication;
 import java.util.HashMap;
 
 // This interface defines the methods for the authentication repository.

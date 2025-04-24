@@ -27,45 +27,15 @@ public class User extends IUser {
         this.cart = new Cart();
     }
 
-    public synchronized boolean isLoggedIn() {
-        logger.info("Checks isLoggedIn");
-        boolean result = isLoggedIn;
-        logger.info("Exiting isLoggedIn with result={}", result);
-        return result;
+    public User(UserDTO user) {
+        this.userName = user.getUserName();
+        this.password = user.getPassword();
+        this.email = user.getEmail();
+        this.firstName = user.getFirstName();
+        this.lastName = user.getLastName();
+        this.isLoggedIn = false;
+        this.cart = new Cart();
     }
-
-    public synchronized void setLoggedIn(boolean loggedIn) {
-        logger.info("Setting isLoggedIn to {}", loggedIn);
-        this.isLoggedIn = loggedIn;
-    }
-
-    public void setLogin(boolean login) {
-        logger.info("Setting login to {}", login);
-        this.isLoggedIn = login;
-        logger.info("Exiting setLogin to {}", login);
-    }
-
-    public synchronized void login() {
-        logger.info("Entering login");
-        if (isLoggedIn) {
-            logger.error("Exception in login: user is already logged in");
-            throw new IllegalStateException("User is already logged in");
-        }
-        this.setLogin(true);
-        logger.info("Exiting login");
-    }
-
-    public synchronized void logout() {
-        logger.info("Entering logout");
-        if (!isLoggedIn) {
-            logger.error("Exception in logout: user isn't logged in");
-            throw new IllegalStateException("User is not logged in");
-        }
-        this.setLogin(false);
-        logger.info("Exiting logout");
-    }
-
-
 
     public String getUserName() {
         return userName;
@@ -107,5 +77,47 @@ public class User extends IUser {
         this.lastName = lastName;
     }
 
+    public synchronized boolean isLoggedIn() {
+        logger.info("Checks isLoggedIn");
+        boolean result = isLoggedIn;
+        logger.info("Exiting isLoggedIn with result={}", result);
+        return result;
+    }
 
+    public synchronized void setLoggedIn(boolean loggedIn) {
+        logger.info("Setting isLoggedIn to {}", loggedIn);
+        this.isLoggedIn = loggedIn;
+    }
+
+    public void setLogin(boolean login) {
+        logger.info("Setting login to {}", login);
+        this.isLoggedIn = login;
+        logger.info("Exiting setLogin to {}", login);
+    }
+
+    public synchronized void login() {
+        logger.info("Entering login");
+        if (isLoggedIn) {
+            logger.error("Exception in login: user is already logged in");
+            throw new IllegalStateException("User is already logged in");
+        }
+        this.setLogin(true);
+        logger.info("Exiting login");
+    }
+
+    public synchronized void logout() {
+        logger.info("Entering logout");
+        if (!isLoggedIn) {
+            logger.error("Exception in logout: user isn't logged in");
+            throw new IllegalStateException("User is not logged in");
+        }
+        this.setLogin(false);
+        logger.info("Exiting logout");
+    }
+
+
+    public void addToCart(String productId, int quantity) {
+        logger.info("Adding product {} with quantity {} to cart", productId, quantity);
+        cart.addProduct(productId, quantity);
+    }
 }

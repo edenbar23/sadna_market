@@ -1,5 +1,18 @@
 package com.sadna_market.market.DomainLayer;
 
-public class IUserRepository {
+import java.util.Optional;
+
+public interface IUserRepository {
+    Optional<User> findByUsername(String username);
+    boolean contains(String username);
+
+    void save(User user);
+    void update(User user);
+
+    void delete(String username);
+
+
+
+    // Add other methods as needed
 
 }
