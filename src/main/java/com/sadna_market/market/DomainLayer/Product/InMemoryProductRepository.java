@@ -126,4 +126,23 @@ public class InMemoryProductRepository implements IProductRepository {
             logger.info("Product successfully deleted: {}", id);
         }
     }
+
+    /**
+     * Retrieves products corresponding to the provided set of UUIDs.
+     *
+     * @param intersectionIds Set of product UUIDs to retrieve
+     * @return List of Optional<Product> objects corresponding to the provided IDs
+     */
+    public List<Optional<Product>> getProductsByIds(Set<UUID> intersectionIds) {
+        logger.debug("Retrieving {} products by their IDs", intersectionIds.size());
+
+        List<Optional<Product>> result = intersectionIds.stream()
+                .map(id -> Optional.ofNullable(productStorage.get(id)))
+                .collect(Collectors.toList());
+
+        int foundCount = (int) result.stream().filter(Optional::isPresent).count();
+        logger.debug("Found {}/{} products from the provided IDs", foundCount, intersectionIds.size());
+
+        return result;
+    }
 }

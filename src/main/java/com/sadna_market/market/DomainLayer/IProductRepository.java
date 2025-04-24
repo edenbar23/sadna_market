@@ -4,6 +4,7 @@ import com.sadna_market.market.DomainLayer.Product.Product;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface IProductRepository {
@@ -16,4 +17,5 @@ public interface IProductRepository {
     void updateProduct(Product product);
     void deleteProduct(UUID id);
 
+    List<Optional<Product>> getProductsByIds(Set<UUID> intersectionIds);
 }
