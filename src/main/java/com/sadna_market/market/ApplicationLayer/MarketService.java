@@ -161,7 +161,7 @@ public class MarketService {
     //req 3.2
     public void openStore(String username,String token,StoreRequest newStore) {
         //check if the token is valid
-        authenticate(userName,token);
+        authenticate(username,token);
         //if not, throw an exception
         storeService.openStore(newStore);
     }
@@ -175,20 +175,20 @@ public class MarketService {
         userService.saveReview(review);
     }
     //req 3.4 (a)
-    public void rateProduct(String username, String token, RateRequest review) {
+    public void rateProduct(String username, String token, RateRequest rate) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        productService.addReview(review);
-        //userService.saveReview(review);
+        productService.addRate(rate);
+        userService.saveRate(rate);
     }
     //req 3.4 (b)
-    public void rateStore(String username, String token, RateRequest review) {
+    public void rateStore(String username, String token, RateRequest rate) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        productService.addReview(review);
-        userService.saveReview(review);
+        productService.addRate(rate);
+        userService.saveRate(rate);
     }
     //req 3.5
     public void sendMessageToStore(String username, String token,String storeId, String message) {
@@ -217,7 +217,8 @@ public class MarketService {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        return userService.returnInfo(username);
+        //return a Response<UserDTO> in future
+        userService.returnInfo(username);
     }
     //req 3.8 (b)
     public void changeUserInfo(String username, String token, RegisterRequest user) {
