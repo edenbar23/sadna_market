@@ -182,4 +182,13 @@ public class User extends IUser {
         logger.info("User info updated: password={}, email={}, firstName={}, lastName={}", password, email, firstName, lastName);
 
     }
+
+    public boolean hasPermission(UUID storeId,Permission permission) {
+        for (UserStoreRoles role : userStoreRoles) {
+            if (role.getStoreId() == storeId && role.hasPermission(permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

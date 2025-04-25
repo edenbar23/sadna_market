@@ -1,6 +1,7 @@
 package com.sadna_market.market.DomainLayer;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Interface representing a user role in the market system.
@@ -28,7 +29,7 @@ public interface IUserRole {
      * 
      * @return The store ID
      */
-    int getStoreId();
+    UUID getStoreId();
     
     /**
      * Checks if the role has a specific permission
