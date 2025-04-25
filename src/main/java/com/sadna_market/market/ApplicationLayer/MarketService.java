@@ -374,7 +374,7 @@ public class MarketService {
         //if not, throw an exception
         userService.removeStoreManager(username,storeId,manager);
     }
-    //req 4.9
+    //req 4.9 + req 6.1
     public void closeStore(String username,String token,UUID storeId) {
         //check if the token is valid
         authenticate(username,token);
@@ -422,6 +422,79 @@ public class MarketService {
 
     //Product functions here:
     //
+
+    //SystemAdmin functions here:
+    //req 6.2
+    public void removeUser(String admin,String token,String userToDelete) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.deleteUser(admin,token,userToDelete);
+    }
+    //req 6.3 (a)
+    public void getViolationReports(String admin,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getViolationReports(admin);
+    }
+    //req 6.3 (b)
+    public void replyViolationReport(String admin,String token,UUID reportId,String message) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.replyViolationReport(admin,reportId,message);
+    }
+    //req 6.3 (c)
+    public void sendMessageToUser(String admin,String token,String addresse,String message) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.sendMessageToUser(admin,addresse,message);
+    }
+    //req 6.4 (a)
+    public void getUserPurchaseHistory(String admin,String username,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getUserPurchasedHistory(admin,username);
+    }
+    //req 6.4 (b)
+    public void getStorePurchaseHistory(String admin,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getUserPurchaseHistory(admin,storeId);
+    }
+    //req 6.5 (a)
+    public void getBuyersRate(String admin,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getBuyersRate(admin);
+    }
+    //req 6.5 (b)
+    public void getTransactionsRate(String admin,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getTransactionsRate(admin);
+    }
+    //req 6.5 (c)
+    public void getSubscriptionsRate(String admin,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        userService.getSubscriptionsRate(admin);
+    }
+
+    public void closeMarket(String admin,String token) {
+        //check if the token is valid
+        authenticate(admin,token);
+        //if not, throw an exception
+        //close the market (not allowing anyone to access market)
+    }
+
 
 
     //helper functions here:
