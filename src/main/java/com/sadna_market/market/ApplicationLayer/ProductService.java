@@ -136,4 +136,7 @@ public class ProductService {
             return Response.error("Error adding review: " + e.getMessage());
         }
     }
+
+    public void addRate(RateRequest rate) {
+    }
 }

@@ -118,10 +118,11 @@ public class UserService {
         Optional<User> user_ = userRepository.findByUsername(username);
         if (user_.isPresent()) {
             User user = (User) user_.get();
-            return user.getCart();
             logger.info("Cart viewed successfully");
+            return user.getCart();
         } else {
             logger.error("User not found");
+            throw new RuntimeException("User not found");
         }
     }
 
@@ -182,10 +183,10 @@ public class UserService {
     public void saveReview(ReviewRequest review) {
         // Here we would implement the logic to save a review
         logger.info("Saving review for product with ID: {}", review.getProductId());
-        Optional<User> user_ = userRepository.findByUsername(review.getUserName());
+        Optional<User> user_ = userRepository.findByUsername(review.getUsername());
         if (user_.isPresent()) {
             User user = (User) user_.get();
-            user.saveReview(review.getStore(), review.getProductId(), review.getRating(), review.getComment());
+            user.saveReview(review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
             logger.info("Review saved successfully");
         } else {
             logger.error("User not found");
@@ -225,7 +226,7 @@ public class UserService {
         Optional<User> user_ = userRepository.findByUsername(username);
         if (user_.isPresent()) {
             User user = (User) user_.get();
-            user.reportViolation(report.getStore(), report.getProductId(), report.getComment());
+            user.reportViolation(report.getStoreId(), report.getProductId(), report.getComment());
             logger.info("Violation reported successfully");
         } else {
             logger.error("User not found");
@@ -274,6 +275,102 @@ public class UserService {
             logger.info("User info updated successfully");
         } else {
             logger.error("User not found");
+        }
+    }
+
+    //StoreOwner functions:
+    public boolean canAddProductToStore(String username, UUID storeId) {
+        // Here we would implement the logic to check if a user can add a product to a store
+        logger.info("Checking if user with username: {} can add product to store with ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            if (user.hasPermission(storeId,Permission.ADD_PRODUCT)) {
+                logger.info("User can add product to store");
+                return true;
+            } else {
+                logger.error("User cannot add product to store");
+                return false;
+            }
+        } else {
+            logger.error("User not found");
+            return false;
+        }
+    }
+
+    public boolean canRemoveProductToStore(String username, UUID storeId) {
+        // Here we would implement the logic to check if a user can remove a product from a store
+        logger.info("Checking if user with username: {} can remove product from store with ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            if (user.hasPermission(storeId,Permission.REMOVE_PRODUCT)) {
+                logger.info("User can remove product from store");
+                return true;
+            } else {
+                logger.error("User cannot remove product from store");
+                return false;
+            }
+        } else {
+            logger.error("User not found");
+            return false;
+        }
+    }
+
+    public boolean canUpdateProductToStore(String username, UUID storeId) {
+        // Here we would implement the logic to check if a user can edit a product in a store
+        logger.info("Checking if user with username: {} can edit product in store with ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            if (user.hasPermission(storeId,Permission.UPDATE_PRODUCT)) {
+                logger.info("User can edit product in store");
+                return true;
+            } else {
+                logger.error("User cannot edit product in store");
+                return false;
+            }
+        } else {
+            logger.error("User not found");
+            return false;
+        }
+    }
+
+    public boolean canUpdateStoreDiscountPolicy(String username, UUID storeId) {
+        // Here we would implement the logic to check if a user can update the store discount policy
+        logger.info("Checking if user with username: {} can update store discount policy for store with ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            if (user.hasPermission(storeId,Permission.MANAGE_DISCOUNT_POLICY)) {
+                logger.info("User can update store discount policy");
+                return true;
+            } else {
+                logger.error("User cannot update store discount policy");
+                return false;
+            }
+        } else {
+            logger.error("User not found");
+            return false;
+        }
+    }
+
+    public boolean canUpdateStorePurchasePolicy(String username, UUID storeId) {
+        // Here we would implement the logic to check if a user can update the store purchase policy
+        logger.info("Checking if user with username: {} can update store purchase policy for store with ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            if (user.hasPermission(storeId,Permission.MANAGE_PURCHASE_POLICY)) {
+                logger.info("User can update store purchase policy");
+                return true;
+            } else {
+                logger.error("User cannot update store purchase policy");
+                return false;
+            }
+        } else {
+            logger.error("User not found");
+            return false;
         }
     }
 }

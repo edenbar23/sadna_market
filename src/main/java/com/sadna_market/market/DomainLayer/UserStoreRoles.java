@@ -3,6 +3,7 @@ package com.sadna_market.market.DomainLayer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class UserStoreRoles implements IUserRole {
     private static final Logger logger = LogManager.getLogger(UserStoreRoles.class);
     protected String username;
-    protected int storeId;
+    protected UUID storeId;
     protected String appointedBy; // null for founder
     
     // Using thread-safe collections for concurrent access
@@ -29,7 +30,7 @@ public abstract class UserStoreRoles implements IUserRole {
      * @param storeId The store ID this role is associated with
      * @param appointedBy The username of the user who appointed this role (null for founder)
      */
-    public UserStoreRoles(String username, int storeId, String appointedBy) {
+    public UserStoreRoles(String username, UUID storeId, String appointedBy) {
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
@@ -63,7 +64,7 @@ public abstract class UserStoreRoles implements IUserRole {
     }
     
     @Override
-    public int getStoreId() {
+    public UUID getStoreId() {
         return storeId;
     }
     
@@ -164,7 +165,7 @@ public abstract class UserStoreRoles implements IUserRole {
     public int hashCode() {
         int result = 17;
         result = 31 * result + username.hashCode();
-        result = 31 * result + storeId;
+        result = 31 * result + storeId.hashCode();
         result = 31 * result + getRoleType().hashCode();
         return result;
     }

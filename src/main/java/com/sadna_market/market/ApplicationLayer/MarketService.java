@@ -237,7 +237,185 @@ public class MarketService {
     }
 
     //StoreOwner functions here:
-    //
+    //req 4.1 (a)
+    public void addProductToStore(String username,String token,UUID storeId,ProductRequest product) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        if(userService.canAddProductToStore(username,storeId)) {
+            storeService.addProductToStore(storeId, product);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to add product to store");
+        }
+    }
+    //req 4.1 (b)
+    public void removeProductFromStore(String username,String token, UUID storeId,UUID productId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        if(userService.canRemoveProductToStore(username,storeId)) {
+            storeService.removeProductFromStore(storeId, productId);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to remove product from store");
+        }
+    }
+    //req 4.1 (c)
+    public void updateProductOfStore(String username,String token,UUID storeId,ProductRequest product) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        if(userService.canUpdateProductToStore(username,storeId)) {
+            storeService.updateProductFromStore(storeId, productId);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to remove product from store");
+        }
+    }
+    //req 4.2 (a)
+    public void updateStoreDiscountPolicy(String username,String token,UUID storeId,DiscountPolicyRequest discount) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        //check if the user has permission to update the store discount policy
+        if(userService.canUpdateStoreDiscountPolicy(username,storeId)) {
+            storeService.updateStoreDiscountPolicy(storeId, discount);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to update store discount policy");
+        }
+
+    }
+    //req 4.2 (b)
+    public void changeStorePurchasePolicy(String username,String token,UUID storeId,PurchasePolicyRequest policy) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        //check if the user has permission to update the store purchase policy
+        if(userService.canUpdateStorePurchasePolicy(username,storeId)) {
+            storeService.updateStorePurchasePolicy(storeId, policy);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to update store purchase policy");
+        }
+    }
+    //req 4.2 (c)
+    public void changeProductDiscountPolicy(String username,String token,UUID productId,DiscountPolicyRequest discount) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        //check if the user has permission to update the store purchase policy
+        if(userService.canUpdateProductDiscountPolicy(username,productId)) {
+            productService.updateProductDiscountPolicy(productId, discount);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to update store purchase policy");
+        }
+    }
+    //req 4.2 (d)
+    public void changeProductPurchasePolicy(String username,String token,UUID productId,PurchasePolicyRequest policy) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        if(userService.canUpdateProductPurchasePolicy(username,productId)) {
+            productService.updateProductPurchasePolicy(productId, policy);
+            //should return a Response with productId
+        }
+        else {
+            throw new IllegalArgumentException("User does not have permission to update store purchase policy");
+        }
+    }
+    //req 4.3
+    public void appointStoreOwner(String username,String token,UUID storeId, String newOwner) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.appointStoreOwner(username,storeId,newOwner);
+    }
+    //req 4.4
+    public void removeStoreOwner(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.removeStoreOwner(username,storeId);
+    }
+    //req 4.5
+    public void leaveOwnership(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.leaveOwnership(username,storeId);
+    }
+    //req 4.6
+    public void appointStoreManager(String username,String token,UUID storeId, String manager,PermissionsRequest permissions) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.appointStoreManager(username,storeId,manager,permissions);
+    }
+    //req 4.7
+    public void changePermissions(String username,String token,UUID storeId, String manager,PermissionsRequest permissions) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.changePermissions(username,storeId,manager,permissions);
+    }
+    //req 4.8
+    public void removeStoreManager(String username,String token,UUID storeId, String manager) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.removeStoreManager(username,storeId,manager);
+    }
+    //req 4.9
+    public void closeStore(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.closeStore(username,storeId);
+    }
+    //req 4.10
+    public void reopenStore(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.reopenStore(username,storeId);
+    }
+    //req 4.11
+    public void getStoreRolesInfo(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        storeService.getStoreInfo(storeId);
+    }
+    //req 4.12 (a)
+    public void viewStoreMessages(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.viewStoreMessages(username,storeId);
+    }
+    //req 4.12 (b)
+    public void replyToStoreMessage(String username,String token,UUID storeId,UUID messageId,String targetUser, String message) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.replyToStoreMessage(username,storeId,messageId,targetUser,message);
+    }
+    //req 4.13
+    public void getPurchaseHistory(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        userService.getPurchaseHistory(username,storeId);
+    }
 
     //Store functions here:
     //
