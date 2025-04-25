@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
+import com.sadna_market.market.DomainLayer.Product.UserRate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ public class ProductService {
     }
 
     public Response searchProduct(ProductSearchRequest request) {
-        logger.debug("Computing intersection of filtered products with criteria - name: {}, category: {}, price: {} to {}, rate: {} to {}",
+        logger.info("Computing intersection of filtered products with criteria - name: {}, category: {}, price: {} to {}, rate: {} to {}",
                 request.getName(), request.getCategory(), request.getMinPrice(), request.getMaxPrice(),
                 request.getMinRank(), request.getMaxRank());
         // convert to Response
@@ -57,6 +58,8 @@ public class ProductService {
         }
     }
 
+
+    // private helper method
     private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request){
         // Get results from each filter method
         List<Optional<Product>> nameFiltered = productRepository.filterByName(request.getName());
@@ -95,5 +98,42 @@ public class ProductService {
         return productRepository.getProductsByIds(intersectionIds);
     }
 
+    public Response rateProduct(ProductRateRequest rate){
+        UUID productId = rate.getProductId();
+        UUID userId = rate.getUserId();
+        int rateValue = rate.getRate();
+        logger.info("User {} rated product {} with value {}", userId, productId, rateValue);
+        try {
+            Optional<UserRate> userRateOptional = productRepository.handleUserRate(userId, productId, rateValue);
 
+            if (userRateOptional.isPresent()) {
+                UserRate userRate = userRateOptional.get();
+                // Convert the UserRate to JSON or any format you're using for response
+                // This part depends on how you want to serialize your objects
+                // You might be using Jackson, Gson, or a custom serializer
+                String json = objectMapper.writeValueAsString(userRate);
+
+                return Response.success(json);
+            } else {
+                // If the Optional is empty, it likely means the product or user wasn't found
+                return Response.error("Failed to rate product: Product or user not found");
+            }
+        } catch (Exception e) {
+            logger.error("Error rating product: {}", e.getMessage(), e);
+            return Response.error("Error rating product: " + e.getMessage());
+        }    }
+
+    public Response addProductReview(ProductReviewRequest review) {
+        UUID productId = review.getProductId();
+        UUID userId = review.getUserId();
+        String reviewText = review.getReviewText();
+        logger.info("User {} added review for product {}: {}", userId, productId, reviewText);
+        try {
+            productRepository.handleUserReview(userId, productId, reviewText);
+            return Response.success("Review added successfully");
+        } catch (Exception e) {
+            logger.error("Error adding review: {}", e.getMessage(), e);
+            return Response.error("Error adding review: " + e.getMessage());
+        }
+    }
 }

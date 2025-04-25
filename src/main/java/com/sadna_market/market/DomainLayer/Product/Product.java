@@ -58,8 +58,11 @@ public class Product {
         this.category = category;
     }
 
-    public void updateRank(double newRank) {
-        rate.updateRank(newRank);
+    public void addRank(double newRank) {
+        rate.addRank(newRank);
+    }
+    public void updateRank(double oldRank, double newRank) {
+        rate.updateRank(oldRank, newRank);
     }
 
     public double getRate() {

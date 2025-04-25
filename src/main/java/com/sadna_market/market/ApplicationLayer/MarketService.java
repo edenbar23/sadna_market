@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
+import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 
 import java.util.UUID;
@@ -69,9 +70,9 @@ public class MarketService {
         //auth return token
     }
     //req 2.1 (a)
-    public void getProductInfo(String productId) {
+    public ProductDTO getProductInfo(UUID productId) {
         //get product info
-        //return productService.getProductInfo(productId);
+        return productService.getProductInfo(productId);
     }
     //req 2.1 (b)
     public void getStoreInfo(String storeId) {
@@ -172,20 +173,22 @@ public class MarketService {
     }
 
     //req 3.3
-    public void reviewProduct(String username, String token, ReviewRequest review) {
+    public void reviewProduct(String username, String token, ProductReviewRequest review) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        productService.addReview(review);
+        productService.addProductReview(review);
+        // need to change implementation in UserService
         userService.saveReview(review);
     }
     //req 3.4 (a)
-    public void rateProduct(String username, String token, RateRequest rate) {
+    public Response rateProduct(String username, String token, ProductRateRequest rate) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        productService.addRate(rate);
+        Response output = productService.rateProduct(rate);
         userService.saveRate(rate);
+        return output;
     }
     //req 3.4 (b)
     public void rateStore(String username, String token, RateRequest rate) {

@@ -34,7 +34,7 @@ public class Rate {
      *
      * @param newRank the new rank to add
      */
-    public void updateRank(double newRank) {
+    public void addRank(double newRank) {
         // Calculate the total sum of all previous ranks
         double totalSum = rateVal * numOfRanks;
 
@@ -43,6 +43,17 @@ public class Rate {
 
         // Add the new rank to the total sum
         totalSum += newRank;
+
+        // Recalculate the average
+        rateVal = totalSum / numOfRanks;
+    }
+
+    public void updateRank(double oldRank, double newRank) {
+        // Calculate the total sum of all previous ranks
+        double totalSum = rateVal * numOfRanks;
+
+        // Update the total sum by removing the old rank and adding the new rank
+        totalSum = totalSum - oldRank + newRank;
 
         // Recalculate the average
         rateVal = totalSum / numOfRanks;

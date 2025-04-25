@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 public class InMemoryProductRepository implements IProductRepository {
     // In-memory storage for products
     private Map<UUID, Product> productStorage = new ConcurrentHashMap<>();
+    private List<UserRate> userRates = new ArrayList<>();
+    private List<UserReview> userReviews = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
     @Override
     public Optional<Product> findById(UUID id) {
@@ -144,5 +146,79 @@ public class InMemoryProductRepository implements IProductRepository {
         logger.debug("Found {}/{} products from the provided IDs", foundCount, intersectionIds.size());
 
         return result;
+    }
+
+
+    // Method to handle user rating of a product
+    /**
+     * Handles the user rating for a product.
+     *
+     * @param userId    UUID of the user
+     * @param productId UUID of the product
+     * @param rate      Rating value
+     */
+    // if the user already rated the product, update the rating
+    // if the user didn't rate the product, add a new rating
+    public Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rate) {
+        synchronized (userRates) {
+            logger.debug("Handling user rate: User ID={}, Product ID={}, Rate={}", userId, productId, rate);
+            // check if product exist in the system
+            Optional<Product> productOpt = findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                // check if user already rated the product
+                Optional<UserRate> existingRate = userRates.stream()
+                        .filter(userRate -> userRate.getUserId().equals(userId) && userRate.getProductId().equals(productId))
+                        .findFirst();
+                if (existingRate.isPresent()) {
+                    logger.warn("User has already rated this product. Updating rate.");
+                    // update userRate list
+                    UserRate userRate = existingRate.get();
+                    int oldRate = userRate.getRatingValue();
+                    userRates.remove(userRate);
+                    userRate.changeRatingValue(rate);
+                    userRates.add(userRate);
+                    // Update the product's rate
+                    product.updateRank(oldRate, rate);
+                    productStorage.put(product.getProductId(), product);
+                    return Optional.of(userRate);
+                } else {
+                    logger.info("Adding new user rate.");
+                    UserRate userRate = new UserRate(userId, productId, rate);
+                    userRates.add(userRate);
+                    // Update the product's rate
+                    product.addRank(rate);
+                    productStorage.put(product.getProductId(), product);
+                    return Optional.of(userRate);
+                }
+            } else {
+                logger.error("Product not found for ID: {}", productId);
+                return Optional.empty();
+            }
+        }
+    }
+
+    // Method to handle user review of a product
+    /**
+     * Handles the user review for a product.
+     *
+     * @param userId    UUID of the user
+     * @param productId UUID of the product
+     * @param reviewText Review text
+     */
+    public void handleUserReview(UUID userId, UUID productId, String reviewText) {
+        synchronized (productStorage) {
+            logger.debug("Handling user review: User ID={}, Product ID={}, Review={}", userId, productId, reviewText);
+            // check if product exist in the system
+            Optional<Product> productOpt = findById(productId);
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                // add the review to the product
+                userReviews.add(new UserReview(userId, productId, reviewText));
+                logger.info("User review added successfully.");
+            } else {
+                logger.error("Product not found for ID: {}", productId);
+            }
+        }
     }
 }
