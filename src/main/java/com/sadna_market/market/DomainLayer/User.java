@@ -3,6 +3,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 public class User extends IUser {
@@ -190,5 +191,14 @@ public class User extends IUser {
             }
         }
         return false;
+    }
+
+    public List<Permission> getStoreManagerPermissions(UUID storeId) {
+        for (UserStoreRoles role : userStoreRoles) {
+            if (role.getStoreId() == storeId && role instanceof StoreManager) {
+                return role.getPermissions();
+            }
+        }
+        return new ArrayList<>(); // Return an empty list if no StoreManager role is found for the store
     }
 }
