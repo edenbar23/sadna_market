@@ -136,7 +136,63 @@ public class ProductService {
             return Response.error("Error adding review: " + e.getMessage());
         }
     }
-
-    public void addRate(RateRequest rate) {
+    public Response addProduct(ProductRequest product) {
+        logger.info("Adding new product: {}", product);
+        if (product.getProductId() != null) {
+            logger.error("Product ID should be null for new products");
+            return Response.error("Product ID should be null for new products");
+        }
+        try {
+            Product newProduct = new Product(product.getName(), product.getDescription(), product.getCategory(), product.getPrice(), true);
+            productRepository.addProduct(newProduct);
+            return Response.success("Product added successfully");
+        } catch (Exception e) {
+            logger.error("Error adding product: {}", e.getMessage(), e);
+            return Response.error("Error adding product: " + e.getMessage());
+        }
     }
+    public Response updateProduct(ProductRequest product){
+        logger.info("Updating product: {}", product);
+        if (product.getProductId() == null){
+            logger.error("Product ID should not be null for existing products");
+            return Response.error("Product ID should not be null for existing products");
+        }
+
+        try {
+            Optional<Product> existingProduct_ = productRepository.findById(product.getProductId());
+            if (existingProduct_.isEmpty()) {
+                logger.error("Product not found");
+                return Response.error("Product not found");
+            }
+            Product existingProduct = existingProduct_.get();
+            existingProduct.updateProduct(product);
+            productRepository.updateProduct(existingProduct);
+            return Response.success("Product updated successfully");
+        } catch (Exception e){
+            logger.error("Error updating product: {}", e.getMessage(), e);
+            return Response.error("Error updating product: " + e.getMessage());
+            }
+    }
+    public Response deleteProduct(ProductRequest product){
+        logger.info("Deleting product: {}", product);
+        if (product.getProductId() == null){
+            logger.error("Product ID should not be null for existing products");
+            return Response.error("Product ID should not be null for existing products");
+        }
+        try {
+            Optional<Product> existingProduct_ = productRepository.findById(product.getProductId());
+            if (existingProduct_.isEmpty()) {
+                logger.error("Product not found");
+                return Response.error("Product not found");
+            }
+            Product existingProduct = existingProduct_.get();
+            productRepository.deleteProduct(existingProduct.getProductId());
+            return Response.success("Product deleted successfully");
+        } catch (Exception e){
+            logger.error("Error deleting product: {}", e.getMessage(), e);
+            return Response.error("Error deleting product: " + e.getMessage());
+        }
+    }
+//    public void addRate(RateRequest rate) {
+//    }
 }

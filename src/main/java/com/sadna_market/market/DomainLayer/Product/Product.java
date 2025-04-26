@@ -1,5 +1,7 @@
 package com.sadna_market.market.DomainLayer.Product;
 
+import com.sadna_market.market.ApplicationLayer.ProductRequest;
+
 import java.util.UUID;
 
 public class Product {
@@ -23,6 +25,26 @@ public class Product {
         this.price = price;
         this.isAvailable = isAvailable;
         this.rate = new Rate();
+    }
+
+    // a methods that updates a gets a product request object
+    public void updateProduct(ProductRequest productRequest) {
+        if (productRequest.getName() != null) {
+            this.name = productRequest.getName();
+        }
+        if (productRequest.getDescription() != null) {
+            this.description = productRequest.getDescription();
+        }
+        if (productRequest.getCategory() != null) {
+            this.category = productRequest.getCategory();
+        }
+        if (productRequest.getPrice() != 0) {
+            this.price = productRequest.getPrice();
+        }
+        if (productRequest.getProductId() != null) {
+            this.productId = productRequest.getProductId();
+        }
+
     }
 
     public UUID getProductId() {
