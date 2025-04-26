@@ -103,13 +103,24 @@ public class InMemoryProductRepository implements IProductRepository {
     }
 
     @Override
-    public void addProduct(Product product) {
+    public boolean addProduct(Product product) {
         synchronized (productStorage) {
             logger.debug("Adding new product with ID: {}", product.getProductId());
+            String name = product.getName();
+            // Check if a product with the same name already exists
+            Optional<Product> existingProduct = productStorage.values().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(name))
+                    .findFirst();
+            if (existingProduct.isPresent()) {
+                logger.warn("Product with name '{}' already exists. Not adding.", name);
+                return false;
+            }
             productStorage.put(product.getProductId(), product);
             logger.info("Product successfully added: {}", product.getProductId());
+            return true;
         }
     }
+
 
     @Override
     public void updateProduct(Product product) {

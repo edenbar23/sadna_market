@@ -5,10 +5,7 @@ import java.util.UUID;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
-import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-
-import java.util.UUID;
 
 //this is going to be the API for the market
 public class MarketService {
@@ -306,7 +303,7 @@ public class MarketService {
         }
     }
     //req 4.2 (c)
-    public void changeProductDiscountPolicy(String username,String token,UUID productId,DiscountPolicyRequest discount) {
+    public void changeProductDiscountPolicy(String username,String token,UUID productId,ProductDiscountPolicyRequest discount) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
@@ -320,7 +317,7 @@ public class MarketService {
         }
     }
     //req 4.2 (d)
-    public void changeProductPurchasePolicy(String username,String token,UUID productId,PurchasePolicyRequest policy) {
+    public void changeProductPurchasePolicy(String username,String token,UUID productId,ProductPurchasePolicyRequest policy) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
