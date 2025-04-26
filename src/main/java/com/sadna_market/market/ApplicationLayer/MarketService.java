@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
+import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 
 //this is going to be the API for the market
