@@ -505,43 +505,65 @@ public class StoreService {
      * @param searchRequest The search criteria
      * @return List of StoreDTO objects matching the criteria
      */
-    public List<StoreDTO> searchStore(SearchRequest searchRequest) {
+    public List<StoreDTO> searchStore(StoreRequest searchRequest) {
         logger.info("Searching for stores with criteria: {}", searchRequest);
         
-        // In a full implementation, we would use repository methods to search for stores
-        // based on name, category, product, etc.
-        // For now, we'll just return all active stores
+        // Default to active stores only if not specified
+        boolean activeOnly = searchRequest.getActiveOnly() != null ? 
+                searchRequest.getActiveOnly() : true;
         
         List<Store> stores = storeRepository.findAll();
         List<StoreDTO> result = new ArrayList<>();
         
         for (Store store : stores) {
-            if (store.isActive()) {
-                // Apply search criteria if provided
-                boolean matches = true;
-                
-                if (searchRequest.getName() != null && !searchRequest.getName().isEmpty()) {
-                    matches = store.getName().toLowerCase().contains(searchRequest.getName().toLowerCase());
-                }
-                
-                if (matches && searchRequest.getProductCategory() != null && !searchRequest.getProductCategory().isEmpty()) {
-                    // In a real implementation, we would check if the store has products in this category
-                    // This is a placeholder
-                    Set<Store> storesWithCategory = storeRepository.findByProductCategory(searchRequest.getProductCategory());
-                    matches = storesWithCategory.contains(store);
-                }
-                
-                if (matches) {
-                    result.add(new StoreDTO(
-                        store.getStoreId(),
-                        store.getName(),
-                        store.getDescription(),
-                        true,
-                        store.getFounder().getUsername(),
-                        storeRepository.getStoreOwners(store.getStoreId()),
-                        storeRepository.getStoreManagers(store.getStoreId())
-                    ));
-                }
+            // Skip inactive stores if activeOnly is true
+            if (activeOnly && !store.isActive()) {
+                continue;
+            }
+            
+            // Apply search criteria if provided
+            boolean matches = true;
+            
+            // Filter by name if specified
+            if (matches && searchRequest.getStoreName() != null && !searchRequest.getStoreName().isEmpty()) {
+                matches = store.getName().toLowerCase().contains(searchRequest.getStoreName().toLowerCase());
+            }
+            
+            // Filter by description if specified
+            if (matches && searchRequest.getDescription() != null && !searchRequest.getDescription().isEmpty()) {
+                matches = store.getDescription().toLowerCase().contains(searchRequest.getDescription().toLowerCase());
+            }
+            
+            // Filter by product category if specified
+            if (matches && searchRequest.getProductCategory() != null && !searchRequest.getProductCategory().isEmpty()) {
+                // In a real implementation, we would check if the store has products in this category
+                Set<Store> storesWithCategory = storeRepository.findByProductCategory(searchRequest.getProductCategory());
+                matches = storesWithCategory.contains(store);
+            }
+            
+            // Filter by rating if specified
+            // Note: This is a placeholder as store rating is not implemented in the current model
+            if (matches && searchRequest.getMinRating() != null) {
+                // This would need to be implemented based on how store ratings are stored
+                // For now, we'll assume all stores pass this filter
+            }
+            
+            if (matches && searchRequest.getMaxRating() != null) {
+                // This would need to be implemented based on how store ratings are stored
+                // For now, we'll assume all stores pass this filter
+            }
+            
+            // If store matches all criteria, add it to the result
+            if (matches) {
+                result.add(new StoreDTO(
+                    store.getStoreId(),
+                    store.getName(),
+                    store.getDescription(),
+                    store.isActive(),
+                    store.getFounder().getUsername(),
+                    storeRepository.getStoreOwners(store.getStoreId()),
+                    storeRepository.getStoreManagers(store.getStoreId())
+                ));
             }
         }
         
