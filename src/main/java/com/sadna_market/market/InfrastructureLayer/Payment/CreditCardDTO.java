@@ -13,6 +13,10 @@ public class CreditCardDTO implements PaymentMethod {
         this.cvv = cvv;
     }
 
+    public String getCardPrefix() {
+        return cardNumber.substring(0, 8); // Binlist works best with 6-8 digits
+    }
+
     @Override
     public boolean accept(PaymentVisitor visitor, double amount) {
         return visitor.visit(this, amount);
