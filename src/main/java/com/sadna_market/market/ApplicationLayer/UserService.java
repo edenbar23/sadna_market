@@ -373,4 +373,19 @@ public class UserService {
             return false;
         }
     }
+
+    public Response getStoreManagerPermissions(String username, UUID storeId) {
+        // Here we would implement the logic to get a store manager's permissions
+        logger.info("Getting store manager permissions for user with username: {} and store ID: {}", username, storeId);
+        Optional<User> user_ = userRepository.findByUsername(username);
+        if (user_.isPresent()) {
+            User user = (User) user_.get();
+            List<Permission> permissions = user.getStoreManagerPermissions(storeId);
+            logger.info("Store manager permissions retrieved successfully");
+            return new Response(true, permissions);
+        } else {
+            logger.error("User not found");
+            return new Response(false, "User not found");
+        }
+    }
 }

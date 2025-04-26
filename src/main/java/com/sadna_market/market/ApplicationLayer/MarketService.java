@@ -417,6 +417,14 @@ public class MarketService {
         userService.getPurchaseHistory(username,storeId);
     }
 
+    //StoreManager functions here:
+    //req 5
+    public Response getStoreManagerPermissions(String username,String token,UUID storeId) {
+        //check if the token is valid
+        authenticate(username,token);
+        //if not, throw an exception
+        return userService.getStoreManagerPermissions(username,storeId);
+    }
     //Store functions here:
     //
 
