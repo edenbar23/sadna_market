@@ -193,6 +193,14 @@ public class ProductService {
             return Response.error("Error deleting product: " + e.getMessage());
         }
     }
+
+    public void updateProductDiscountPolicy(UUID productId, ProductDiscountPolicyRequest discount) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public void updateProductPurchasePolicy(UUID productId, ProductPurchasePolicyRequest policy) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 //    public void addRate(RateRequest rate) {
 //    }
 }
