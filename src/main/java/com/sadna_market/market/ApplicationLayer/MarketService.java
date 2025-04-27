@@ -434,7 +434,7 @@ public class MarketService {
         //check if the token is valid
         authenticate(admin,token);
         //if not, throw an exception
-        userService.deleteUser(admin,token,userToDelete);
+        userService.deleteUser(admin,userToDelete);
     }
     //req 6.3 (a)
     public void getViolationReports(String admin,String token) {
