@@ -1,4 +1,4 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.ApplicationLayer.Requests;
 
 /**
  * General search request class that serves as a wrapper for different types of searches.

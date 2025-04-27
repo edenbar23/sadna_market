@@ -1,23 +1,34 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.ApplicationLayer.DTOs;
 
 import com.sadna_market.market.DomainLayer.Order;
 import com.sadna_market.market.DomainLayer.OrderStatus;
 
-import
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
 public class OrderDTO {
+    @Getter
     private UUID orderId;
+    @Getter
     private UUID storeId;
+    @Getter
     private String userName;
+    @Getter
     private Map<UUID, Integer> products;
+    @Getter
     private double totalPrice;
+    @Getter
     private double finalPrice;
+    @Getter
     private LocalDateTime orderDate;
+    @Getter
     private OrderStatus status;
+    @Getter
     private String paymentId;
+    @Getter
     private String deliveryId;
 
     public OrderDTO(Order order) {
@@ -33,44 +44,19 @@ public class OrderDTO {
         this.deliveryId = order.getDeliveryId();
     }
 
-    // Getters
-    public UUID getOrderId() {
-        return orderId;
+    public OrderDTO(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
+            double totalPrice, double finalPrice, LocalDateTime orderDate, OrderStatus status,
+            String paymentId, String deliveryId) {
+        this.orderId = orderId;
+        this.storeId = storeId;
+        this.userName = userName;
+        this.products = products;
+        this.totalPrice = totalPrice;
+        this.finalPrice = finalPrice;
+        this.orderDate = orderDate;
+        this.status = status;
+        this.paymentId = paymentId;
+        this.deliveryId = deliveryId;
     }
 
-    public UUID getStoreId() {
-        return storeId;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public Map<UUID, Integer> getProducts() {
-        return products;
-    }
-
-    public double getTotalPrice() {
-        return totalPrice;
-    }
-
-    public double getFinalPrice() {
-        return finalPrice;
-    }
-
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
-    public String getPaymentId() {
-        return paymentId;
-    }
-
-    public String getDeliveryId() {
-        return deliveryId;
-    }
 }

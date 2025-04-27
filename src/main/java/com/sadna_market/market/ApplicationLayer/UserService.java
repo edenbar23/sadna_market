@@ -1,19 +1,21 @@
 package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.DTOs.CartDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.UserDTO;
+import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.RateRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
-import com.sadna_market.market.ApplicationLayer.OrderDTO;
-import com.sadna_market.market.ApplicationLayer.CartDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 //import com.sadna_market.market.DomainLayer.DomainServices
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -363,5 +365,3 @@ public class UserService {
         }
     }
 }
-
-

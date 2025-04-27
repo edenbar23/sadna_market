@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer.Product;
+package com.sadna_market.market.DomainLayer;
 
 /**
  * The Rate class represents the rating of a product.
