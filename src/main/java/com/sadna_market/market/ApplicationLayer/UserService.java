@@ -2,9 +2,9 @@ package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.CartDTO;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
-import com.sadna_market.market.DomainLayer.OrderDTO;
+import com.sadna_market.market.ApplicationLayer.OrderDTO;
+import com.sadna_market.market.ApplicationLayer.CartDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -112,11 +112,11 @@ public class UserService {
         }
     }
 
-    public Response addToCart(String username, UUID productId, int quantity) {
+    public Response addToCart(String username,UUID storeId, UUID productId, int quantity) {
         // Here we would implement the logic to add a product to a user's cart
         logger.info("Adding product with ID: {} to user with username: {}", productId, username);
         try {
-            userAccessService.addToCart(productId, quantity);
+            userAccessService.addToCart(username,storeId, productId, quantity);
             logger.info("Product added to cart successfully");
             return Response.success("Product added to cart successfully");
         } catch (Exception e) {
@@ -128,8 +128,9 @@ public class UserService {
         // Here we would implement the logic to view a user's cart
         logger.info("Viewing cart for user with username: {}", username);
         try {
-            CartRequest cart = userAccessService.getCart(username);
-            String json = objectMapper.writeValueAsString(cart);
+            Cart cart = userAccessService.getCart(username);
+            CartDTO cartDTO = new CartDTO(cart);
+            String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Cart viewed successfully");
             return Response.success(json);
         }
@@ -144,7 +145,7 @@ public class UserService {
         // Here we would implement the logic to get a user's order history
         logger.info("Getting order history for user with username: {}", username);
         try {
-            HashMap<UUID, OrderDTO> orders = userAccessService.getOrdersHistory(username);
+            List<UUID> orders = userAccessService.getOrdersHistory(username);
             String json = objectMapper.writeValueAsString(orders);
             logger.info("Order history retrieved successfully");
             return Response.success(json);
@@ -155,13 +156,15 @@ public class UserService {
         }
     }
 
-        public Response removeFromCart(String username, UUID productId) {
+        public Response removeFromCart(String username, UUID storeId, UUID productId) {
         // Here we would implement the logic to remove a product from a user's cart
         logger.info("Removing product with ID: {} from user with username: {}", productId, username);
         try {
-            userAccessService.removeFromCart(username,productId);
+            Cart cartUpdated = userAccessService.removeFromCart(username,storeId,productId);
+            CartDTO cartDTO = new CartDTO(cartUpdated);
+            String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Product removed from cart successfully");
-            return Response.success("Product removed from cart successfully");
+            return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
@@ -172,8 +175,9 @@ public class UserService {
         // Here we would implement the logic to update a product in a user's cart
         logger.info("Updating product with ID: {} in user with username: {}", productId, userName);
         try {
-            CartRequest updatedCart = userAccessService.updateCart(userName, productId, quantity);
-            String json = objectMapper.writeValueAsString(updatedCart);
+            Cart updatedCart = userAccessService.updateCart(userName, productId, quantity);
+            CartDTO cartDTO = new CartDTO(updatedCart);
+            String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Product updated in cart successfully");
             return Response.success(json);
         } catch (Exception e) {
@@ -201,10 +205,10 @@ public class UserService {
         try {
             userAccessService.saveReview(review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
             logger.info("Review saved successfully");
-            return Response.success("Review saved successfully")
+            return Response.success("Review saved successfully");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -217,7 +221,7 @@ public class UserService {
             return Response.success("Rate saved successfully");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -230,7 +234,7 @@ public class UserService {
             return Response.success("Message sent successfully");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -243,7 +247,7 @@ public class UserService {
             return Response.success("Violation reported successfully");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -257,7 +261,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -271,7 +275,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -287,7 +291,7 @@ public class UserService {
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -301,7 +305,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -315,7 +319,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -329,7 +333,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -343,7 +347,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
@@ -358,7 +362,7 @@ public class UserService {
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 }
