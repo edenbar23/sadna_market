@@ -21,7 +21,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryOrderRepository.class);
     
     // Thread-safe map to store orders by ID
-    private final Map<Long, Order> orders = new ConcurrentHashMap<>();
+    private final Map<UUID, Order> orders = new ConcurrentHashMap<>();
     
     @Override
     public Order save(Order order) {
@@ -36,7 +36,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public Optional<Order> findById(Long orderId) {
+    public Optional<Order> findById(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot find order with null ID");
             return Optional.empty();
@@ -53,7 +53,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public void deleteById(Long orderId) {
+    public void deleteById(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot delete order with null ID");
             return;
@@ -64,7 +64,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public boolean exists(Long orderId) {
+    public boolean exists(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot check existence of order with null ID");
             return false;
@@ -76,7 +76,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public Long createOrder(Long storeId, String userName, Map<Long, Integer> products, 
+    public UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                         double totalPrice, double finalPrice, LocalDateTime orderDate, 
                         OrderStatus status, String paymentId) {
         // Validate input parameters
@@ -108,7 +108,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
         
         // Create a defensive copy of the products map
-        Map<Long, Integer> productsCopy = new HashMap<>(products);
+        Map<UUID, Integer> productsCopy = new HashMap<>(products);
         
         Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice, 
                               orderDate, status, paymentId);
@@ -120,7 +120,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public boolean updateOrderStatus(Long orderId, OrderStatus newStatus) {
+    public boolean updateOrderStatus(UUID orderId, OrderStatus newStatus) {
         if (orderId == null) {
             logger.error("Cannot update status for order with null ID");
             return false;
@@ -151,7 +151,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public boolean setDeliveryId(Long orderId, String deliveryId) {
+    public boolean setDeliveryId(UUID orderId, String deliveryId) {
         if (orderId == null) {
             logger.error("Cannot set delivery ID for order with null ID");
             return false;
@@ -177,7 +177,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public List<Order> findByStoreId(Long storeId) {
+    public List<Order> findByStoreId(UUID storeId) {
         if (storeId == null) {
             logger.error("Cannot find orders for null store ID");
             return Collections.emptyList();
@@ -260,7 +260,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public List<Order> getStorePurchaseHistory(Long storeId) {
+    public List<Order> getStorePurchaseHistory(UUID storeId) {
         if (storeId == null) {
             logger.error("Cannot get purchase history for null store ID");
             return Collections.emptyList();

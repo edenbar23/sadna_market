@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer;
+package com.sadna_market.market.ApplicationLayer;
 
 import com.sadna_market.market.DomainLayer.User;
 

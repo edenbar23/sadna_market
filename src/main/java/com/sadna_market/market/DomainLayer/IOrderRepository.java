@@ -26,7 +26,7 @@ public interface IOrderRepository {
      * @param orderId The order ID to look for
      * @return Optional containing the order if found
      */
-    Optional<Order> findById(Long orderId);
+    Optional<Order> findById(UUID orderId);
     
     /**
      * Gets all orders in the system
@@ -40,7 +40,7 @@ public interface IOrderRepository {
      * 
      * @param orderId The order ID to delete
      */
-    void deleteById(Long orderId);
+    void deleteById(UUID orderId);
     
     /**
      * Checks if an order exists
@@ -48,7 +48,7 @@ public interface IOrderRepository {
      * @param orderId The order ID to check
      * @return true if the order exists
      */
-    boolean exists(Long orderId);
+    boolean exists(UUID orderId);
     
     /**
      * Creates a new order with the given information
@@ -63,7 +63,8 @@ public interface IOrderRepository {
      * @param paymentId The payment transaction ID (if any)
      * @return The ID of the newly created order
      */
-    Long createOrder(Long storeId, String userName, Map<Long, Integer> products, 
+
+    UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate, 
                  OrderStatus status, String paymentId);
     
@@ -74,7 +75,7 @@ public interface IOrderRepository {
      * @param newStatus The new status
      * @return true if the update was successful
      */
-    boolean updateOrderStatus(Long orderId, OrderStatus newStatus);
+    boolean updateOrderStatus(UUID orderId, OrderStatus newStatus);
     
     /**
      * Sets the delivery ID for an order
@@ -83,7 +84,7 @@ public interface IOrderRepository {
      * @param deliveryId The delivery tracking ID
      * @return true if the update was successful
      */
-    boolean setDeliveryId(Long orderId, String deliveryId);
+    boolean setDeliveryId(UUID orderId, String deliveryId);
     
     /**
      * Finds orders by store ID
@@ -91,7 +92,7 @@ public interface IOrderRepository {
      * @param storeId The store ID
      * @return List of orders for the specified store
      */
-    List<Order> findByStoreId(Long storeId);
+    List<Order> findByStoreId(UUID storeId);
     
     /**
      * Finds orders by username (buyer)
@@ -132,5 +133,5 @@ public interface IOrderRepository {
      * @param storeId The store ID
      * @return List of orders placed at the store
      */
-    List<Order> getStorePurchaseHistory(Long storeId);
+    List<Order> getStorePurchaseHistory(UUID storeId);
 }
