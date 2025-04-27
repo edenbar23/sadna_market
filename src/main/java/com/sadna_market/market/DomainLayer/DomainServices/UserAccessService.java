@@ -16,10 +16,15 @@ public class UserAccessService {
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
+    private final String realAdmin;
 
     public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository) {
         this.userRepository = userRepository;
         this.storeRepository = storeRepository;
+    }
+
+    public void setAdmin(String realAdmin) {
+        this.realAdmin = realAdmin;
     }
 
     /*
@@ -48,67 +53,11 @@ public class UserAccessService {
             logger.error("First name and last name must not be empty");
             throw new IllegalArgumentException("First name and last name must not be empty");
         }
-
         User user = new User(username, password, email, firstName, lastName);
         userRepository.save(user);
         return user;
     }
 
-    /*
-     * Validates the strength of a password.
-     * Business rules:
-     * 1. The password must contain at least one uppercase letter.
-     * 2. The password must contain at least one lowercase letter.
-     * 3. The password must contain at least one digit.
-     * 4. The password must contain at least one special character.
-     * 5. The password must be at least 8 characters long.
-     */
-    private boolean isValidPassword(String password) {
-        if (password.length() < 8) {
-            logger.error("Password must be at least 8 characters long");
-            return false;
-        }
-        if (!password.matches(".*[A-Z].*")) {
-            logger.error("Password must contain at least one uppercase letter");
-            return false;
-        }
-        if (!password.matches(".*[a-z].*")) {
-            logger.error("Password must contain at least one lowercase letter");
-            return false;
-        }
-        if (!password.matches(".*\\d.*")) {
-            logger.error("Password must contain at least one digit");
-            return false;
-        }
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
-            logger.error("Password must contain at least one special character");
-            return false;
-        }
-        return true;
-    }
-
-    /*
-     * Validates the format of an email address.
-     * Business rules:
-     * 1. The email must contain an "@" symbol.
-     * 2. The email must contain a domain name.
-     */
-    private boolean isValidEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            logger.error("Email cannot be null or empty");
-            return false;
-        }
-        if (!email.contains("@")) {
-            logger.error("Email must contain an '@' symbol");
-            return false;
-        }
-        String domain = email.substring(email.indexOf("@") + 1);
-        if (domain.isEmpty() || !domain.contains(".")) {
-            logger.error("Email must contain a valid domain name");
-            return false;
-        }
-        return true;
-    }
 
     /*
      * Authenticates a user by checking the username and password.
@@ -174,26 +123,6 @@ public class UserAccessService {
         }
     }
 
-    /*
-     * Checks if a user has admin permissions.
-     * Business rules:
-     * 1. The user must be logged in.
-     * 2. The user must have admin permissions.
-     */
-    public void validateAdminPermissions(String username) {
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (!user.hasAdminPermissions()) {
-                logger.error("User {} does not have admin permissions", username);
-                throw new IllegalArgumentException("User does not have admin permissions");
-            }
-        } else {
-            logger.error("User not found: {}", username);
-            throw new IllegalArgumentException("User not found");
-        }
-    }
-
     // Password management
     /*
      * Changes the password for a user.
@@ -229,4 +158,95 @@ public class UserAccessService {
             logger.info("Password changed successfully for user: {}", username);
         }
     }
+
+    public boolean deleteUser(String adminUser, String userToDelete) {
+        validateAdmin(adminUser);
+        if(userToDelete.equals(adminUser)) {
+            throw new IllegalArgumentException("Admin can't delete himself!");
+        }
+        try {
+            userRepository.delete(userToDelete);
+            //remove him from all stores and everyone he appointed
+            //storeRepository.deleteUserFromStores(userToDelete);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete user: " + userToDelete);
+        }
+        return true;
+    }
+
+    public void loginUser(String username, String password) {
+        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        user.login(username,password);
+    }
+
+
+    //Validation functions here:
+
+    /*
+     * Validates the strength of a password.
+     * Business rules:
+     * 1. The password must contain at least one uppercase letter.
+     * 2. The password must contain at least one lowercase letter.
+     * 3. The password must contain at least one digit.
+     * 4. The password must contain at least one special character.
+     * 5. The password must be at least 8 characters long.
+     */
+    private boolean isValidPassword(String password) {
+        if (password.length() < 8) {
+            logger.error("Password must be at least 8 characters long");
+            return false;
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            logger.error("Password must contain at least one uppercase letter");
+            return false;
+        }
+        if (!password.matches(".*[a-z].*")) {
+            logger.error("Password must contain at least one lowercase letter");
+            return false;
+        }
+        if (!password.matches(".*\\d.*")) {
+            logger.error("Password must contain at least one digit");
+            return false;
+        }
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            logger.error("Password must contain at least one special character");
+            return false;
+        }
+        return true;
+    }
+
+    /*
+     * Validates the format of an email address.
+     * Business rules:
+     * 1. The email must contain an "@" symbol.
+     * 2. The email must contain a domain name.
+     */
+    private boolean isValidEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            logger.error("Email cannot be null or empty");
+            return false;
+        }
+        if (!email.contains("@")) {
+            logger.error("Email must contain an '@' symbol");
+            return false;
+        }
+        String domain = email.substring(email.indexOf("@") + 1);
+        if (domain.isEmpty() || !domain.contains(".")) {
+            logger.error("Email must contain a valid domain name");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     *
+     * @param username
+     * validate that username equals admin's username
+     */
+    private validateAdmin(String username) {
+        if(!realAdmin.equals(username))
+            throw new IllegalArgumentException("Not authorized! only admin can operate this!");
+    }
+
+
 }
