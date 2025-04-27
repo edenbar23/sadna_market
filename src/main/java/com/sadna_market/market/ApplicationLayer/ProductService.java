@@ -134,6 +134,8 @@ public class ProductService {
     }
 
 
+
+
     // returns all products for a specific store
     public Response getStoreProducts(UUID storeId) {
         logger.info("Getting products for store ID: {}", storeId);
