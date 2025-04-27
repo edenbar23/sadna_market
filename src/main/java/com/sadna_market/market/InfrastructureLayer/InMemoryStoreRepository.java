@@ -66,7 +66,7 @@ public class InMemoryStoreRepository implements IStoreRepository {
         logger.info("Creating new store with name: {} for founder: {}", storeName, founderUsername);
         
         // Create a StoreFounder object
-        StoreFounder founder = new StoreFounder(founderUsername, 0, null); // Assuming constructor signature
+        StoreFounder founder = new StoreFounder(founderUsername, UUID.randomUUID(), null); // Assuming constructor signature
         
         // Create store description from address, email, and phone
         String description = String.format("Address: %s, Email: %s, Phone: %s", 

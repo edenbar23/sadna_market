@@ -2,6 +2,8 @@ package com.sadna_market.market.DomainLayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.UUID;
+
 /**
  * Visitor for handling user role operations in the market system.
  * Primarily used for role removal operations with different behavior depending on role type.
@@ -18,7 +20,7 @@ public class UserRoleVisitor {
      * @param storeId The store ID associated with the role
      * @param user The user with this role
      */
-    public void processManagerRoleRemoval(StoreManager manager, int storeId, User user) {
+    public void processManagerRoleRemoval(StoreManager manager, UUID storeId, User user) {
         logger.info("Processing store manager removal for user {} in store {}", 
                    user.getUserName(), storeId);
         
@@ -35,7 +37,7 @@ public class UserRoleVisitor {
      * @param storeId The store ID associated with the role
      * @param user The user with this role
      */
-    public void processOwnerRoleRemoval(StoreOwner owner, int storeId, User user) {
+    public void processOwnerRoleRemoval(StoreOwner owner, UUID storeId, User user) {
         logger.info("Processing store owner removal for user {} in store {}", 
                   user.getUserName(), storeId);
         
@@ -61,7 +63,7 @@ public class UserRoleVisitor {
      * @param user The user with this role
      * @throws IllegalStateException since founders cannot leave their role
      */
-    public void processFounderRoleRemoval(StoreFounder founder, int storeId, User user) {
+    public void processFounderRoleRemoval(StoreFounder founder, UUID storeId, User user) {
         logger.error("Attempt to remove store founder role for user {} in store {}", 
                     user.getUserName(), storeId);
         throw new IllegalStateException("Store founders cannot leave their role");
