@@ -1,5 +1,7 @@
 package com.sadna_market.market.DomainLayer;
 
+import com.sadna_market.market.ApplicationLayer.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.Product.Product;
 
 import java.util.List;
@@ -15,12 +17,14 @@ public interface IProductRepository {
     List<Optional<Product>> filterByCategory(String category);
     List<Optional<Product>> filterByPriceRange(double minPrice, double maxPrice);
     List<Optional<Product>> filterByRate(double minRate, double maxRate);
-    boolean addProduct(Product product);
-    void updateProduct(Product product);
-    void deleteProduct(UUID id);
+    void addProduct(UUID storeId, String name, String category, String description,double price, boolean isAvailable);
+    void updateProduct(ProductRequest product);
+    void deleteProduct(ProductRequest product);
     List<Optional<Product>> getProductsByIds(Set<UUID> intersectionIds);
-
+    // New methods for store-specific operations
+    List<Optional<Product>> findByStoreId(UUID storeId);
+    List<Optional<Product>> filterByStoreWithRequest(UUID storeId, ProductSearchRequest request);
     Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rateValue);
     void handleUserReview(UUID userId, UUID productId, String reviewText);
-
+    List<Optional<Product>> searchProduct(ProductSearchRequest request);
 }

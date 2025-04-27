@@ -1,62 +1,72 @@
 package com.sadna_market.market.DomainLayer;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ShoppingBasket {
     private static final Logger logger = LogManager.getLogger(ShoppingBasket.class);
-    private HashMap <UUID, Integer> products; // Dictionary<productID,quantity>
-    private UUID storeID; // Store ID
-    //private int shoppingBasketID; // Shopping basket ID
+    private final Map<UUID, Integer> products;
+    @Getter
+    private final UUID storeId;
 
-    public ShoppingBasket(UUID storeID) {
-        // Logic to initialize a shopping basket for a specific store
-        // This could involve setting up a connection to the store's inventory, etc.
+    public ShoppingBasket(UUID storeId) {
+        this.storeId = storeId;
+        this.products = new HashMap<>();
     }
 
-    public void addProduct(UUID productID, int quantity) {
-        // Logic to add a product to the shopping basket
-        // This could involve checking if the product exists, updating the quantity, etc.
-        if (products.containsKey(productID)) {
-            logger.info("Product already exists in ShoppingBasket");
+    public void addProduct(UUID productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+
+        int currentQuantity = products.getOrDefault(productId, 0);
+        int newQuantity = currentQuantity + quantity;
+        products.put(productId, newQuantity);
+
+        logger.info("Product {} quantity updated from {} to {} in basket for store {}",
+                productId, currentQuantity, newQuantity, storeId);
+    }
+
+    public void changeProductQuantity(UUID productId, int quantity) {
+        if (quantity <= 0) {
+            removeProduct(productId);
         } else {
-            products.put(productID, quantity);
-            logger.info("Product added to shopping basket");
+            products.put(productId, quantity);
+            logger.info("Product {} quantity set to {} in basket for store {}",
+                    productId, quantity, storeId);
         }
     }
 
-    public void changeProductQuantity(UUID productID, int quantity) {
-        // Logic to change the quantity of a product in the shopping basket
-        // This could involve checking if the product exists, updating the quantity, etc.
-        if (products.containsKey(productID)) {
-            products.put(productID, quantity);
-            logger.info("Product quantity changed in shopping basket");
+    public void removeProduct(UUID productId) {
+        if (products.remove(productId) != null) {
+            logger.info("Product {} removed from basket for store {}", productId, storeId);
         } else {
-            logger.error("Product not found in shopping basket");
+            logger.warn("Product {} not found in basket for store {}", productId, storeId);
         }
     }
 
-    public void removeProduct(UUID productID) {
-        // Logic to remove a product from the shopping basket
-        // This could involve checking if the product exists, updating the quantity, etc.
-        if (products.containsKey(productID)) {
-            products.remove(productID);
-            logger.info("Product removed from shopping basket");
-        } else {
-            logger.error("Product not found in shopping basket");
-        }
+    public Map<UUID, Integer> getProductsList() {
+        return new HashMap<>(products); // Return a defensive copy
     }
 
-    public HashMap<UUID,Integer> getProductsList() {
-        // Logic to get the list of products in the shopping basket
-        // This could involve returning a list of product IDs and quantities, etc.
-        HashMap<UUID,Integer> productList = new HashMap<>();
-        for (UUID productID : products.keySet()) {
-            productList.put(productID, products.get(productID));
-        }
-        return productList;
+    public boolean isEmpty() {
+        return products.isEmpty();
+    }
+
+    public int getTotalQuantity() {
+        return products.values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    public boolean containsProduct(UUID productId) {
+        return products.containsKey(productId);
+    }
+
+    public int getProductQuantity(UUID productId) {
+        return products.getOrDefault(productId, 0);
     }
 }

@@ -42,8 +42,8 @@ abstract class IUser {
         logger.info("done change amount of: {} of product id:{} of storeId: {}",amount,productId,storeId);
 
     }
-    public CartDTO getCart(){
+    public Cart getCart(){
         logger.info("get cart: {}",cart);
-        return new CartDTO(cart);
+        return cart;
     }
 }

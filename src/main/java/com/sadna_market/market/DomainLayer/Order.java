@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import lombok.Getter;
@@ -14,18 +13,17 @@ import lombok.Setter;
 
 public class Order {
     private static final Logger logger = LoggerFactory.getLogger(Order.class);
-    private static final AtomicLong ORDER_ID_GENERATOR = new AtomicLong(1);
-    
-    @Getter
-    private Long orderId;
 
     @Getter
-    private Long storeId;
+    private UUID orderId;
+
+    @Getter
+    private UUID storeId;
 
     @Getter
     private String userName;
 
-    private Map<Long, Integer> products; // productId -> quantity
+    private Map<UUID, Integer> products; // productId -> quantity
 
     @Getter
     private double totalPrice;
@@ -51,10 +49,10 @@ public class Order {
     private final Object statusLock = new Object();
 
 
-    public Order(Long storeId, String userName, Map<Long, Integer> products, double totalPrice,
+    public Order(UUID storeId, String userName, Map<UUID, Integer> products, double totalPrice,
             double finalPrice,LocalDateTime orderDate, OrderStatus status, String paymentId) {
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
-        this.orderId = ORDER_ID_GENERATOR.getAndIncrement();
+        this.orderId = UUID.randomUUID(); // Generate a unique order ID
         this.storeId = storeId;
         this.userName = userName;
         this.products = new HashMap<>(products);
@@ -72,7 +70,7 @@ public class Order {
     /**
      * Constructor for reconstructing an order from the repository.
      */
-    public Order(Long orderId, Long storeId, String userName, Map<Long, Integer> products,
+    public Order(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate,
                  OrderStatus status, String paymentId, String deliveryId) {
         this.orderId = orderId;
@@ -85,11 +83,7 @@ public class Order {
         this.status = status;
         this.paymentId = paymentId;
         this.deliveryId = deliveryId;
-        
-        // Update ID_GENERATOR if needed to prevent ID collisions
-        if (orderId >= ORDER_ID_GENERATOR.get()) {
-            ORDER_ID_GENERATOR.set(orderId + 1);
-        }
+
     }
     /**
      * Updates the status of the order in a thread-safe manner
@@ -167,7 +161,7 @@ public class Order {
      * 
      * @return Unmodifiable map of product IDs to quantities
      */
-    public Map<Long, Integer> getProductsMap() {
+    public Map<UUID, Integer> getProductsMap() {
         return Collections.unmodifiableMap(products);
     }
     
@@ -177,7 +171,7 @@ public class Order {
      * @param productId The product ID to check
      * @return true if the order contains the product
      */
-    public boolean containsProduct(Long productId) {
+    public boolean containsProduct(UUID productId) {
         return products.containsKey(productId);
     }
     
@@ -187,7 +181,7 @@ public class Order {
      * @param productId The product ID to check
      * @return The quantity ordered, or 0 if the product is not in the order
      */
-    public int getProductQuantity(Long productId) {
+    public int getProductQuantity(UUID productId) {
         return products.getOrDefault(productId, 0);
     }
     

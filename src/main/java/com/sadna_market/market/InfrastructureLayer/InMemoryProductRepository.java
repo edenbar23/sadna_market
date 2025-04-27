@@ -1,10 +1,17 @@
-package com.sadna_market.market.DomainLayer.Product;
+package com.sadna_market.market.InfrastructureLayer;
 
+import com.sadna_market.market.ApplicationLayer.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
+import com.sadna_market.market.ApplicationLayer.Response;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.DomainLayer.Product.UserReview;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,40 +110,61 @@ public class InMemoryProductRepository implements IProductRepository {
     }
 
     @Override
-    public boolean addProduct(Product product) {
+    public void addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
         synchronized (productStorage) {
+            Product product = new Product( name, storeId, category, description, price, isAvailable);
             logger.debug("Adding new product with ID: {}", product.getProductId());
-            String name = product.getName();
+
             // Check if a product with the same name already exists
             Optional<Product> existingProduct = productStorage.values().stream()
                     .filter(p -> p.getName().equalsIgnoreCase(name))
                     .findFirst();
             if (existingProduct.isPresent()) {
                 logger.warn("Product with name '{}' already exists. Not adding.", name);
-                return false;
+                throw new IllegalArgumentException("Product with the same name already exists.");
             }
             productStorage.put(product.getProductId(), product);
             logger.info("Product successfully added: {}", product.getProductId());
-            return true;
         }
     }
 
 
     @Override
-    public void updateProduct(Product product) {
+    public void updateProduct(ProductRequest product) {
         synchronized (productStorage) {
+            if (product.getProductId() == null){
+                logger.error("Product ID should not be null for existing products");
+                throw new IllegalArgumentException("Product ID should not be null for existing products");
+            }
+            Optional<Product> existingProduct_ = findById(product.getProductId());
+            if (existingProduct_.isEmpty()) {
+                logger.error("Product not found");
+                throw new IllegalArgumentException("Product not found");
+            }
+            Product existingProduct = existingProduct_.get();
+            existingProduct.updateProduct(product);
             logger.debug("Updating product with ID: {}", product.getProductId());
-            productStorage.put(product.getProductId(), product);
+            productStorage.put(existingProduct.getProductId(),existingProduct);
             logger.info("Product successfully updated: {}", product.getProductId());
         }
     }
 
     @Override
-    public void deleteProduct(UUID id) {
+    public void deleteProduct(ProductRequest product) {
         synchronized (productStorage) {
-            logger.debug("Deleting product with ID: {}", id);
-            productStorage.remove(id);
-            logger.info("Product successfully deleted: {}", id);
+            if (product.getProductId() == null){
+                logger.error("Product ID should not be null for existing products");
+                throw new IllegalArgumentException("Product ID should not be null for existing products");
+            }
+            Optional<Product> existingProduct_ = findById(product.getProductId());
+            if (existingProduct_.isEmpty()) {
+                logger.error("Product not found");
+                throw new IllegalArgumentException("Product not found");
+            }
+            Product existingProduct = existingProduct_.get();
+            logger.debug("Deleting product with ID: {}", existingProduct.getProductId());
+            productStorage.remove(existingProduct.getProductId());
+            logger.info("Product successfully deleted: {}", existingProduct.getProductId());
         }
     }
 
@@ -173,6 +201,7 @@ public class InMemoryProductRepository implements IProductRepository {
     public Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rate) {
         synchronized (userRates) {
             logger.debug("Handling user rate: User ID={}, Product ID={}, Rate={}", userId, productId, rate);
+
             // check if product exist in the system
             Optional<Product> productOpt = findById(productId);
             if (productOpt.isPresent()) {
@@ -232,4 +261,91 @@ public class InMemoryProductRepository implements IProductRepository {
             }
         }
     }
+
+    public List<Optional<Product>> searchProduct(ProductSearchRequest request) {
+        logger.debug("Searching for products with parameters: {}", request);
+        // Get products by parameters
+        List<Optional<Product>> results = getProductsByParameters(request);
+
+        if (results.isEmpty()) {
+            logger.warn("No products found matching the search criteria.");
+        } else {
+            logger.info("Found {} products matching the search criteria.", results.size());
+        }
+
+        return results;
+    }
+    // helper method to search products by parameters
+    private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request){
+        // Get results from each filter method
+        List<Optional<Product>> nameFiltered = filterByName(request.getName());
+        List<Optional<Product>> categoryFiltered = filterByCategory(request.getCategory());
+        List<Optional<Product>> priceFiltered = filterByPriceRange(request.getMinPrice(), request.getMaxPrice());
+        List<Optional<Product>> rateFiltered = filterByRate(request.getMinRank(), request.getMaxRank());
+
+        // Extract product IDs from each result set
+        Set<UUID> nameIds = nameFiltered.stream()
+                .filter(Optional::isPresent)
+                .map(opt -> opt.get().getProductId())
+                .collect(Collectors.toSet());
+
+        Set<UUID> categoryIds = categoryFiltered.stream()
+                .filter(Optional::isPresent)
+                .map(opt -> opt.get().getProductId())
+                .collect(Collectors.toSet());
+
+        Set<UUID> priceIds = priceFiltered.stream()
+                .filter(Optional::isPresent)
+                .map(opt -> opt.get().getProductId())
+                .collect(Collectors.toSet());
+
+        Set<UUID> rateIds = rateFiltered.stream()
+                .filter(Optional::isPresent)
+                .map(opt -> opt.get().getProductId())
+                .collect(Collectors.toSet());
+
+        // Compute intersection of all ID sets
+        Set<UUID> intersectionIds = new HashSet<>(nameIds);
+        intersectionIds.retainAll(categoryIds);
+        intersectionIds.retainAll(priceIds);
+        intersectionIds.retainAll(rateIds);
+
+        // Get the final list of products from the intersection IDs
+        return getProductsByIds(intersectionIds);
+    }
+    public List<Optional<Product>> findByStoreId(UUID storeId){
+        synchronized (productStorage) {
+            logger.debug("Searching for products by store ID: {}", storeId);
+
+            List<Optional<Product>> results = productStorage.values().stream()
+                    .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
+                    .map(Optional::of)
+                    .collect(Collectors.toList());
+
+            if (results.isEmpty()) {
+                logger.warn("No products found for store ID: {}", storeId);
+            }
+
+            return results;
+        }
+    }
+
+    public List<Optional<Product>> filterByStoreWithRequest(UUID storeId, ProductSearchRequest request) {
+        logger.debug("Searching for products by store ID: {}", storeId);
+        // First get all products by the search parameters
+        List<Optional<Product>> allResults = getProductsByParameters(request);
+
+        // Then filter to include only products with matching storeId
+        List<Optional<Product>> filteredResults = allResults.stream()
+                .filter(productOpt -> productOpt.isPresent() &&
+                        productOpt.get().getStoreId().equals(storeId))
+                .collect(Collectors.toList());
+
+        if (filteredResults.isEmpty()) {
+            logger.warn("No products found for store ID: {}", storeId);
+        }
+
+        return filteredResults;
+    }
+
 }

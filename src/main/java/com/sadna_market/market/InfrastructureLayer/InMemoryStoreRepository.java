@@ -9,11 +9,13 @@ import org.apache.logging.log4j.Logger;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.Store;
 import com.sadna_market.market.DomainLayer.StoreFounder;
+import org.springframework.stereotype.Repository;
 
 /**
  * In-memory implementation of IStoreRepository interface for version 1
  * Uses collections to store and manage data without an actual database
  */
+@Repository
 public class InMemoryStoreRepository implements IStoreRepository {
     
     private static final Logger logger = LogManager.getLogger(InMemoryStoreRepository.class);
@@ -66,7 +68,7 @@ public class InMemoryStoreRepository implements IStoreRepository {
         logger.info("Creating new store with name: {} for founder: {}", storeName, founderUsername);
         
         // Create a StoreFounder object
-        StoreFounder founder = new StoreFounder(founderUsername, 0, null); // Assuming constructor signature
+        StoreFounder founder = new StoreFounder(founderUsername, UUID.randomUUID(), null); // Assuming constructor signature
         
         // Create store description from address, email, and phone
         String description = String.format("Address: %s, Email: %s, Phone: %s", 

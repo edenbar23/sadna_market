@@ -1,6 +1,7 @@
 package com.sadna_market.market.DomainLayer;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,7 +16,7 @@ public class StoreManager extends UserStoreRoles{
      * @param storeId    The ID of the store managed
      * @param appointedBy The user who appointed this manager
      */
-    public StoreManager(String username, int storeId, String appointedBy) {
+    public StoreManager(String username, UUID storeId, String appointedBy) {
         super(username, storeId, appointedBy);
         logger.info("StoreManager created for user: {}, store: {}, appointed by: {}", 
                    username, storeId, appointedBy);

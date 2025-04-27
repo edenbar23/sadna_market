@@ -3,13 +3,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 public class StoreOwner extends UserStoreRoles {
     private static final Logger logger = LogManager.getLogger(StoreOwner.class);
-    private static final long serialVersionUID = 1L;
     private String appointedBy;
-    private int storeId;
+    private UUID storeId;
 
     /**
      * Constructor for the StoreOwner class.
@@ -19,8 +19,11 @@ public class StoreOwner extends UserStoreRoles {
      * @param storeId    The ID of the store owned
      * @param appointedBy The user who appointed this owner
      */
-    public StoreOwner(String username, int storeId, String appointedBy) {
+    public StoreOwner(String username, UUID storeId, String appointedBy) {
         super(username, storeId, appointedBy);
+        this.storeId = storeId;
+        this.appointedBy = appointedBy;
+        this.appointees = new ArrayList<>();
     }
 
     @Override
@@ -82,11 +85,6 @@ public class StoreOwner extends UserStoreRoles {
     public void removePermission(Permission permission) {
         logger.error("Exception in removePermission: can't remove permissions from a store owner");
         throw new IllegalStateException("Store owner has all the permissions");
-    }
-
-    @Override
-    public List<Permission> getPermissions() {
-        return new ArrayList<>(permissions);
     }
 
     @Override
