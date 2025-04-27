@@ -97,11 +97,11 @@ public class ProductService {
             return Response.error("Error adding review: " + e.getMessage());
         }
     }
-    public Response addProduct(ProductRequest product) {
+    public Response addProduct(ProductRequest product, UUID storeId) {
         logger.info("Adding new product: {}", product);
 
         try {
-            productRepository.addProduct(product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
+            productRepository.addProduct(storeId, product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
             return Response.success("Product added successfully");
         } catch (Exception e) {
             logger.error("Error adding product: {}", e.getMessage(), e);
@@ -130,6 +130,34 @@ public class ProductService {
         } catch (Exception e){
             logger.error("Error deleting product: {}", e.getMessage(), e);
             return Response.error("Error deleting product: " + e.getMessage());
+        }
+    }
+
+
+    // returns all products for a specific store
+    public Response getStoreProducts(UUID storeId) {
+        logger.info("Getting products for store ID: {}", storeId);
+        try {
+            List<Optional<Product>> products = productRepository.findByStoreId(storeId);
+            // Convert products list to JSON string
+            String json = objectMapper.writeValueAsString(products);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error while getting store products: {}", e.getMessage(), e);
+            return Response.error("Failed to get store products: " + e.getMessage());
+        }
+    }
+    // returns all products for a specific store with a specific request (parameters and values)
+    public Response getStoreProductsWithRequest(UUID storeId, ProductSearchRequest request) {
+        logger.info("Getting products for store ID: {} with request: {}", storeId, request);
+        try {
+            List<Optional<Product>> products = productRepository.filterByStoreWithRequest(storeId, request);
+            // Convert products list to JSON string
+            String json = objectMapper.writeValueAsString(products);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error while getting store products with request: {}", e.getMessage(), e);
+            return Response.error("Failed to get store products with request: " + e.getMessage());
         }
     }
 

@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public class Product {
     private String name;
-
+    private UUID storeId;
     private UUID productId;
     private String description;
 
@@ -17,8 +17,9 @@ public class Product {
 
 
     // an initialize constructor: sets a new rate object an generates a new product id
-    public Product(String name, String description, String category, double price, boolean isAvailable) {
+    public Product(String name,UUID storeId, String description, String category, double price, boolean isAvailable) {
         this.name = name;
+        this.storeId = storeId;
         this.productId = UUID.randomUUID();
         this.description = description;
         this.category = category;
@@ -97,5 +98,8 @@ public class Product {
         return isAvailable;
     }
 
+    public UUID getStoreId() {
+        return storeId;
+    }
 
 }
