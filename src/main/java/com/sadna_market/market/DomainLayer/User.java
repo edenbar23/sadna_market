@@ -64,25 +64,26 @@ public class User extends IUser {
     }
 
     // Cart operations - delegating to Cart object
-    public void addToCart(UUID storeId, UUID productId, int quantity) {
+    public Cart addToCart(UUID storeId, UUID productId, int quantity) {
         logger.info("User {} adding product {} to cart for store {}", userName, productId, storeId);
-        cart.addToCart(storeId, productId, quantity);
+        return cart.addToCart(storeId, productId, quantity);
     }
 
-    public void removeFromCart(UUID storeId, UUID productId) {
+    public Cart removeFromCart(UUID storeId, UUID productId) {
         logger.info("User {} removing product {} from cart for store {}", userName, productId, storeId);
-        cart.removeFromCart(storeId, productId);
+        return cart.removeFromCart(storeId, productId);
     }
 
-    public void updateCart(UUID storeId, UUID productId, int quantity) {
+    public Cart updateCart(UUID storeId, UUID productId, int quantity) {
         logger.info("User {} updating product {} quantity to {} in cart for store {}",
                 userName, productId, quantity, storeId);
-        cart.changeProductQuantity(storeId, productId, quantity);
+        return cart.changeProductQuantity(storeId, productId, quantity);
     }
 
-    public void clearCart() {
+    public Cart clearCart() {
         logger.info("User {} clearing cart", userName);
         this.cart = new Cart();
+        return cart;
     }
 
     // Order history management
