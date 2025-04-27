@@ -301,8 +301,8 @@ class InMemoryUserRepositoryTest {
         List<User> activeUsers = repository.findActiveUsers();
         assertTrue(activeUsers.isEmpty());
         
-        // Log user in
-        testUser.login();
+        // Log user 
+        testUser.login("testUser","Password123!");
         repository.update(testUser);
         
         // Now should be active
