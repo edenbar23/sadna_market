@@ -353,9 +353,9 @@ public class UserService {
         logger.info("Getting store manager permissions for user with username: {} and store ID: {}", username, storeId);
         // Here we would implement the logic to check if a user can update the store purchase policy
         try {
-            boolean isOk = userAccessService.getStoreManagerPermissions(username,storeId);
+            List<Permission> permissions = userAccessService.getStoreManagerPermissions(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOk);
+            String json = objectMapper.writeValueAsString(permissions);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
