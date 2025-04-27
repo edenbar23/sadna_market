@@ -1,12 +1,10 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.DomainLayer;
 
 import java.util.HashMap;
 import java.util.UUID;
 
-import com.sadna_market.market.DomainLayer.Cart;
-
 public class CartDTO {
-    public HashMap<UUID, HashMap<UUID,Integer>> shoppingBaskets; // dictionary of storeId , ShoppingBasketsDTO
+    HashMap<UUID, HashMap<UUID,Integer>> shoppingBaskets; // dictionary of storeId , ShoppingBasketsDTO
 
     public CartDTO(Cart cart) {
         shoppingBaskets = new HashMap<>();

@@ -1,4 +1,4 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.DomainLayer;
 
 import java.util.UUID;
 
