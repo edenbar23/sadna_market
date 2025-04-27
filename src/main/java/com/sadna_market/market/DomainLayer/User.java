@@ -1,4 +1,6 @@
 package com.sadna_market.market.DomainLayer;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
@@ -8,13 +10,22 @@ import java.util.UUID;
 
 public class User extends IUser {
     private static final Logger logger = LogManager.getLogger(User.class);
+    @Setter
+    @Getter
     private String userName;
+    @Setter
+    @Getter
     private String password;
+    @Setter
+    @Getter
     private String email;
+    @Setter
+    @Getter
     private String firstName;
+    @Setter
+    @Getter
     private String lastName;
     private boolean isLoggedIn;
-    //private HashMap<String,Role> roles;
     private Cart cart;
     private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
     private ArrayList<UUID> ordersHistory; // List of order IDs
@@ -39,215 +50,94 @@ public class User extends IUser {
         this.cart = new Cart();
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
+    @Override
     public synchronized boolean isLoggedIn() {
-        logger.info("Checks isLoggedIn");
-        boolean result = isLoggedIn;
-        logger.info("Exiting isLoggedIn with result={}", result);
-        return result;
-    }
-
-    public synchronized void setLoggedIn(boolean loggedIn) {
-        logger.info("Setting isLoggedIn to {}", loggedIn);
-        this.isLoggedIn = loggedIn;
-    }
-
-    public void setLogin(boolean login) {
-        logger.info("Setting login to {}", login);
-        this.isLoggedIn = login;
-        logger.info("Exiting setLogin to {}", login);
+        return isLoggedIn;
     }
 
     public synchronized void login() {
-        logger.info("Entering login");
         if (isLoggedIn) {
-            logger.error("Exception in login: user is already logged in");
+            logger.error("User {} is already logged in", userName);
             throw new IllegalStateException("User is already logged in");
         }
-        this.setLogin(true);
-        logger.info("Exiting login");
+        this.isLoggedIn = true;
+        logger.info("User {} logged in successfully", userName);
     }
 
     public synchronized void logout() {
-        logger.info("Entering logout");
         if (!isLoggedIn) {
-            logger.error("Exception in logout: user isn't logged in");
+            logger.error("User {} is not logged in", userName);
             throw new IllegalStateException("User is not logged in");
         }
-        this.setLogin(false);
-        logger.info("Exiting logout");
+        this.isLoggedIn = false;
+        logger.info("User {} logged out successfully", userName);
     }
 
-
-    public void addToCart(UUID productId, int quantity) {
-        logger.info("Adding product {} with quantity {} to cart", productId, quantity);
-        cart.addProduct(productId, quantity);
+    // Cart operations - delegating to Cart object
+    public void addToCart(UUID storeId, UUID productId, int quantity) {
+        logger.info("User {} adding product {} to cart for store {}", userName, productId, storeId);
+        cart.addToCart(storeId, productId, quantity);
     }
 
-    public HashMap<UUID, OrderDTO> getOrdersHistory() {
-        HashMap<UUID, OrderDTO> orders = new HashMap<>();
-        for (UUID orderId : ordersHistory) {
-            OrderDTO order = new OrderDTO(orderId);
-            orders.put(order.getOrderID(), order);
-        }
-        return orders;
+    public void removeFromCart(UUID storeId, UUID productId) {
+        logger.info("User {} removing product {} from cart for store {}", userName, productId, storeId);
+        cart.removeFromCart(storeId, productId);
     }
 
-    public void removeFromCart(UUID productId) {
+    public void updateCart(UUID storeId, UUID productId, int quantity) {
+        logger.info("User {} updating product {} quantity to {} in cart for store {}",
+                userName, productId, quantity, storeId);
+        cart.changeProductQuantity(storeId, productId, quantity);
     }
 
-    public void updateCart(UUID productId, int quantity) {
+    public void clearCart() {
+        logger.info("User {} clearing cart", userName);
+        this.cart = new Cart();
     }
 
-    public void checkout() {
+    // Order history management
+    public void addOrderToHistory(UUID orderId) {
+        logger.info("Adding order {} to user {} history", orderId, userName);
+        ordersHistory.add(orderId);
     }
 
-    public void saveReview(UUID storeId, UUID productId, int rate, String review) {
-        logger.info("Saving review for product {}: {}", productId, review);
-        // Implement the logic to save the review
+    public List<UUID> getOrdersHistory() {
+        return new ArrayList<>(ordersHistory);
     }
 
-    public void saveRate(UUID storeId, UUID productId, int rate) {
-        logger.info("Saving rate for product {}: {}", productId, rate);
-        // Implement the logic to save the rate
-    }
-
-
-    public void sendMessage(UUID storeId, String message) {
-        logger.info("Sending message to store {}: {}", storeId, message);
-        // Implement the logic to send the message
-    }
-
-    public void reportViolation(UUID storeId,UUID productId, String violation) {
-        logger.info("Reporting violation for store {}: {}", storeId, violation);
-        // Implement the logic to report the violation
-    }
-
-    public void updateInfo(String password, String email, String firstName, String lastName) {
-        logger.info("Updating user info");
-        if (password != null) {
-            this.password = password;
-        }
-        if (email != null) {
-            this.email = email;
-        }
-        if (firstName != null) {
-            this.firstName = firstName;
-        }
-        if (lastName != null) {
-            this.lastName = lastName;
-        }
-        else {
-            logger.error("Exception in updateInfo: object details are null");
-            throw new IllegalArgumentException("Last name cannot be null");
-        }
-        logger.info("User info updated: password={}, email={}, firstName={}, lastName={}", password, email, firstName, lastName);
-
-    }
-
-    public boolean hasPermission(UUID storeId,Permission permission) {
-        for (UserStoreRoles role : userStoreRoles) {
-            if (role.getStoreId() == storeId && role.hasPermission(permission)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public List<Permission> getStoreManagerPermissions(UUID storeId) {
-        for (UserStoreRoles role : userStoreRoles) {
-            if (role.getStoreId() == storeId && role instanceof StoreManager) {
-                return role.getPermissions();
-            }
-        }
-        return new ArrayList<>(); // Return an empty list if no StoreManager role is found for the store
-    }
-
-    /**
-     * Adds a store role to this user
-     *
-     * @param role The store role to add
-     */
+    // User store roles management
     public void addStoreRole(UserStoreRoles role) {
         if (role == null) {
             throw new IllegalArgumentException("Role cannot be null");
-        }
-        if (userStoreRoles == null) {
-            userStoreRoles = new ArrayList<>();
         }
         userStoreRoles.add(role);
         logger.info("Added {} role for store {} to user {}",
                 role.getRoleType(), role.getStoreId(), userName);
     }
 
-    /**
-     * Removes a store role from this user
-     *
-     * @param storeId The store ID
-     * @param roleType The type of role to remove
-     */
     public void removeStoreRole(UUID storeId, RoleType roleType) {
-        if (userStoreRoles == null) {
-            return;
-        }
-
         userStoreRoles.removeIf(role ->
-                role.getStoreId().equals(storeId) &&
-                        role.getRoleType() == roleType
-        );
-
+                role.getStoreId().equals(storeId) && role.getRoleType() == roleType);
         logger.info("Removed {} role for store {} from user {}",
                 roleType, storeId, userName);
     }
 
-    /**
-     * Gets all store roles for this user
-     *
-     * @return List of user store roles
-     */
     public List<UserStoreRoles> getUserStoreRoles() {
-        if (userStoreRoles == null) {
-            userStoreRoles = new ArrayList<>();
-        }
         return new ArrayList<>(userStoreRoles);
+    }
+
+    public boolean hasPermission(UUID storeId, Permission permission) {
+        return userStoreRoles.stream()
+                .anyMatch(role -> role.getStoreId().equals(storeId) &&
+                        role.hasPermission(permission));
+    }
+
+    public List<Permission> getStoreManagerPermissions(UUID storeId) {
+        return userStoreRoles.stream()
+                .filter(role -> role.getStoreId().equals(storeId) &&
+                        role instanceof StoreManager)
+                .findFirst()
+                .map(UserStoreRoles::getPermissions)
+                .orElse(new ArrayList<>());
     }
 }
