@@ -201,10 +201,10 @@ public class UserService {
         try {
             userAccessService.saveReview(review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
             logger.info("Review saved successfully");
-            return Response.success("Review saved successfully")
+            return Response.success("Review saved successfully");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return Response.error(e.getMessage())
+            return Response.error(e.getMessage());
         }
     }
 
