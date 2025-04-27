@@ -1,5 +1,4 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
-public class OrderDomainService {
-
+public class ProductCatalogService {
 }

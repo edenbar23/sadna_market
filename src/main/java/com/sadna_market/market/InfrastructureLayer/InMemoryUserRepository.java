@@ -13,11 +13,13 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
 /**
  * In-memory implementation of the IUserRepository interface.
  * Uses thread-safe collections to store and manage user data without an actual database.
  */
+@Repository
 public class InMemoryUserRepository implements IUserRepository {
     
     private static final Logger logger = LoggerFactory.getLogger(InMemoryUserRepository.class);

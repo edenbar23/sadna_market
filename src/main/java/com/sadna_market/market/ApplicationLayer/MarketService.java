@@ -29,7 +29,7 @@ public class MarketService {
 //        this.storeRepository = storeRepository;
         this.userService = new UserService(userRepository);
 //        this.productService = new ProductService(productRepository);
-        this.storeService = new StoreService(storeRepository);
+        this.storeService = new StoreService(storeRepository, userRepository);
     }
     //System functions here:
     public void openMarket() {
@@ -72,7 +72,7 @@ public class MarketService {
         return productService.getProductInfo(productId);
     }
     //req 2.1 (b)
-    public void getStoreInfo(String storeId) {
+    public Response getStoreInfo(UUID storeId) {
         //get store info
         return storeService.getStoreInfo(storeId);
     }
@@ -351,11 +351,11 @@ public class MarketService {
         userService.leaveOwnership(username,storeId);
     }
     //req 4.6
-    public void appointStoreManager(String username,String token,UUID storeId, String manager,PermissionsRequest permissions) {
+    public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        userService.appointStoreManager(username,storeId,manager,permissions);
+        return storeService.appointStoreManager(username,storeId,manager,permissions);
     }
     //req 4.7
     public void changePermissions(String username,String token,UUID storeId, String manager,PermissionsRequest permissions) {
@@ -376,14 +376,14 @@ public class MarketService {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        userService.closeStore(username,storeId);
+        storeService.closeStore(username,storeId);
     }
     //req 4.10
     public void reopenStore(String username,String token,UUID storeId) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
-        userService.reopenStore(username,storeId);
+        storeService.reopenStore(username,storeId);
     }
     //req 4.11
     public void getStoreRolesInfo(String username,String token,UUID storeId) {

@@ -9,11 +9,13 @@ import org.apache.logging.log4j.Logger;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.Store;
 import com.sadna_market.market.DomainLayer.StoreFounder;
+import org.springframework.stereotype.Repository;
 
 /**
  * In-memory implementation of IStoreRepository interface for version 1
  * Uses collections to store and manage data without an actual database
  */
+@Repository
 public class InMemoryStoreRepository implements IStoreRepository {
     
     private static final Logger logger = LogManager.getLogger(InMemoryStoreRepository.class);
