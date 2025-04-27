@@ -59,29 +59,29 @@ public class UserAccessService {
     }
 
 
-    /*
-     * Authenticates a user by checking the username and password.
-     * Buisness rules:
-     * 1. The username must exist in the system.
-     * 2. The password must match the stored password for the user.
-     */
-    public User authenticateUser(String username, String password) {
-        logger.info("Authenticating user: {}", username);
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            if (user.getPassword().equals(password)) {
-                logger.info("User authenticated successfully: {}", username);
-                return user;
-            } else {
-                logger.error("Invalid password for user: {}", username);
-                throw new IllegalArgumentException("Invalid password");
-            }
-        } else {
-            logger.error("User not found: {}", username);
-            throw new IllegalArgumentException("User not found");
-        }
-    }
+//    /*
+//     * Authenticates a user by checking the username and password.
+//     * Buisness rules:
+//     * 1. The username must exist in the system.
+//     * 2. The password must match the stored password for the user.
+//     */
+//    public User authenticateUser(String username, String password) {
+//        logger.info("Authenticating user: {}", username);
+//        Optional<User> userOptional = userRepository.findByUsername(username);
+//        if (userOptional.isPresent()) {
+//            User user = userOptional.get();
+//            if (user.getPassword().equals(password)) {
+//                logger.info("User authenticated successfully: {}", username);
+//                return user;
+//            } else {
+//                logger.error("Invalid password for user: {}", username);
+//                throw new IllegalArgumentException("Invalid password");
+//            }
+//        } else {
+//            logger.error("User not found: {}", username);
+//            throw new IllegalArgumentException("User not found");
+//        }
+//    }
 
     /*
      * Logs out a user by invalidating their session.
@@ -166,7 +166,7 @@ public class UserAccessService {
         }
         try {
             userRepository.delete(userToDelete);
-            //remove him from all stores and everyone he appointed
+            //remove him from all stores and remove everyone he appointed
             //storeRepository.deleteUserFromStores(userToDelete);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete user: " + userToDelete);
@@ -177,6 +177,33 @@ public class UserAccessService {
     public void loginUser(String username, String password) {
         User user = userRepository.findByUsername(username).orElseThrow("user not found!");
         user.login(username,password);
+    }
+
+
+    //Registered functions here:
+    public void addToCart(String username,UUID storeId, UUID productId, int quantity) {
+        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        if(storeRepository.hasProductInStock(storeId,productId,quantity)) {
+            user.addToCart(productId, quantity);
+        }
+        else throw new IllegalArgumentException("Store does not have product in stock");
+    }
+
+    public Cart getCart(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        return user.getCart();
+    }
+
+    public List<UUID> getOrdersHistory(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        return user.getOrdersHistory();
+    }
+
+    public void removeFromCart(String username,UUID storeId, UUID productId) {
+        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        user.removeFromCart(storeId,productId);
+    }
+    public Cart updateCart(String userName, UUID productId, int quantity) {
     }
 
 
@@ -243,10 +270,11 @@ public class UserAccessService {
      * @param username
      * validate that username equals admin's username
      */
-    private validateAdmin(String username) {
+    private void validateAdmin(String username) {
         if(!realAdmin.equals(username))
             throw new IllegalArgumentException("Not authorized! only admin can operate this!");
     }
+
 
 
 }

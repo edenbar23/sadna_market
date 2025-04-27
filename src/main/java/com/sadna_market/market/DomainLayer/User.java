@@ -40,16 +40,6 @@ public class User extends IUser {
         this.cart = new Cart();
     }
 
-    public User(UserDTO user) {
-        this.userName = user.getUserName();
-        this.password = user.getPassword();
-        this.email = user.getEmail();
-        this.firstName = user.getFirstName();
-        this.lastName = user.getLastName();
-        this.isLoggedIn = false;
-        this.cart = new Cart();
-    }
-
     @Override
     public synchronized boolean isLoggedIn() {
         return isLoggedIn;
