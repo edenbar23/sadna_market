@@ -47,7 +47,7 @@ public class StoreManagementService {
                 .orElseThrow(() -> new IllegalStateException("Store creation failed"));
 
         StoreFounder storeFounder = new StoreFounder(founderUserName, storeId, null);
-        storeFounder.addStoreRole(founderRole);
+        founder.addStoreRole(storeFounder);
         userRepository.update(founder);
 
         logger.info("Store '{}' has been created", storeName);
@@ -139,7 +139,7 @@ public class StoreManagementService {
 
 
         StoreOwner newOwnerRole = new StoreOwner(newOwnerUsername, storeId, appointerUsername);
-        userRepository.addRoleToUser(newOwnerRole);
+        newOwner.addStoreRole(newOwnerRole);
 
         store.addStoreOwner(newOwnerUsername);
         storeRepository.save(store);
@@ -178,17 +178,17 @@ public class StoreManagementService {
         }
 
 
-        User ownerUser = userRepository.findByUsername(ownerUsername)
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + ownerUsername));
+        User ownerUser = userRepository.findByUsername(ownerToRemoveUsername)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + ownerToRemoveUsername));
 
         UserStoreRoles ownerRole = findUserStoreRole(ownerUser, storeId, RoleType.STORE_OWNER);
 
         if (ownerRole == null) {
-            logger.error("User '{}' is not a store owner", ownerUsername);
+            logger.error("User '{}' is not a store owner", ownerToRemoveUsername);
             throw new UserNotFoundException("User is not an owner if this store");
         }
 
-        cascadeRemoveAppointees(ownerRole, storeId);
+        cascadeRemoveAppointees(ownerUser, storeId);
         ownerUser.removeStoreRole(storeId, RoleType.STORE_OWNER);
         store.removeStoreOwner(ownerToRemoveUsername);
 

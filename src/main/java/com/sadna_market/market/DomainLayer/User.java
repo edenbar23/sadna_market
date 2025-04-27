@@ -201,4 +201,53 @@ public class User extends IUser {
         }
         return new ArrayList<>(); // Return an empty list if no StoreManager role is found for the store
     }
+
+    /**
+     * Adds a store role to this user
+     *
+     * @param role The store role to add
+     */
+    public void addStoreRole(UserStoreRoles role) {
+        if (role == null) {
+            throw new IllegalArgumentException("Role cannot be null");
+        }
+        if (userStoreRoles == null) {
+            userStoreRoles = new ArrayList<>();
+        }
+        userStoreRoles.add(role);
+        logger.info("Added {} role for store {} to user {}",
+                role.getRoleType(), role.getStoreId(), userName);
+    }
+
+    /**
+     * Removes a store role from this user
+     *
+     * @param storeId The store ID
+     * @param roleType The type of role to remove
+     */
+    public void removeStoreRole(UUID storeId, RoleType roleType) {
+        if (userStoreRoles == null) {
+            return;
+        }
+
+        userStoreRoles.removeIf(role ->
+                role.getStoreId().equals(storeId) &&
+                        role.getRoleType() == roleType
+        );
+
+        logger.info("Removed {} role for store {} from user {}",
+                roleType, storeId, userName);
+    }
+
+    /**
+     * Gets all store roles for this user
+     *
+     * @return List of user store roles
+     */
+    public List<UserStoreRoles> getUserStoreRoles() {
+        if (userStoreRoles == null) {
+            userStoreRoles = new ArrayList<>();
+        }
+        return new ArrayList<>(userStoreRoles);
+    }
 }

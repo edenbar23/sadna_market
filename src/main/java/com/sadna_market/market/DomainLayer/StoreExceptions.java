@@ -55,6 +55,12 @@ public class StoreExceptions{
             super(message);
         }
     }
+
+    public static class CannotRemoveFounderException extends RuntimeException{
+        public CannotRemoveFounderException(String message) {
+            super(message);
+        }
+    }
 }
 
 
