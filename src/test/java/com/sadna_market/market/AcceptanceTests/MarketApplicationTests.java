@@ -1,4 +1,4 @@
-package com.sadna_market.market;
+package com.sadna_market.market.AcceptanceTests;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
