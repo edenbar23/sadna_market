@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.sadna_market.market.ApplicationLayer.UserDTO;
 import com.sadna_market.market.DomainLayer.Cart;
 import com.sadna_market.market.DomainLayer.Permission;
 import com.sadna_market.market.DomainLayer.RoleType;
 import com.sadna_market.market.DomainLayer.StoreManager;
 import com.sadna_market.market.DomainLayer.StoreOwner;
 import com.sadna_market.market.DomainLayer.User;
-import com.sadna_market.market.DomainLayer.UserDTO;
+//import com.sadna_market.market.DomainLayer.UserDTO;
 import com.sadna_market.market.DomainLayer.UserStoreRoles;
 
 import java.util.Arrays;
