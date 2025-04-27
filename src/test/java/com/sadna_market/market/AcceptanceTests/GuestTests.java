@@ -1,4 +1,4 @@
-package com.sadna_market.market;
+package com.sadna_market.market.AcceptanceTests;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.Bridge;
 import com.sadna_market.market.ApplicationLayer.Response;

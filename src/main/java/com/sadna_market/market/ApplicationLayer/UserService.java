@@ -7,6 +7,7 @@ import com.sadna_market.market.ApplicationLayer.OrderDTO;
 import com.sadna_market.market.ApplicationLayer.CartDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 //import com.sadna_market.market.DomainLayer.DomainServices
 
@@ -23,21 +24,21 @@ public class UserService {
     private UserAccessService userAccessService;
     private ObjectMapper objectMapper;
 
+
     public UserService(UserAccessService userAccessService) {
         this.objectMapper = new ObjectMapper();
         this.userAccessService = userAccessService;
     }
 
     //admin functions:
-    public Response deleteUser(String adminUser,String userToDelete) {
+    public Response deleteUser(String adminUser, String userToDelete) {
         // Here we would implement the logic to delete a user
         try {
             logger.info("Deleting user with username: {}", userToDelete);
             userAccessService.deleteUser(adminUser, userToDelete);
             logger.info("User deleted successfully");
             return Response.success("User deleted successfully");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error deleting user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -51,15 +52,14 @@ public class UserService {
             userAccessService.registerUser(user.getUserName(), user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
             logger.info("User registered successfully");
             return Response.success("User registered successfully");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error registering user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
 
     /**
-    This method returns session token if logged in successfully
+     * This method returns session token if logged in successfully
      */
     public Response loginUser(String username, String password) {
         try {
@@ -67,15 +67,14 @@ public class UserService {
             userAccessService.loginUser(username, password);
             logger.info("User logged in successfully");
             return Response.success("User logged in successfully");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error logging in user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
         //should return a response object of token
     }
 
-    public CartRequest addToCart(CartRequest cart,UUID storeId, UUID productId, int quantity) {
+    public CartRequest addToCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
         // Here we would implement the logic to add a product to a user's cart
         logger.info("Adding product with ID: {} to guest: {}", productId);
         //maybe add here a domainService to make sure product in stock
@@ -88,7 +87,7 @@ public class UserService {
         // Here we would implement the logic to view a user's cart
         logger.info("Viewing cart for guest");
         //maybe use a domainService to check all products still in stock and update it if needed
-        try{
+        try {
             String json = objectMapper.writeValueAsString(cart);
             logger.info("Cart viewed successfully");
             return Response.success(json);
@@ -105,18 +104,17 @@ public class UserService {
             logger.info("Logging out user with username: {}", username);
             userAccessService.logoutUser(username);
             return Response.success("User logged out successfully");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error logging out user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
 
-    public Response addToCart(String username,UUID storeId, UUID productId, int quantity) {
+    public Response addToCart(String username, UUID storeId, UUID productId, int quantity) {
         // Here we would implement the logic to add a product to a user's cart
         logger.info("Adding product with ID: {} to user with username: {}", productId, username);
         try {
-            userAccessService.addToCart(username,storeId, productId, quantity);
+            userAccessService.addToCart(username, storeId, productId, quantity);
             logger.info("Product added to cart successfully");
             return Response.success("Product added to cart successfully");
         } catch (Exception e) {
@@ -124,6 +122,7 @@ public class UserService {
             return Response.error(e.getMessage());
         }
     }
+
     public Response viewCart(String username) {
         // Here we would implement the logic to view a user's cart
         logger.info("Viewing cart for user with username: {}", username);
@@ -133,8 +132,7 @@ public class UserService {
             String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Cart viewed successfully");
             return Response.success(json);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error viewing cart: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -149,18 +147,17 @@ public class UserService {
             String json = objectMapper.writeValueAsString(orders);
             logger.info("Order history retrieved successfully");
             return Response.success(json);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.error("Error getting order history: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
 
-        public Response removeFromCart(String username, UUID storeId, UUID productId) {
+    public Response removeFromCart(String username, UUID storeId, UUID productId) {
         // Here we would implement the logic to remove a product from a user's cart
         logger.info("Removing product with ID: {} from user with username: {}", productId, username);
         try {
-            Cart cartUpdated = userAccessService.removeFromCart(username,storeId,productId);
+            Cart cartUpdated = userAccessService.removeFromCart(username, storeId, productId);
             CartDTO cartDTO = new CartDTO(cartUpdated);
             String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Product removed from cart successfully");
@@ -171,11 +168,11 @@ public class UserService {
         }
     }
 
-    public Response updateCart(String userName, UUID productId, int quantity) {
+    public Response updateCart(String userName,UUID storeId, UUID productId, int quantity) {
         // Here we would implement the logic to update a product in a user's cart
         logger.info("Updating product with ID: {} in user with username: {}", productId, userName);
         try {
-            Cart updatedCart = userAccessService.updateCart(userName, productId, quantity);
+            Cart updatedCart = userAccessService.updateCart(userName,storeId, productId, quantity);
             CartDTO cartDTO = new CartDTO(updatedCart);
             String json = objectMapper.writeValueAsString(cartDTO);
             logger.info("Product updated in cart successfully");
@@ -189,7 +186,7 @@ public class UserService {
     public Response checkout(String userName) {
         // Here we would implement the logic to checkout a user's cart
         logger.info("Checking out cart for user with username: {}", userName);
-        try{
+        try {
             userAccessService.checkout(userName);
             logger.info("checkout successfully");
             return Response.success("checkout successfully");
@@ -203,7 +200,7 @@ public class UserService {
         // Here we would implement the logic to save a review
         logger.info("Saving review for product with ID: {}", review.getProductId());
         try {
-            userAccessService.saveReview(review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
+            userAccessService.saveReview(review.getUsername(),review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
             logger.info("Review saved successfully");
             return Response.success("Review saved successfully");
         } catch (Exception e) {
@@ -229,7 +226,7 @@ public class UserService {
         // Here we would implement the logic to send a message to a store
         logger.info("Sending message to store with ID: {} from user with username: {}", storeId, username);
         try {
-            userAccessService.sendMessage(username,storeId, message);
+            userAccessService.sendMessage(username, storeId, message);
             logger.info("Message sent successfully");
             return Response.success("Message sent successfully");
         } catch (Exception e) {
@@ -242,7 +239,7 @@ public class UserService {
         // Here we would implement the logic to report a violation
         logger.info("Reporting violation for review with ID: {}", report.getProductId());
         try {
-            userAccessService.reportViolation(username,report.getStoreId(), report.getProductId(), report.getComment());
+            userAccessService.reportViolation(username, report.getStoreId(), report.getProductId(), report.getComment());
             logger.info("Violation reported successfully");
             return Response.success("Violation reported successfully");
         } catch (Exception e) {
@@ -255,8 +252,9 @@ public class UserService {
         // Here we would implement the logic to return a user's information
         logger.info("Returning info for user with username: {}", username);
         try {
-            UserDTO user = userAccessService.returnInfo(username);
-            String json = objectMapper.writeValueAsString(user);
+            User user = userAccessService.returnInfo(username);
+            UserDTO userDTO = new UserDTO(user);
+            String json = objectMapper.writeValueAsString(userDTO);
             logger.info("Returning info successfully");
             return Response.success(json);
         } catch (Exception e) {
@@ -265,12 +263,13 @@ public class UserService {
         }
     }
 
-    public void changeUserInfo(String username, RegisterRequest user) {
+    public Response changeUserInfo(String username, RegisterRequest user) {
         // Here we would implement the logic to change a user's information
         logger.info("Changing info for user with username: {}", username);
         try {
-            UserDTO user = userAccessService.changeUserInfo(username,user.getUserName(),user.getPassword(),user.getEmail(),user.getFirstName(),user.getLastName());
-            String json = objectMapper.writeValueAsString(user);
+            User userObject = userAccessService.changeUserInfo(username, user.getUserName(), user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
+            UserDTO userDTO = new UserDTO(userObject);
+            String json = objectMapper.writeValueAsString(userDTO);
             logger.info("Returning info successfully");
             return Response.success(json);
         } catch (Exception e) {
@@ -284,24 +283,22 @@ public class UserService {
         // Here we would implement the logic to check if a user can add a product to a store
         logger.info("Checking if user with username: {} can add product to store with ID: {}", username, storeId);
         try {
-            boolean isOk = userAccessService.canAddToStore(username,storeId);
+            boolean isOk = userAccessService.canAddToStore(username, storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
-            }
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
     }
-
     public Response canRemoveProductToStore(String username, UUID storeId) {
         // Here we would implement the logic to check if a user can remove a product from a store
         logger.info("Checking if user with username: {} can remove product from store with ID: {}", username, storeId);
         try {
             boolean isOk = userAccessService.canRemoveToStore(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -315,7 +312,7 @@ public class UserService {
         try {
             boolean isOk = userAccessService.canUpdateProductToStore(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -329,7 +326,7 @@ public class UserService {
         try {
             boolean isOk = userAccessService.canUpdateStoreDiscount(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -343,7 +340,7 @@ public class UserService {
         try {
             boolean isOk = userAccessService.canUpdateStorePurchasePolicy(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -358,7 +355,7 @@ public class UserService {
         try {
             boolean isOk = userAccessService.getStoreManagerPermissions(username,storeId);
             logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(isOK);
+            String json = objectMapper.writeValueAsString(isOk);
             return Response.success(json);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -366,3 +363,5 @@ public class UserService {
         }
     }
 }
+
+

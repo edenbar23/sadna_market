@@ -12,20 +12,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * UserAccessService is responsible for managing user access and permissions in the system.
+ * It handles user registration, authentication, authorization, and other user-related operations.
+ */
 public class UserAccessService {
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
 
-    public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository) {
+    public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, String realAdmin) {
         this.userRepository = userRepository;
         this.storeRepository = storeRepository;
-    }
-
-    public void setAdmin(String realAdmin) {
         this.realAdmin = realAdmin;
     }
+
 
     /*
      * Registers a new user in the system.
@@ -175,37 +177,177 @@ public class UserAccessService {
     }
 
     public void loginUser(String username, String password) {
-        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
-        user.login(username,password);
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+            user.login(username,password);
+            userRepository.update(user);
+        }
+        catch (Exception e) {
+            logger.error("Failed to login user: {}", username);
+            throw new RuntimeException("Failed to login user: " + username);
+        }
     }
 
 
     //Registered functions here:
-    public void addToCart(String username,UUID storeId, UUID productId, int quantity) {
-        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
-        if(storeRepository.hasProductInStock(storeId,productId,quantity)) {
-            user.addToCart(productId, quantity);
+    public Cart addToCart(String username,UUID storeId, UUID productId, int quantity) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(IllegalArgumentException("user not found!"));
+            if(storeRepository.hasProductInStock(storeId,productId,quantity)) {
+                Cart updatedCart = user.addToCart(storeId, productId, quantity);
+                userRepository.update(user);
+                return updatedCart;
+            }
+            else throw new IllegalArgumentException("Store does not have product in stock");
         }
-        else throw new IllegalArgumentException("Store does not have product in stock");
+        catch(Exception e){
+            throw new RuntimeException("Failed to add to cart: " + e.getMessage());
+        }
+    }
+
+    public Cart removeFromCart(String username,UUID storeId, UUID productId) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            Cart updatedCart = user.removeFromCart(storeId, productId);
+            logger.info("Successfully removed from cart for user: {}", username);
+            userRepository.update(user);
+            return updatedCart;
+        }
+        catch (Exception e) {}
+                logger.error("Failed to remove from cart for user: {}", username);
+                throw new RuntimeException("Failed to remove from cart for user: " + username);
+    }
+
+    public Cart updateCart(String username,UUID storeId, UUID productId, int quantity) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            Cart updatedCart = user.updateCart(storeId, productId, quantity);
+            logger.info("Successfully updated cart for user: {}", username);
+            return updatedCart;
+        }
+        catch (Exception e) {
+            logger.error("Failed to update cart for user: {}", username);
+            throw new RuntimeException("Failed to update cart for user: " + username);
+        }
     }
 
     public Cart getCart(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
-        return user.getCart();
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            return user.getCart();
+        }
+        catch (Exception e) {
+            logger.error("Failed to get cart for user: {}", username);
+            throw new RuntimeException("Failed to get cart for user: " + username);
+        }
     }
 
     public List<UUID> getOrdersHistory(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
         return user.getOrdersHistory();
     }
 
-    public void removeFromCart(String username,UUID storeId, UUID productId) {
-        User user = userRepository.findByUsername(username).orElseThrow("user not found!");
-        user.removeFromCart(storeId,productId);
-    }
-    public Cart updateCart(String userName, UUID productId, int quantity) {
+    public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+
     }
 
+    public void checkout(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            Cart cart = user.getCart();
+            if (cart.isEmpty()) {
+                throw new IllegalArgumentException("Cart is empty");
+            }
+            // Process the checkout (e.g., create an order, charge payment, etc.)
+            // This is not implemented here yet.
+            logger.info("Checkout successful for user: {}", username);
+        } catch (Exception e) {
+            logger.error("Failed to checkout for user: {}", username);
+            throw new RuntimeException("Failed to checkout for user: " + username);
+        }
+    }
+
+    public void saveRate(String username,UUID storeId, UUID productId, int rating) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        Store store = storeRepository.findById(storeId).orElseThrow(()-> new IllegalArgumentException("store not found!"));
+        //Product product = productRepository.getProduct(productId).orElseThrow("product not found!");
+        //product.addRating(rating);
+        //storeRepository.update(store);
+    }
+
+    public void sendMessage(String username, UUID storeId, String message) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+
+    }
+
+    public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+
+    }
+
+    public User returnInfo(String username) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            return user;
+        } catch (Exception e) {
+            logger.error("Failed to get user info: {}", username);
+            throw new RuntimeException("Failed to get user info: " + username);
+        }
+    }
+
+    public User changeUserInfo(String username, String userName, String password, String email, String firstName, String lastName) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            if (password != null) {
+                user.setPassword(password);
+            }
+            if (email != null) {
+                user.setEmail(email);
+            }
+            if (firstName != null) {
+                user.setFirstName(firstName);
+            }
+            if (lastName != null) {
+                user.setLastName(lastName);
+            }
+            userRepository.update(user);
+            return user;
+        } catch (Exception e) {
+            logger.error("Failed to change user info: {}", username);
+            throw new RuntimeException("Failed to change user info: " + username);
+        }
+    }
+
+    public boolean canAddToStore(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.hasPermission(storeId, Permission.ADD_PRODUCT);
+    }
+
+    public boolean canRemoveToStore(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.hasPermission(storeId, Permission.REMOVE_PRODUCT);
+    }
+
+    public boolean canUpdateProductToStore(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.hasPermission(storeId, Permission.UPDATE_PRODUCT);
+    }
+
+    public boolean canUpdateStoreDiscount(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.hasPermission(storeId,Permission.MANAGE_DISCOUNT_POLICY);
+    }
+
+    public boolean canUpdateStorePurchasePolicy(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.hasPermission(storeId,Permission.MANAGE_PURCHASE_POLICY);
+    }
+
+    public boolean getStoreManagerPermissions(String username, UUID storeId) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.getStoreManagerPermissions(storeId);
+    }
 
     //Validation functions here:
 

@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
             this.shoppingBaskets = new HashMap<>();
         }
 
-        public void addToCart(UUID storeId, UUID productId, int quantity) {
+        public Cart addToCart(UUID storeId, UUID productId, int quantity) {
             if (quantity <= 0) {
                 throw new IllegalArgumentException("Quantity must be positive");
             }
@@ -26,13 +26,13 @@ import org.apache.logging.log4j.Logger;
 
             logger.info("Added {} units of product {} to store {} basket",
                     quantity, productId, storeId);
+            return this;
         }
 
-        public void removeFromCart(UUID storeId, UUID productId) {
+        public Cart removeFromCart(UUID storeId, UUID productId) {
             ShoppingBasket basket = shoppingBaskets.get(storeId);
             if (basket != null) {
                 basket.removeProduct(productId);
-
                 // Remove empty baskets
                 if (basket.isEmpty()) {
                     shoppingBaskets.remove(storeId);
@@ -42,20 +42,21 @@ import org.apache.logging.log4j.Logger;
                 logger.warn("No basket found for store {} when trying to remove product {}",
                         storeId, productId);
             }
+            return this;
         }
 
-        public void changeProductQuantity(UUID storeId, UUID productId, int quantity) {
+        public Cart changeProductQuantity(UUID storeId, UUID productId, int quantity) {
             if (quantity <= 0) {
                 removeFromCart(storeId, productId);
-                return;
+                return this;
             }
-
             ShoppingBasket basket = shoppingBaskets.get(storeId);
             if (basket != null) {
                 basket.changeProductQuantity(productId, quantity);
             } else {
                 logger.warn("No basket found for store {} when trying to change quantity", storeId);
             }
+            return this;
         }
 
         public Map<UUID, ShoppingBasket> getShoppingBaskets() {
