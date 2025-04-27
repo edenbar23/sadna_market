@@ -110,9 +110,9 @@ public class InMemoryProductRepository implements IProductRepository {
     }
 
     @Override
-    public void addProduct(String name, String category, String description, double price, boolean isAvailable) {
+    public void addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
         synchronized (productStorage) {
-            Product product = new Product(name, category, description, price, isAvailable);
+            Product product = new Product( name, storeId, category, description, price, isAvailable);
             logger.debug("Adding new product with ID: {}", product.getProductId());
 
             // Check if a product with the same name already exists
@@ -313,4 +313,39 @@ public class InMemoryProductRepository implements IProductRepository {
         // Get the final list of products from the intersection IDs
         return getProductsByIds(intersectionIds);
     }
+    public List<Optional<Product>> findByStoreId(UUID storeId){
+        synchronized (productStorage) {
+            logger.debug("Searching for products by store ID: {}", storeId);
+
+            List<Optional<Product>> results = productStorage.values().stream()
+                    .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
+                    .map(Optional::of)
+                    .collect(Collectors.toList());
+
+            if (results.isEmpty()) {
+                logger.warn("No products found for store ID: {}", storeId);
+            }
+
+            return results;
+        }
+    }
+
+    public List<Optional<Product>> filterByStoreWithRequest(UUID storeId, ProductSearchRequest request) {
+        logger.debug("Searching for products by store ID: {}", storeId);
+        // First get all products by the search parameters
+        List<Optional<Product>> allResults = getProductsByParameters(request);
+
+        // Then filter to include only products with matching storeId
+        List<Optional<Product>> filteredResults = allResults.stream()
+                .filter(productOpt -> productOpt.isPresent() &&
+                        productOpt.get().getStoreId().equals(storeId))
+                .collect(Collectors.toList());
+
+        if (filteredResults.isEmpty()) {
+            logger.warn("No products found for store ID: {}", storeId);
+        }
+
+        return filteredResults;
+    }
+
 }
