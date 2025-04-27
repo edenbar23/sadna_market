@@ -39,7 +39,7 @@ public class ProductService {
                 request.getMinRank(), request.getMaxRank());
         // convert to Response
         try {
-            List<Optional<Product>> result = getProductsByParameters(request);
+            List<Optional<Product>> result = productRepository.searchProduct(request);
 
             // Filter out empty Optionals and extract the products
             List<Product> products = result.stream()
@@ -58,45 +58,6 @@ public class ProductService {
         }
     }
 
-
-    // private helper method
-    private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request){
-        // Get results from each filter method
-        List<Optional<Product>> nameFiltered = productRepository.filterByName(request.getName());
-        List<Optional<Product>> categoryFiltered = productRepository.filterByCategory(request.getCategory());
-        List<Optional<Product>> priceFiltered = productRepository.filterByPriceRange(request.getMinPrice(), request.getMaxPrice());
-        List<Optional<Product>> rateFiltered = productRepository.filterByRate(request.getMinRank(), request.getMaxRank());
-
-        // Extract product IDs from each result set
-        Set<UUID> nameIds = nameFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
-
-        Set<UUID> categoryIds = categoryFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
-
-        Set<UUID> priceIds = priceFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
-
-        Set<UUID> rateIds = rateFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
-
-        // Compute intersection of all ID sets
-        Set<UUID> intersectionIds = new HashSet<>(nameIds);
-        intersectionIds.retainAll(categoryIds);
-        intersectionIds.retainAll(priceIds);
-        intersectionIds.retainAll(rateIds);
-
-        // Get the final list of products from the intersection IDs
-        return productRepository.getProductsByIds(intersectionIds);
-    }
 
     public Response rateProduct(ProductRateRequest rate){
         UUID productId = rate.getProductId();
@@ -138,13 +99,9 @@ public class ProductService {
     }
     public Response addProduct(ProductRequest product) {
         logger.info("Adding new product: {}", product);
-        if (product.getProductId() != null) {
-            logger.error("Product ID should be null for new products");
-            return Response.error("Product ID should be null for new products");
-        }
+
         try {
-            Product newProduct = new Product(product.getName(), product.getDescription(), product.getCategory(), product.getPrice(), true);
-            productRepository.addProduct(newProduct);
+            productRepository.addProduct(product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
             return Response.success("Product added successfully");
         } catch (Exception e) {
             logger.error("Error adding product: {}", e.getMessage(), e);
@@ -153,20 +110,8 @@ public class ProductService {
     }
     public Response updateProduct(ProductRequest product){
         logger.info("Updating product: {}", product);
-        if (product.getProductId() == null){
-            logger.error("Product ID should not be null for existing products");
-            return Response.error("Product ID should not be null for existing products");
-        }
-
         try {
-            Optional<Product> existingProduct_ = productRepository.findById(product.getProductId());
-            if (existingProduct_.isEmpty()) {
-                logger.error("Product not found");
-                return Response.error("Product not found");
-            }
-            Product existingProduct = existingProduct_.get();
-            existingProduct.updateProduct(product);
-            productRepository.updateProduct(existingProduct);
+            productRepository.updateProduct(product);
             return Response.success("Product updated successfully");
         } catch (Exception e){
             logger.error("Error updating product: {}", e.getMessage(), e);
@@ -180,13 +125,7 @@ public class ProductService {
             return Response.error("Product ID should not be null for existing products");
         }
         try {
-            Optional<Product> existingProduct_ = productRepository.findById(product.getProductId());
-            if (existingProduct_.isEmpty()) {
-                logger.error("Product not found");
-                return Response.error("Product not found");
-            }
-            Product existingProduct = existingProduct_.get();
-            productRepository.deleteProduct(existingProduct.getProductId());
+            productRepository.deleteProduct(product);
             return Response.success("Product deleted successfully");
         } catch (Exception e){
             logger.error("Error deleting product: {}", e.getMessage(), e);
