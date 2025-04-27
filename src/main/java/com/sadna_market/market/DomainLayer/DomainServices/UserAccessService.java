@@ -178,7 +178,7 @@ public class UserAccessService {
 
     public void loginUser(String username, String password) {
         try {
-            User user = userRepository.findByUsername(username).orElseThrow("user not found!");
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             user.login(username,password);
             userRepository.update(user);
         }
@@ -192,7 +192,7 @@ public class UserAccessService {
     //Registered functions here:
     public Cart addToCart(String username,UUID storeId, UUID productId, int quantity) {
         try {
-            User user = userRepository.findByUsername(username).orElseThrow(IllegalArgumentException("user not found!"));
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             if(storeRepository.hasProductInStock(storeId,productId,quantity)) {
                 Cart updatedCart = user.addToCart(storeId, productId, quantity);
                 userRepository.update(user);
@@ -249,7 +249,7 @@ public class UserAccessService {
 
     public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     public void checkout(String username) {
@@ -261,7 +261,12 @@ public class UserAccessService {
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
             // This is not implemented here yet.
+            //first thing should check all products still available
+            //secondly, create an order
+            //thirdly, charge payment
+            // Finally, clear the cart
             logger.info("Checkout successful for user: {}", username);
+            throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
             logger.error("Failed to checkout for user: {}", username);
             throw new RuntimeException("Failed to checkout for user: " + username);
@@ -278,12 +283,12 @@ public class UserAccessService {
 
     public void sendMessage(String username, UUID storeId, String message) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     public User returnInfo(String username) {
@@ -344,7 +349,7 @@ public class UserAccessService {
         return user.hasPermission(storeId,Permission.MANAGE_PURCHASE_POLICY);
     }
 
-    public boolean getStoreManagerPermissions(String username, UUID storeId) {
+    public List<Permission> getStoreManagerPermissions(String username, UUID storeId) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
         return user.getStoreManagerPermissions(storeId);
     }
