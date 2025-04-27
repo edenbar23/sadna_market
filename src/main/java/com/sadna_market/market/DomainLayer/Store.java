@@ -27,6 +27,9 @@ public class Store {
     @Getter 
     private StoreFounder founder;
 
+
+    private Rate storeRate;
+
     // Using ConcurrentHashMap for thread safety in a multi-user environment
     @Getter
     private final Map<UUID, Integer> productQuantities = new ConcurrentHashMap<>();
@@ -40,6 +43,8 @@ public class Store {
     
     @Getter
     private final Set<UUID> orderIds = ConcurrentHashMap.newKeySet();
+
+
 
     private final Object activeLock = new Object();
     private final Object productLock = new Object();
@@ -426,5 +431,27 @@ public class Store {
             
             return new HashSet<>();
         }
+    }
+
+    public void addRating(int rateValue) {
+        if (rateValue < 1 || rateValue > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        storeRate.addRank(rateValue);
+    }
+
+    public void updateRating(int oldRate, int newRate) {
+        if (newRate < 1 || newRate > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        storeRate.updateRank(oldRate, newRate);
+    }
+
+    public double getStoreRate() {
+        return storeRate.getRateVal();
+    }
+
+    public int getNumOfRanks() {
+        return storeRate.getNumOfRanks();
     }
 }

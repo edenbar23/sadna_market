@@ -1,4 +1,4 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.ApplicationLayer.Requests;
 
 import java.util.Date;
 import java.util.UUID;

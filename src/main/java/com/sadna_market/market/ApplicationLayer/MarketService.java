@@ -2,6 +2,7 @@ package com.sadna_market.market.ApplicationLayer;
 
 import java.util.UUID;
 
+import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
@@ -241,7 +242,7 @@ public class MarketService {
 
     //StoreOwner functions here:
     //req 4.1 (a)
-    public Response addProductToStore(String username,String token,UUID storeId,ProductRequest product) {
+    public Response addProductToStore(String username, String token, UUID storeId, ProductRequest product) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
@@ -312,7 +313,7 @@ public class MarketService {
         return null;
     }
     //req 4.2 (c)
-    public Response changeProductDiscountPolicy(String username,String token,UUID productId,ProductDiscountPolicyRequest discount) {
+    public Response changeProductDiscountPolicy(String username, String token, UUID productId, ProductDiscountPolicyRequest discount) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
@@ -327,7 +328,7 @@ public class MarketService {
         return null;
     }
     //req 4.2 (d)
-    public Response changeProductPurchasePolicy(String username,String token,UUID productId,ProductPurchasePolicyRequest policy) {
+    public Response changeProductPurchasePolicy(String username, String token, UUID productId, ProductPurchasePolicyRequest policy) {
         //check if the token is valid
         authenticate(username,token);
         //if not, throw an exception
