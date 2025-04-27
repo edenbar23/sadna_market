@@ -2,12 +2,15 @@ package com.sadna_market.market.DomainLayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.UUID;
+
 //StoreFounder can close the store
 //StoreFounder can open a store that he closed
-public class StoreFounder extends UserStoreRoles{
+public class StoreFounder extends UserStoreRoles {
     //logger
     private static final Logger logger = LogManager.getLogger(StoreFounder.class);
-    public StoreFounder(String username, int storeId, String appointedBy) {
+
+    public StoreFounder(String username, UUID storeId, String appointedBy) {
         super(username, storeId, appointedBy);
         logger.info("Entering StoreFounder constructor with storeId={} and appointedBy={}", storeId, appointedBy);
         logger.info("Exiting StoreFounder constructor");
@@ -29,6 +32,7 @@ public class StoreFounder extends UserStoreRoles{
         logger.info("Exiting toString with result={}", result);
         return result;
     }
+
     @Override
     protected void initializePermissions() {
         logger.info("Entering initializePermissions");
@@ -50,8 +54,8 @@ public class StoreFounder extends UserStoreRoles{
 
     @Override
     public void processRoleRemoval(UserRoleVisitor visitor, User user) {
-        logger.info("Processing role removal for StoreFounder with username={} and storeId={}", 
-                   username, storeId);
+        logger.info("Processing role removal for StoreFounder with username={} and storeId={}",
+                username, storeId);
         visitor.processFounderRoleRemoval(this, storeId, user);
         logger.info("Role removal processing completed for StoreFounder");
     }
