@@ -1,6 +1,7 @@
 package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;

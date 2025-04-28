@@ -1,8 +1,7 @@
 package com.sadna_market.market.InfrastructureLayer;
 
-import com.sadna_market.market.ApplicationLayer.ProductRequest;
-import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
-import com.sadna_market.market.ApplicationLayer.Response;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 
 import java.util.*;

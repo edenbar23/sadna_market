@@ -1,13 +1,17 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.ApplicationLayer.DTOs;
 
 import com.sadna_market.market.DomainLayer.ShoppingBasket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 
 public class ShoppingBasketDTO {
+    @Getter
     private UUID storeId;
+    @Getter
     private Map<UUID, Integer> products;
+    @Getter
     private int totalQuantity;
 
     public ShoppingBasketDTO(ShoppingBasket basket) {
@@ -16,19 +20,10 @@ public class ShoppingBasketDTO {
         this.totalQuantity = basket.getTotalQuantity();
     }
 
-    public UUID getStoreId() {
-        return storeId;
+    public ShoppingBasketDTO(UUID storeId, Map<UUID, Integer> products, int totalQuantity) {
+        this.storeId = storeId;
+        this.products = new HashMap<>(products);
+        this.totalQuantity = totalQuantity;
     }
 
-    public Map<UUID, Integer> getProducts() {
-        return products;
-    }
-
-    public int getTotalQuantity() {
-        return totalQuantity;
-    }
-
-    public boolean isEmpty() {
-        return products.isEmpty();
-    }
 }

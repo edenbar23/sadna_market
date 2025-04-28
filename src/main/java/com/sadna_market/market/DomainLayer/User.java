@@ -45,10 +45,18 @@ public class User extends IUser {
         return isLoggedIn;
     }
 
-    public synchronized void login() {
+    public synchronized void login(String username,String password) {
         if (isLoggedIn) {
             logger.error("User {} is already logged in", userName);
             throw new IllegalStateException("User is already logged in");
+        }
+        if (username == null || password == null) {
+            logger.error("Username or password cannot be null");
+            throw new IllegalArgumentException("Username or password cannot be null");
+        }
+        if (!this.userName.equals(username) || !this.password.equals(password)) {
+            logger.error("Invalid username or password for user {}", userName);
+            throw new IllegalArgumentException("Invalid username or password");
         }
         this.isLoggedIn = true;
         logger.info("User {} logged in successfully", userName);

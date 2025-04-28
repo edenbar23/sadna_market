@@ -1,6 +1,7 @@
 package com.sadna_market.market.DomainLayer.Product;
 
-import com.sadna_market.market.ApplicationLayer.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
+import com.sadna_market.market.DomainLayer.Rate;
 
 import java.util.UUID;
 
