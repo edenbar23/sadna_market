@@ -1,7 +1,9 @@
 package com.sadna_market.market.UnitTests;
 
-import com.sadna_market.market.ApplicationLayer.ProductRequest;
-import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
+//import com.sadna_market.market.ApplicationLayer.ProductRequest;
+//import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
 import com.sadna_market.market.InfrastructureLayer.InMemoryProductRepository;
@@ -187,7 +189,7 @@ class InMemoryProductRepositoryTest {
     void testUpdateProductWithNullId() {
         // Create a ProductRequest with null ID
         ProductRequest updateRequest = new ProductRequest(
-            "Updated Product", "Updated Category", "Updated Description", 149.99
+          null,  "Updated Product", "Updated Category", "Updated Description", 149.99
         );
         
         // Try to update - should throw exception
@@ -238,7 +240,7 @@ class InMemoryProductRepositoryTest {
     void testDeleteProductWithNullId() {
         // Create a ProductRequest with null ID
         ProductRequest deleteRequest = new ProductRequest(
-            productName, category, description, price
+           null, productName, category, description, price
         );
         
         // Try to delete - should throw exception

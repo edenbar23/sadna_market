@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,9 +21,9 @@ class InMemoryOrderRepositoryUnitTest {
 
     private InMemoryOrderRepository repository;
     private Order testOrder;
-    private Long storeId;
+    private UUID storeId;
     private String userName;
-    private Map<Long, Integer> products;
+    private Map<UUID, Integer> products;
     private LocalDateTime orderDate;
     private String paymentId;
 
@@ -31,18 +32,22 @@ class InMemoryOrderRepositoryUnitTest {
         repository = new InMemoryOrderRepository();
         
         // Set up test data
-        storeId = 1001L;
+        storeId = UUID.randomUUID();
         userName = "testUser";
         products = new HashMap<>();
-        products.put(101L, 2); // Product ID 101, quantity 2
-        products.put(102L, 1); // Product ID 102, quantity 1
+        UUID productId1 = UUID.randomUUID();
+        UUID productId2 = UUID.randomUUID();
+        products.put(productId1, 2); // Product ID 101, quantity 2
+        products.put(productId2, 1); // Product ID 102, quantity 1
         double totalPrice = 100.0;
         double finalPrice = 90.0; // After discount
         orderDate = LocalDateTime.now();
         OrderStatus initialStatus = OrderStatus.PENDING;
         paymentId = "pay_123456";
-        
-        // Create a test order
+       
+
+
+
         testOrder = new Order(storeId, userName, products, totalPrice, finalPrice, orderDate, initialStatus, paymentId);
     }
 
@@ -71,7 +76,8 @@ class InMemoryOrderRepositoryUnitTest {
     @Test
     void testFindByIdNonExistent() {
         // Find an order that doesn't exist
-        Optional<Order> retrievedOrderOpt = repository.findById(999L);
+        UUID a=UUID.randomUUID();
+        Optional<Order> retrievedOrderOpt = repository.findById(a);
         
         // Verify
         assertFalse(retrievedOrderOpt.isPresent());
@@ -148,7 +154,7 @@ class InMemoryOrderRepositoryUnitTest {
     @Test
     void testCreateOrder() {
         // Create a new order using the repository method
-        Long orderId = repository.createOrder(
+        UUID orderId = repository.createOrder(
             storeId, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId
         );
         
@@ -241,7 +247,8 @@ class InMemoryOrderRepositoryUnitTest {
     @Test
     void testUpdateOrderStatusNonExistentOrder() {
         // Try to update a non-existent order
-        boolean updated = repository.updateOrderStatus(999L, OrderStatus.PAID);
+        UUID orderId = UUID.randomUUID();
+        boolean updated = repository.updateOrderStatus(orderId, OrderStatus.PAID);
         
         // Verify
         assertFalse(updated);
@@ -293,7 +300,8 @@ class InMemoryOrderRepositoryUnitTest {
     @Test
     void testSetDeliveryIdNonExistentOrder() {
         // Try to set delivery ID for non-existent order
-        boolean updated = repository.setDeliveryId(999L, "del_123456");
+        UUID orderId = UUID.randomUUID();
+        boolean updated = repository.setDeliveryId(orderId, "del_123456");
         
         // Verify
         assertFalse(updated);
@@ -313,8 +321,9 @@ class InMemoryOrderRepositoryUnitTest {
         // Save some orders
         repository.save(testOrder); // Store ID: 1001L
         
-        Long anotherStoreId = 1002L;
-        Order anotherStoreOrder = new Order(anotherStoreId, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        //Long anotherStoreId = 1002L;
+        UUID anotherStoreIdUUID = UUID.randomUUID();
+        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
         repository.save(anotherStoreOrder);
         
         // Find orders for store 1001L
@@ -503,8 +512,9 @@ class InMemoryOrderRepositoryUnitTest {
         // Save some orders for different stores
         repository.save(testOrder); // Store: 1001L
         
-        Long anotherStoreId = 1002L;
-        Order anotherStoreOrder = new Order(anotherStoreId, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        ///Long anotherStoreId = 1002L;
+        UUID anotherStoreIdUUID = UUID.randomUUID();
+        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
         repository.save(anotherStoreOrder);
         
         // Also save an older order for the test store
