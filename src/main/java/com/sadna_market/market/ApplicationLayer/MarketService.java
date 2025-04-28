@@ -69,10 +69,11 @@ public class MarketService {
         return userService.registerUser(registerRequest);
     }
     //req 1.4
-    public void login(String userName, String password) {
+    public Response login(String userName, String password) {
         //login to the system
-        return userService.loginUser(userName,password);
-        //auth return token
+        userService.loginUser(userName,password);
+        String jwt = authentication.createUserSessionToken(userName,password);
+        return Response.success(jwt);
     }
     //req 2.1 (a)
     public ProductDTO getProductInfo(UUID productId) {
