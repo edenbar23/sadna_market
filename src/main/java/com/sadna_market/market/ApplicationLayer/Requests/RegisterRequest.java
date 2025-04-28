@@ -19,4 +19,8 @@ public class RegisterRequest {
     private String email;
     private String firstName;
     private String lastName;
+
+    public RegisterRequest(String username, String password, String s, String store, String owner) {
+
+    }
 }
