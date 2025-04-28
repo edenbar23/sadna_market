@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @SpringBootTest
 public class GuestTests {
-    private Bridge bridge;
+    private Bridge bridge = new Bridge();
     ObjectMapper objectMapper = new ObjectMapper();
     // Test data
     private UUID storeId;
@@ -36,8 +36,6 @@ public class GuestTests {
 
     @BeforeEach
     void setup() {
-        // Initialize the bridge with an empty constructor
-        bridge = new Bridge();
 
         // Create a "dummy" user who will create a store and product
         // This simulates an admin or registered user setting up the environment
@@ -256,7 +254,7 @@ public class GuestTests {
 
             // Check if the store exists in the baskets
             if (baskets.containsKey(storeId)) {
-                HashMap<UUID, Integer> storeBasket = baskets.get(storeId);
+                Map<UUID, Integer> storeBasket = baskets.get(storeId);
 
                 // Check if the product exists in the basket
                 if (storeBasket.containsKey(productId)) {
@@ -273,4 +271,247 @@ public class GuestTests {
             Assertions.fail("Failed to parse cart JSON: " + e.getMessage());
         }
     }
+
+    @Test
+    @DisplayName("Guest should be able to update the quantity of a product in their cart")
+    void updateProductQuantityInGuestCartTest() {
+        // First add a product to the cart
+        Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
+
+        // Verify product was added successfully with initial quantity
+        Response viewCartAfterAdd = bridge.viewGuestCart(cartReq);
+        Assertions.assertFalse(viewCartAfterAdd.isError(), "Viewing cart after add should succeed");
+
+        try {
+            CartRequest cartAfterAdd = objectMapper.readValue(viewCartAfterAdd.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsAfterAdd = cartAfterAdd.getBaskets();
+
+            // Verify the product is in the cart with the initial quantity
+            Assertions.assertTrue(
+                    basketsAfterAdd.containsKey(storeId) &&
+                            basketsAfterAdd.get(storeId).containsKey(productId),
+                    "Product should be in cart before update"
+            );
+
+            int initialQuantity = basketsAfterAdd.get(storeId).get(productId);
+            Assertions.assertEquals(PRODUCT_QUANTITY, initialQuantity, "Initial quantity should match what was added");
+
+            // Define the new quantity for update
+            int newQuantity = PRODUCT_QUANTITY + 3;  // Increase the quantity
+
+            // Now update the product quantity in the cart
+            Response updateResponse = bridge.updateGuestCart(cartReq, productId, newQuantity);
+
+            // Assert - Verify update response is valid
+            Assertions.assertNotNull(updateResponse, "Update response should not be null");
+            Assertions.assertFalse(updateResponse.isError(), "Update response should not indicate an error");
+            Assertions.assertNotNull(updateResponse.getJson(), "Update response JSON should not be null");
+
+            // Verify that the product quantity has been updated
+            Response viewCartAfterUpdate = bridge.viewGuestCart(cartReq);
+            Assertions.assertFalse(viewCartAfterUpdate.isError(), "Viewing cart after update should succeed");
+
+            CartRequest cartAfterUpdate = objectMapper.readValue(viewCartAfterUpdate.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsAfterUpdate = cartAfterUpdate.getBaskets();
+
+            // Verify the product is still in the cart and has the new quantity
+            Assertions.assertTrue(
+                    basketsAfterUpdate.containsKey(storeId) &&
+                            basketsAfterUpdate.get(storeId).containsKey(productId),
+                    "Product should still be in cart after update"
+            );
+
+            int updatedQuantity = basketsAfterUpdate.get(storeId).get(productId);
+            Assertions.assertEquals(newQuantity, updatedQuantity,
+                    "Product quantity should be updated to the new value");
+
+            // Print debug information
+            System.out.println("Cart before update: " + cartAfterAdd);
+            System.out.println("Cart after update: " + cartAfterUpdate);
+
+        } catch (IOException e) {
+            Assertions.fail("Failed to parse cart JSON: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Guest should be able to remove a product from their cart")
+    void removeProductFromGuestCartTest() {
+        // First add a product to the cart
+        Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
+
+        // Verify product was added successfully
+        Response viewCartAfterAdd = bridge.viewGuestCart(cartReq);
+        Assertions.assertFalse(viewCartAfterAdd.isError(), "Viewing cart after add should succeed");
+
+        try {
+            CartRequest cartAfterAdd = objectMapper.readValue(viewCartAfterAdd.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsAfterAdd = cartAfterAdd.getBaskets();
+
+            // Verify the product is in the cart before removal
+            Assertions.assertTrue(
+                    basketsAfterAdd.containsKey(storeId) &&
+                            basketsAfterAdd.get(storeId).containsKey(productId),
+                    "Product should be in cart before removal"
+            );
+
+            // Now remove the product from the cart
+            Response removeResponse = bridge.removeProductFromGuestCart(cartReq, productId);
+
+            // Assert - Verify removal response is valid
+            Assertions.assertNotNull(removeResponse, "Remove response should not be null");
+            Assertions.assertFalse(removeResponse.isError(), "Remove response should not indicate an error");
+            Assertions.assertNotNull(removeResponse.getJson(), "Remove response JSON should not be null");
+
+            // Verify that the product is no longer in the cart
+            Response viewCartAfterRemove = bridge.viewGuestCart(cartReq);
+            Assertions.assertFalse(viewCartAfterRemove.isError(), "Viewing cart after remove should succeed");
+
+            CartRequest cartAfterRemove = objectMapper.readValue(viewCartAfterRemove.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsAfterRemove = cartAfterRemove.getBaskets();
+
+            boolean productStillInCart = false;
+            if (basketsAfterRemove.containsKey(storeId)) {
+                Map<UUID, Integer> storeBasket = basketsAfterRemove.get(storeId);
+                productStillInCart = storeBasket.containsKey(productId);
+            }
+
+            Assertions.assertFalse(productStillInCart, "Product should not be in cart after removal");
+
+            // Print debug information
+            System.out.println("Cart after removal: " + cartAfterRemove);
+
+        } catch (IOException e) {
+            Assertions.fail("Failed to parse cart JSON: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Guest should be able to purchase items in their cart")
+    void buyGuestCartTest() {
+        // First add a product to the cart to ensure there's something to purchase
+        Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
+
+        // Verify the product was added to the cart
+        Response viewCartBeforePurchase = bridge.viewGuestCart(cartReq);
+        Assertions.assertFalse(viewCartBeforePurchase.isError(), "Viewing cart before purchase should succeed");
+
+        try {
+            // Parse cart to verify it contains the product before purchase
+            CartRequest cartBeforePurchase = objectMapper.readValue(viewCartBeforePurchase.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsBeforePurchase = cartBeforePurchase.getBaskets();
+
+            Assertions.assertTrue(
+                    basketsBeforePurchase.containsKey(storeId) &&
+                            basketsBeforePurchase.get(storeId).containsKey(productId),
+                    "Product should be in cart before purchase"
+            );
+
+            // Now purchase the items in the cart
+            Response purchaseResponse = bridge.buyGuestCart(cartReq);
+
+            // Assert - Verify purchase response is valid
+            Assertions.assertNotNull(purchaseResponse, "Purchase response should not be null");
+            Assertions.assertFalse(purchaseResponse.isError(), "Purchase should not indicate an error");
+            Assertions.assertNotNull(purchaseResponse.getJson(), "Purchase response JSON should not be null");
+
+            // Print purchase response for debugging
+            System.out.println("Purchase response: " + purchaseResponse.getJson());
+
+            // Verify the cart is now empty (or in a "purchased" state)
+            Response viewCartAfterPurchase = bridge.viewGuestCart(cartReq);
+            Assertions.assertFalse(viewCartAfterPurchase.isError(), "Viewing cart after purchase should succeed");
+
+            CartRequest cartAfterPurchase = objectMapper.readValue(viewCartAfterPurchase.getJson(), CartRequest.class);
+            Map<UUID, Map<UUID, Integer>> basketsAfterPurchase = cartAfterPurchase.getBaskets();
+
+            // Check if cart is empty or cleared after purchase
+            boolean cartIsEmpty = basketsAfterPurchase == null || basketsAfterPurchase.isEmpty();
+
+            // Alternative check: if the implementation keeps the baskets but removes products
+            boolean productsRemoved = true;
+            if (!cartIsEmpty && basketsAfterPurchase.containsKey(storeId)) {
+                Map<UUID, Integer> storeBasket = basketsAfterPurchase.get(storeId);
+                productsRemoved = storeBasket == null || !storeBasket.containsKey(productId);
+            }
+
+            Assertions.assertTrue(cartIsEmpty || productsRemoved,
+                    "Cart should be empty or products should be removed after purchase");
+
+            // Print cart after purchase for debugging
+            System.out.println("Cart after purchase: " + cartAfterPurchase);
+
+        } catch (IOException e) {
+            Assertions.fail("Failed to parse cart JSON: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Guest should be able to register as a new user")
+    void registerUserTest() {
+        // Create a unique username to avoid conflicts with existing users
+        String testUsername = "testuser" + UUID.randomUUID().toString().substring(0, 8);
+        String testPassword = "Password123!";
+        String testEmail = testUsername + "@example.com";
+        String testFirstName = "Test";
+        String testLastName = "User";
+
+        // Create a RegisterRequest with the test data
+        RegisterRequest registerRequest = new RegisterRequest(
+                testUsername,
+                testPassword,
+                testEmail,
+                testFirstName,
+                testLastName
+        );
+
+        // Call the registration method
+        Response response = bridge.registerUser(registerRequest);
+
+        // Assert - Verify response is valid
+        Assertions.assertNotNull(response, "Response should not be null");
+        Assertions.assertFalse(response.isError(), "Response should not indicate an error");
+        Assertions.assertNotNull(response.getJson(), "Response JSON should not be null");
+
+        // Print response for debugging
+        System.out.println("Registration response: " + response.getJson());
+    }
+
+    @Test
+    @DisplayName("User should be able to login with valid credentials")
+    void loginUserTest() {
+        // Create a unique username for testing
+        String testUsername = "loginuser" + UUID.randomUUID().toString().substring(0, 8);
+        String testPassword = "Password123!";
+        String testEmail = testUsername + "@example.com";
+        String testFirstName = "Login";
+        String testLastName = "User";
+
+        // First register the user so we have valid credentials to test
+        RegisterRequest registerRequest = new RegisterRequest(
+                testUsername,
+                testPassword,
+                testEmail,
+                testFirstName,
+                testLastName
+        );
+
+        Response registerResponse = bridge.registerUser(registerRequest);
+        Assertions.assertFalse(registerResponse.isError(), "User registration should succeed");
+
+        // Now test the login functionality
+        Response loginResponse = bridge.loginUser(testUsername, testPassword);
+
+        // Assert - Verify login response is valid
+        Assertions.assertNotNull(loginResponse, "Login response should not be null");
+        Assertions.assertFalse(loginResponse.isError(), "Login should succeed with valid credentials");
+        Assertions.assertNotNull(loginResponse.getJson(), "Login response JSON should not be null");
+
+        // Print response for debugging
+        System.out.println("Login response: " + loginResponse.getJson());
+    }
+
 }

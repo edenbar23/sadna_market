@@ -278,13 +278,11 @@ public class InMemoryProductRepository implements IProductRepository {
     // helper method to search products by parameters
     private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request) {
         // Initialize the result as all products
-        List<Optional<Product>> result = getAllProducts();
-        Set<UUID> resultIds = result.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
+        List<Optional<Product>> result = productStorage.values().stream()
+                .map(Optional::of)
+                .collect(Collectors.toList());
 
-        // Apply each filter only if the corresponding parameter is provided
+        Set<UUID> resultIds = productStorage.keySet();
 
         // Filter by name if it's not null
         if (request.getName() != null && !request.getName().isEmpty()) {
