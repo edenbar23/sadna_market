@@ -15,6 +15,20 @@ import org.apache.logging.log4j.Logger;
             this.shoppingBaskets = new HashMap<>();
         }
 
+        public Cart(Map<UUID, Map<UUID,Integer>> shoppingBaskets) {
+            //should validate storeId and productId before creating the cart
+            this.shoppingBaskets = new HashMap<>();
+            for (Map.Entry<UUID, Map<UUID, Integer>> entry : shoppingBaskets.entrySet()) {
+                UUID storeId = entry.getKey();
+                Map<UUID, Integer> products = entry.getValue();
+                ShoppingBasket basket = new ShoppingBasket(storeId);
+                for (Map.Entry<UUID, Integer> productEntry : products.entrySet()) {
+                    basket.addProduct(productEntry.getKey(), productEntry.getValue());
+                }
+                this.shoppingBaskets.put(storeId, basket);
+            }
+        }
+
         public Cart addToCart(UUID storeId, UUID productId, int quantity) {
             if (quantity <= 0) {
                 throw new IllegalArgumentException("Quantity must be positive");
