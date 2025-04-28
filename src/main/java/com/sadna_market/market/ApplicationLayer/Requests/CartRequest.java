@@ -18,5 +18,9 @@ public class CartRequest {
                 .merge(productId, quantity, Integer::sum);
         return this;
     }
+
+    public Map<UUID, Map<UUID, Integer>> getBaskets() {
+        return this.baskets;
+    }
 }
 

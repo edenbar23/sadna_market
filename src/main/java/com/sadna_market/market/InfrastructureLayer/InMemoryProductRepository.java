@@ -2,6 +2,7 @@ package com.sadna_market.market.InfrastructureLayer;
 
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
+import com.sadna_market.market.ApplicationLayer.Response;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 
 import java.util.*;
@@ -275,42 +276,64 @@ public class InMemoryProductRepository implements IProductRepository {
         return results;
     }
     // helper method to search products by parameters
-    private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request){
-        // Get results from each filter method
-        List<Optional<Product>> nameFiltered = filterByName(request.getName());
-        List<Optional<Product>> categoryFiltered = filterByCategory(request.getCategory());
-        List<Optional<Product>> priceFiltered = filterByPriceRange(request.getMinPrice(), request.getMaxPrice());
-        List<Optional<Product>> rateFiltered = filterByRate(request.getMinRank(), request.getMaxRank());
-
-        // Extract product IDs from each result set
-        Set<UUID> nameIds = nameFiltered.stream()
+    private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request) {
+        // Initialize the result as all products
+        List<Optional<Product>> result = getAllProducts();
+        Set<UUID> resultIds = result.stream()
                 .filter(Optional::isPresent)
                 .map(opt -> opt.get().getProductId())
                 .collect(Collectors.toSet());
 
-        Set<UUID> categoryIds = categoryFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
+        // Apply each filter only if the corresponding parameter is provided
 
-        Set<UUID> priceIds = priceFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
+        // Filter by name if it's not null
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            List<Optional<Product>> nameFiltered = filterByName(request.getName());
+            Set<UUID> nameIds = nameFiltered.stream()
+                    .filter(Optional::isPresent)
+                    .map(opt -> opt.get().getProductId())
+                    .collect(Collectors.toSet());
 
-        Set<UUID> rateIds = rateFiltered.stream()
-                .filter(Optional::isPresent)
-                .map(opt -> opt.get().getProductId())
-                .collect(Collectors.toSet());
+            resultIds.retainAll(nameIds); // Intersect with current results
+        }
 
-        // Compute intersection of all ID sets
-        Set<UUID> intersectionIds = new HashSet<>(nameIds);
-        intersectionIds.retainAll(categoryIds);
-        intersectionIds.retainAll(priceIds);
-        intersectionIds.retainAll(rateIds);
+        // Filter by category if it's not null
+        if (request.getCategory() != null && !request.getCategory().isEmpty()) {
+            List<Optional<Product>> categoryFiltered = filterByCategory(request.getCategory());
+            Set<UUID> categoryIds = categoryFiltered.stream()
+                    .filter(Optional::isPresent)
+                    .map(opt -> opt.get().getProductId())
+                    .collect(Collectors.toSet());
 
-        // Get the final list of products from the intersection IDs
-        return getProductsByIds(intersectionIds);
+            resultIds.retainAll(categoryIds); // Intersect with current results
+        }
+
+        // Filter by price range if both min and max are not -1
+        if (request.getMinPrice() != -1 && request.getMaxPrice() != -1) {
+            List<Optional<Product>> priceFiltered = filterByPriceRange(
+                    request.getMinPrice(), request.getMaxPrice());
+            Set<UUID> priceIds = priceFiltered.stream()
+                    .filter(Optional::isPresent)
+                    .map(opt -> opt.get().getProductId())
+                    .collect(Collectors.toSet());
+
+            resultIds.retainAll(priceIds); // Intersect with current results
+        }
+
+        // Filter by rate range if both min and max are not -1
+        if (request.getMinRank() != -1 && request.getMaxRank() != -1) {
+            List<Optional<Product>> rateFiltered = filterByRate(
+                    request.getMinRank(), request.getMaxRank());
+            Set<UUID> rateIds = rateFiltered.stream()
+                    .filter(Optional::isPresent)
+                    .map(opt -> opt.get().getProductId())
+                    .collect(Collectors.toSet());
+
+            resultIds.retainAll(rateIds); // Intersect with current results
+        }
+
+        // Get the final list of products from the filtered IDs
+        return getProductsByIds(resultIds);
     }
     public List<Optional<Product>> findByStoreId(UUID storeId){
         synchronized (productStorage) {
