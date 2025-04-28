@@ -13,5 +13,6 @@ public class StoreRequest {
     private String address;
     private String email;
     private String phoneNumber;
+
 }
 
