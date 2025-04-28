@@ -7,8 +7,8 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 /**
- * Request class for store-related operations.
- * Used for creating stores, updating store information, and searching stores.
+ * Request class for store creation and update operations.
+ * Contains all necessary fields for creating a new store or updating an existing store's information.
  */
 @Data
 @NoArgsConstructor
@@ -24,13 +24,10 @@ public class StoreRequest {
     // For store creation
     private String founderUsername;
     
-    // For store search
-    private String productCategory;
-    private boolean activeOnly = true;
-    
     // For store update
     private UUID storeId;
     
+   
     /**
      * Constructor for store creation
      * 
@@ -52,19 +49,6 @@ public class StoreRequest {
     }
     
     /**
-     * Constructor for store search
-     * 
-     * @param storeName The name to search for
-     * @param productCategory The product category to filter by
-     * @param activeOnly Flag to include only active stores
-     */
-    public StoreRequest(String storeName, String productCategory, boolean activeOnly) {
-        this.storeName = storeName;
-        this.productCategory = productCategory;
-        this.activeOnly = activeOnly;
-    }
-    
-    /**
      * Constructor for store update
      * 
      * @param storeId The ID of the store to update
@@ -77,10 +61,69 @@ public class StoreRequest {
     public StoreRequest(UUID storeId, String storeName, String description, String address, 
                         String email, String phoneNumber) {
         this.storeId = storeId;
+        if(storeId != null) {
+            this.storeId = storeId; 
+        }
+        if(storeName != null) {
+            this.storeName = storeName; 
+        }
+        if(description != null) {
+            this.description = description; 
+        }
+        if(address != null) {
+            this.address = address; 
+        }
+        if(email != null) {
+            this.email = email; 
+        }
+        if(phoneNumber != null) {
+            this.phoneNumber = phoneNumber; 
+        }
+     
+    }
+
+    public String getStoreName() {
+        return storeName;
+    }
+    public String getDescription() {
+        return description;
+    }
+    public String getAddress() {
+        return address;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    public String getFounderUsername() {
+        return founderUsername;
+    }
+    public UUID getStoreId() {
+        return storeId;
+    }
+    public void setStoreName(String storeName) {
         this.storeName = storeName;
+    }
+    public void setDescription(String description) {
         this.description = description;
+    }
+    public void setAddress(String address) {
         this.address = address;
+    }
+    public void setEmail(String email) {
         this.email = email;
+    }
+    public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+    public void setFounderUsername(String founderUsername) {
+        this.founderUsername = founderUsername;
+    }
+    public void setStoreId(UUID storeId) {
+        this.storeId = storeId;
+    }
+    
+    
 }

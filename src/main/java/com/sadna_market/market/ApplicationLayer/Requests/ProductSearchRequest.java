@@ -1,5 +1,7 @@
 package com.sadna_market.market.ApplicationLayer.Requests;
 
+import java.util.UUID;
+
 import lombok.Data;
 
 import lombok.NoArgsConstructor;
@@ -21,8 +23,10 @@ public class ProductSearchRequest {
     private Double maxPrice;
     private Double minRank;
     private Double maxRank;
+    private UUID storeId;
 
-    public ProductSearchRequest(String name, String category, Double minPrice, Double maxPrice, Double minRank, Double maxRank) {
+    public ProductSearchRequest(String name, String category, Double minPrice, Double maxPrice, Double minRank, Double maxRank, UUID storeId) {
+        this.storeId = storeId;
         this.name = name;
         this.category = category;
         this.minPrice = minPrice;
@@ -33,6 +37,7 @@ public class ProductSearchRequest {
     public ProductSearchRequest() {
         this.name = null;
         this.category = null;
+        this.storeId = null;
         this.minPrice = -1.0;
         this.maxPrice = -1.0;
         this.minRank = -1.0;
