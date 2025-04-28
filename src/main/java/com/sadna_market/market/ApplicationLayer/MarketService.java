@@ -8,6 +8,7 @@ import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 
 //this is going to be the API for the market
 public class MarketService {
@@ -116,9 +117,9 @@ public class MarketService {
         return userService.removeFromCart(productId);
     }
     //req 2.5
-    public Response checkout(CartRequest cart) {
+    public Response checkout(CartRequest cart, PaymentMethod paymentMethod) {
         //checkout the cart
-        return userService.checkout(cart);
+        return userService.checkout(cart,paymentMethod);
     }
 
 
@@ -159,12 +160,12 @@ public class MarketService {
         //if not, throw an exception
         return userService.viewCart(userName);
     }
-    public Response checkout(String userName,String token) {
+    public Response checkout(String userName,String token, PaymentMethod paymentMethod) {
         //checkout the cart
         //check if the token is valid
         authenticate(userName,token);
         //if not, throw an exception
-       return userService.checkout(userName);
+       return userService.checkout(userName,paymentMethod);
     }
     //
 

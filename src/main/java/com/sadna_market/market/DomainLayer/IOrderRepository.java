@@ -84,7 +84,7 @@ public interface IOrderRepository {
      * @param deliveryId The delivery tracking ID
      * @return true if the update was successful
      */
-    boolean setDeliveryId(UUID orderId, String deliveryId);
+    boolean setDeliveryId(UUID orderId, UUID deliveryId);
     
     /**
      * Finds orders by store ID

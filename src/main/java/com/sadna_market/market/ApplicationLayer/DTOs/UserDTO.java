@@ -1,4 +1,4 @@
-package com.sadna_market.market.ApplicationLayer;
+package com.sadna_market.market.ApplicationLayer.DTOs;
 
 import com.sadna_market.market.DomainLayer.User;
 import lombok.Getter;
