@@ -2,6 +2,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.StoreRepository;
 import com.sadna_market.market.InfrastructureLayer.UserRepository;
 import org.slf4j.Logger;
@@ -252,7 +253,23 @@ public class UserAccessService {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    public void checkout(String username) {
+    //checkout for guest:
+    public void checkoutGuest(Cart cart, PaymentMethod pm) {
+        try {
+            if (cart.isEmpty()) {
+                throw new IllegalArgumentException("Cart is empty");
+            }
+            // Process the checkout (e.g., create an order, charge payment, etc.)
+            OrderProcessingService.getInstance().processGuestPurchase(cart,pm);
+            logger.info("Checkout successful for guest: {}");
+            throw new UnsupportedOperationException("Not implemented yet");
+        } catch (Exception e) {
+            logger.error("Failed to checkout for guest: {}");
+            throw new RuntimeException("Failed to checkout for guest: " + e.getMessage());
+        }
+    }
+    //checkout for user:
+    public void checkout(String username, PaymentMethod pm) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             Cart cart = user.getCart();
@@ -260,11 +277,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            // This is not implemented here yet.
-            //first thing should check all products still available
-            //secondly, create an order
-            //thirdly, charge payment
-            // Finally, clear the cart
+            OrderProcessingService.getInstance().processPurchase(username,cart,pm);
             logger.info("Checkout successful for user: {}", username);
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {

@@ -9,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -185,11 +186,25 @@ public class UserService {
         }
     }
 
-    public Response checkout(String userName) {
+    //checkout of guest:
+    public Response checkout(Cart cart, PaymentMethod pm) {
+        // Here we would implement the logic to checkout a user's cart
+        logger.info("Checking out cart for user with username: {}");
+        try {
+            userAccessService.checkoutGuest(cart,pm);
+            logger.info("checkout successfully");
+            return Response.success("checkout successfully");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+    //checkout of user:
+    public Response checkout(String userName, PaymentMethod pm) {
         // Here we would implement the logic to checkout a user's cart
         logger.info("Checking out cart for user with username: {}", userName);
         try {
-            userAccessService.checkout(userName);
+            userAccessService.checkout(userName,pm);
             logger.info("checkout successfully");
             return Response.success("checkout successfully");
         } catch (Exception e) {
