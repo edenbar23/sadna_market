@@ -1,3 +1,5 @@
+package com.sadna_market.market.InfrastructureLayer.Supply;
+
 public class SupplyAdapter implements SupplyInterface {
     private ExternalSupplyAPI api = new ExternalSupplyAPI();
 

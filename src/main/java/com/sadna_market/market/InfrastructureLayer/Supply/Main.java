@@ -1,3 +1,5 @@
+package com.sadna_market.market.InfrastructureLayer.Supply;
+
 public class Main {
     public static void main(String[] args) {
         SupplyService service = new SupplyService();

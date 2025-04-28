@@ -1,3 +1,6 @@
+package com.sadna_market.market.InfrastructureLayer.Supply;
+
+
 public class ExternalSupplyAPI {
     public boolean sendStandardShippingRequest(String carrier, String address, double weight, int estimatedDays) {
         System.out.println("External API: Arranging standard shipping to " + address + " with " + carrier);

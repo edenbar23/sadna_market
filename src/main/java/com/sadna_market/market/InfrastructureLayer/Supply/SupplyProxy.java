@@ -1,3 +1,5 @@
+package com.sadna_market.market.InfrastructureLayer.Supply;
+
 public class SupplyProxy implements SupplyInterface {
     private SupplyAdapter adapter = new SupplyAdapter();
 

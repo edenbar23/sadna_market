@@ -1,4 +1,4 @@
-//package com.sadna_market.market.InfrastructureLayer.Supply;
+package com.sadna_market.market.InfrastructureLayer.Supply;
 
 public class ExpressShippingDTO implements SupplyMethod {
     public String carrier;
