@@ -503,4 +503,10 @@ public class UserAccessService {
         }
         return timestamps.size(); // rate = count in past hour
     }
+
+    public void replyViolationReport(String admin, UUID reportId,String user, String message) {
+        validateAdmin(admin);
+        MessageService ms = MessageService.getInstance(RC);
+        ms.replyReport(admin,reportId,user,message);
+    }
 }

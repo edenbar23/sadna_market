@@ -32,11 +32,11 @@ public class MarketService {
     public MarketService() {
         this.RC = new RepositoryConfiguration();
         IUserRepository userRepository=RC.userRepository();
-         IProductRepository productRepository=  RC.productRepository();
+        IProductRepository productRepository=  RC.productRepository();
         IStoreRepository storeRepository= RC.storeRepository();
         this.userService = UserService.getInstance(RC);
         this.productService = ProductService.getInstance(productRepository);
-        this.storeService = StoreService.getInstance();
+        this.storeService = StoreService.getInstance(RC);
     }
 
 
@@ -536,14 +536,14 @@ public class MarketService {
         return userService.getViolationReports(admin);
     }
     //req 6.3 (b)
-    public Response replyViolationReport(String admin,String token,UUID reportId,String message) {
+    public Response replyViolationReport(String admin,String token,UUID reportId,String user,String message) {
         try{
             authenticate(admin,token);
         }
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return messageService.replyViolationReport(admin,reportId,message);
+        return userService.replyViolationReport(admin,reportId,user,message);
     }
     //req 6.3 (c)
     public Response sendMessageToUser(String admin,String token,String addresse,String message) {
