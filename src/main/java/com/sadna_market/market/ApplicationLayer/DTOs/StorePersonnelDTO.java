@@ -12,13 +12,13 @@ public class StorePersonnelDTO {
     @Getter
     private String founderUsername;
     @Getter
-    private Set<String> ownerUsernames;
+    private List<String> ownerUsernames;
     @Getter
-    private Set<String> managerUsernames;
+    private List<String> managerUsernames;
 
     // Simple constructor that just accepts data
     public StorePersonnelDTO(UUID storeId, String founderUsername,
-                             Set<String> owners, Set<String> managers) {
+                             List<String> owners, List<String> managers) {
         this.storeId = storeId;
         this.founderUsername = founderUsername;
         this.ownerUsernames = owners;
