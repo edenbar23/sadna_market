@@ -12,12 +12,13 @@ import java.util.logging.Logger;
 
 public class InMemoryReportRepository implements IReportRepository {
     Logger logger = Logger.getLogger(InMemoryReportRepository.class.getName());
-    private final Map<UUID, Report> reports= new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<UUID, Report> reports;
     private static InMemoryReportRepository instance = new InMemoryReportRepository();
 
     // Private constructor
     private InMemoryReportRepository() {
         logger.info("InMemoryReportRepository initialized");
+        this.reports = new java.util.concurrent.ConcurrentHashMap<>();
 
     }
 

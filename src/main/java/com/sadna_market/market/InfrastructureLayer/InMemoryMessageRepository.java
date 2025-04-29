@@ -18,13 +18,14 @@ public class InMemoryMessageRepository implements IMessageRepository {
     private static final Logger logger = LogManager.getLogger(InMemoryMessageRepository.class);
 
     // Thread-safe map to store messages by ID
-    private final Map<UUID, Message> messages = new ConcurrentHashMap<>();
+    private final Map<UUID, Message> messages ;
 
     private static InMemoryMessageRepository instance = new InMemoryMessageRepository();
 
     // Private constructor
     private InMemoryMessageRepository() {
         logger.info("InMemoryMessageRepository initialized");
+        this.messages = new ConcurrentHashMap<>();
     }
 
     // Synchronized getInstance method

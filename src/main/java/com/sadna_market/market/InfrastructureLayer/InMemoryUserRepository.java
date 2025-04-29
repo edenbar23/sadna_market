@@ -25,10 +25,11 @@ public class InMemoryUserRepository implements IUserRepository {
     private static final Logger logger = LoggerFactory.getLogger(InMemoryUserRepository.class);
     private static InMemoryUserRepository instance = new InMemoryUserRepository();
     // Thread-safe map to store users by username
-    private final Map<String, User> users = new ConcurrentHashMap<>();
+    private final Map<String, User> users;
 
     // Private constructor
     private InMemoryUserRepository() {
+        this.users = new ConcurrentHashMap<>();
         logger.info("InMemoryUserRepository initialized");
 
     }

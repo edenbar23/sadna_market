@@ -17,14 +17,19 @@ import org.slf4j.LoggerFactory;
 
 public class InMemoryProductRepository implements IProductRepository {
     // In-memory storage for products
-    private Map<UUID, Product> productStorage = new ConcurrentHashMap<>();
-    private List<UserRate> userRates = new ArrayList<>();
-    private List<UserReview> userReviews = new ArrayList<>();
+    private Map<UUID, Product> productStorage ;
+    private List<UserRate> userRates ;
+    private List<UserReview> userReviews ;
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
     private static InMemoryProductRepository instance = new InMemoryProductRepository();
 
     // Private constructor
     private InMemoryProductRepository() {
+        
+        this.productStorage = new ConcurrentHashMap<>();
+        this.userRates = new ArrayList<>();
+        this.userReviews = new ArrayList<>();
+        
         logger.info("InMemoryProductRepository initialized");
     }
 
