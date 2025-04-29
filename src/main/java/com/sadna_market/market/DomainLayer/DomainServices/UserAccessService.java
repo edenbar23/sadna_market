@@ -3,6 +3,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.StoreRepository;
 import com.sadna_market.market.InfrastructureLayer.UserRepository;
 import org.slf4j.Logger;
@@ -26,17 +27,19 @@ public class UserAccessService {
     private final IReportRepository reportRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
+    private RepositoryConfiguration RC;
 
-    private UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, IReportRepository reportRepository, String realAdmin) {
-        this.userRepository = userRepository.getInstance();
-        this.storeRepository = storeRepository.getInstance();
-        this.reportRepository = reportRepository.getInstance();
+    private UserAccessService(RepositoryConfiguration RC, String realAdmin) {
+        this.RC = RC;
+        this.userRepository = RC.userRepository();
+        this.storeRepository = RC.storeRepository();
+        this.reportRepository = RC.reportRepository();
         this.realAdmin = realAdmin;
     }
 
-    public static UserAccessService getInstance() {
+    public static UserAccessService getInstance(RepositoryConfiguration RC, String realAdmin) {
         if (instance == null) {
-            instance = new UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, IReportRepository reportRepository, String realAdmin);
+            instance = new UserAccessService(RC,realAdmin);
         }
         return instance;
     }

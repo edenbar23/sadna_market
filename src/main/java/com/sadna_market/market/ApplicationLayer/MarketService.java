@@ -27,7 +27,7 @@ public class MarketService {
     MessageApplicationService messageService;
     //IPaymentGateway service
     //supplySystem+
-    RepositoryConfiguration RC;
+    private RepositoryConfiguration RC;
     //Constructor
     public MarketService() {
         this.RC = new RepositoryConfiguration();
@@ -196,6 +196,7 @@ public class MarketService {
         return userService.saveReview(review);
     }
     //req 3.4 (a)
+    //TO-DO FIX THE PRODUCT RATE REQUEST
     public Response rateProduct(String username, String token, ProductRateRequest rate) {
         try{
             authenticate(username,token);
@@ -205,7 +206,7 @@ public class MarketService {
         }
         Response output = productService.rateProduct(rate);
         return userService.saveRate(rate);
-        return output;
+        //return output;
     }
     //req 3.4 (b)
     public Response rateStore(String username, String token, RateRequest rate) {
@@ -325,7 +326,7 @@ public class MarketService {
 
     }
     //req 4.2 (b)
-    public Response changeStorePurchasePolicy(String username,String token,UUID storeId,PurchasePolicyRequest policy) {
+    public Response changeStorePurchasePolicy(String username,String token,UUID storeId,ProductDiscountPolicyRequest policy) {
         try{
             authenticate(username,token);
         }
@@ -575,7 +576,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getUserPurchaseHistory(admin,storeId);
+        return storeService.getStorePurchaseHistory(admin,storeId);
     }
     //req 6.5 (a)
     public Response getBuyersRate(String admin,String token) {
@@ -585,7 +586,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getBuyersRate(admin);
+        return storeService.getBuyersRate(admin);
     }
     //req 6.5 (b)
     public Response getTransactionsRate(String admin,String token) {
@@ -595,7 +596,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getTransactionsRate(admin);
+        return userService.getTransactionsRate(admin);//todo check if this is correct
     }
     //req 6.5 (c)
     public Response getSubscriptionsRate(String admin,String token) {
@@ -605,7 +606,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getSubscriptionsRate(admin);
+        return userService.getSubscriptionsRate(admin);//todo check if this is correct
     }
 
     //System functions here:
