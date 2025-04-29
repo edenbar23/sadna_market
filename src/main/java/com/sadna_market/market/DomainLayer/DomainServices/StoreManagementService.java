@@ -16,10 +16,13 @@ public class StoreManagementService {
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
+    private final RepositoryConfiguration RC;
 
     private StoreManagementService(RepositoryConfiguration RC) {
+        this.RC = RC;
         this.storeRepository = RC.storeRepository();
         this.userRepository = RC.userRepository();
+
     }
 
     public static StoreManagementService getInstance(RepositoryConfiguration RC) {
@@ -409,5 +412,20 @@ public class StoreManagementService {
         storeRepository.save(store);
 
         logger.info("User '{}' has left ownership of store '{}'", username, store.getName());
+    }
+
+    public List<Message> getStoreMessages(String username, UUID storeId) {
+        logger.debug("User '{}' requesting messages for store '{}'", username, storeId);
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isStoreOwner(username)) {
+            logger.error("User '{}' is not a store owner", username);
+            throw new InsufficientPermissionsException("Only store owners can view messages");
+        }
+        MessageService ms = MessageService.getInstance(RC);
+        List<Message> messages = ms.getStoreMessages(username, storeId);
+        logger.info("User '{}' retrieved {} messages for store '{}'", username, messages.size(), store.getName());
+        return messages;
     }
 }

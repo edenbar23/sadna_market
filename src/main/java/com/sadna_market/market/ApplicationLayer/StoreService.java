@@ -1,5 +1,6 @@
 package com.sadna_market.market.ApplicationLayer;
 
+import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StorePersonnelDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
@@ -546,8 +547,9 @@ public class StoreService {
     public Response viewStoreMessages(String username, UUID storeId) {
         logger.info("User {} viewing store messages for store {}", username, storeId);
         try {
-            List<String> messages = storeManagementService.getStoreMessages(username, storeId);
-            String json = objectMapper.writeValueAsString(messages);
+            List<Message> messages = storeManagementService.getStoreMessages(username, storeId);
+            List<MessageDTO> messagesDTO = convertListMessageToDTO(messages);
+            String json = objectMapper.writeValueAsString(messagesDTO);
             return Response.success(json);
         } catch (Exception e) {
             logger.error("Error viewing store messages: {}", e.getMessage());
@@ -565,5 +567,14 @@ public class StoreService {
             logger.error("Error getting store manager permissions: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
+    }
+
+    private List<MessageDTO> convertListMessageToDTO(List<Message> messages) {
+        List<MessageDTO> messageDTOs = new ArrayList<>();
+        for (Message message : messages) {
+            MessageDTO messageDTO = new MessageDTO(message);
+            messageDTOs.add(messageDTO);
+        }
+        return messageDTOs;
     }
 }
