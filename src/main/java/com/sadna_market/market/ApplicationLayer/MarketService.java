@@ -553,7 +553,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return messageService.sendMessageToUser(admin,addresse,message);
+        return userService.sendMessageToUser(admin,addresse,message);
     }
     //req 6.4 (a)
     public Response getUserPurchaseHistory(String admin,String username,String token) {
