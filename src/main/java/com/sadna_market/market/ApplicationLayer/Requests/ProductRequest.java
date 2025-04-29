@@ -16,6 +16,14 @@ public class ProductRequest {
     private String category;
     private double price;
 
+    public ProductRequest(UUID uuid, String name, String description, String category, double price) {
+        this.productId = uuid;
+        this.name = name;
+        this.description = description;
+        this.category = category;
+        this.price = price;
+    }
+
     public UUID getProductId() {
         return productId;
     }

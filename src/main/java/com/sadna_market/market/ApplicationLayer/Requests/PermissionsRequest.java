@@ -12,4 +12,8 @@ import java.util.Set;
 @AllArgsConstructor
 public class PermissionsRequest {
     private Set<Permission> permissions;
+
+    public PermissionsRequest(Set<Permission> permissions) {
+        this.permissions = permissions;
+    }
 }

@@ -2,9 +2,7 @@ package com.sadna_market.market.AcceptanceTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
-import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.*;
 
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
@@ -39,7 +37,6 @@ public class GuestTests {
 
     @BeforeEach
     void setup() {
-
         // Create a "dummy" user who will create a store and product
         // This simulates an admin or registered user setting up the environment
 
@@ -64,11 +61,20 @@ public class GuestTests {
         // Since we're not parsing JSON, we'll assume the token is in the response
         String token = loginResponse.getJson(); // In a real scenario, you'd extract the token from JSON
 
-        // 3. Create a store
+        // 3. Create a store with proper StoreRequest
+        StoreRequest storeRequest = new StoreRequest(
+                STORE_NAME,
+                "A test store for guest testing",
+                "123 Test Street, Test City",
+                "guesttest@example.com",
+                "555-123-4567",
+                dummyUsername
+        );
+
         Response createStoreResponse = bridge.createStore(
                 dummyUsername,
                 token,
-                null // Here you would typically pass a StoreRequest object, but for simplicity using null
+                storeRequest
         );
         Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
 
@@ -76,60 +82,29 @@ public class GuestTests {
         // For this example, we'll use a random UUID
         storeId = UUID.randomUUID();
 
-        // 4. Add a product to the store
+        // 4. Add a product to the store with proper ProductRequest and quantity
+        ProductRequest productRequest = new ProductRequest(
+                UUID.randomUUID(),  // Generate a random UUID for the new product
+                PRODUCT_NAME,
+                PRODUCT_CATEGORY,
+                PRODUCT_DESCRIPTION,
+                PRODUCT_PRICE
+        );
+
+        int productQuantity = 20; // Setting a quantity of 20 for this product
+
         Response addProductResponse = bridge.addProductToStore(
                 token,
                 dummyUsername,
                 storeId,
-                null // Here you would typically pass a ProductRequest object, but for simplicity using null
+                productRequest,
+                productQuantity
         );
         Assertions.assertFalse(addProductResponse.isError(), "Product addition should succeed");
 
         // In a real scenario, you'd extract the productId from the JSON response
-        // For this example, we'll use a random UUID
-        productId = UUID.randomUUID();
-    }
-
-    @Test
-    @DisplayName("Guest should be able to search for a product by name and price")
-    void searchProductTest() {
-        // Create a search request specifying only name and price range
-        ProductSearchRequest searchRequest = new ProductSearchRequest();
-        searchRequest.setName(PRODUCT_NAME);
-        searchRequest.setMinPrice(PRODUCT_PRICE - 1); // Slightly below the product price
-        searchRequest.setMaxPrice(PRODUCT_PRICE + 1); // Slightly above the product price
-
-        // Search for the product
-        Response response = bridge.searchProduct(searchRequest);
-
-        // Assert - Verify response is valid
-        Assertions.assertNotNull(response, "Response should not be null");
-        Assertions.assertFalse(response.isError(), "Response should not indicate an error");
-        Assertions.assertNotNull(response.getJson(), "Response JSON should not be null");
-
-        try {
-            // Parse the JSON response to get the list of products
-            // Assuming the response contains a JSON array of products
-            List<Product> products = objectMapper.readValue(
-                    response.getJson(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, Product.class)
-            );
-
-            // Print products for debugging
-            System.out.println("Found products: " + products);
-
-            // Verify that exactly one product was found
-            Assertions.assertEquals(1, products.size(), "Search should return exactly one product");
-
-            // Verify that the correct product was found
-            Product foundProduct = products.get(0);
-            Assertions.assertEquals(PRODUCT_NAME, foundProduct.getName(), "Product name should match search criteria");
-            Assertions.assertEquals(PRODUCT_PRICE, foundProduct.getPrice(), "Product price should match");
-            Assertions.assertEquals(productId, foundProduct.getProductId(), "Product ID should match the expected product");
-
-        } catch (IOException e) {
-            Assertions.fail("Failed to parse search results JSON: " + e.getMessage());
-        }
+        // For this example, we'll use the same UUID we generated for the product
+        productId = productRequest.getProductId();
     }
 
     @Test

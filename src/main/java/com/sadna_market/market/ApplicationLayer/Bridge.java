@@ -46,14 +46,14 @@ public class Bridge {
      * Store component. These methods test the functionality of stores including inventory
      * management, product listings, pricing strategies, and store policies.
      */
-    public Response addProductToStore(String token, String userName, UUID storeId, ProductRequest product)  {
-        return service.addProductToStore(token, userName, storeId, product);
+    public Response addProductToStore(String token, String userName, UUID storeId, ProductRequest product,int quantity)  {
+        return service.addProductToStore(token, userName, storeId, product, quantity);
     }
     public Response removeProductFromStore(String token, String userName, UUID storeId,  ProductRequest product) {
         return service.removeProductFromStore(token,userName,storeId,product);
     }
-    public Response editProductDetails(String token, String userName, UUID storeId, ProductRequest product) {
-        return service.updateProductOfStore(token, userName, storeId, product);
+    public Response editProductDetails(String token, String userName, UUID storeId, ProductRequest product, int quantity) {
+        return service.updateProductOfStore(token, userName, storeId, product, quantity);
     }
 
     public Response getProductsList(){
