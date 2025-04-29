@@ -8,6 +8,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.Product.Product;
 
+import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -390,10 +391,14 @@ public class UserTests {
         // Verify product was added successfully
         Response viewCartBeforeBuy = bridge.viewUserCart(testUsername, testToken);
         Assertions.assertFalse(viewCartBeforeBuy.isError(), "Viewing cart before buy should succeed");
-
-        try {
+        CreditCardDTO creditCard = new CreditCardDTO(
+                "John Doe",
+                "4111111111111111",
+                "12/25",
+                "123"
+        );        try {
             // Try to buy the cart
-            Response buyResponse = bridge.buyUserCart(testUsername, testToken);
+            Response buyResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
 
             // Assert buy response
             Assertions.assertNotNull(buyResponse, "Buy cart response should not be null");
