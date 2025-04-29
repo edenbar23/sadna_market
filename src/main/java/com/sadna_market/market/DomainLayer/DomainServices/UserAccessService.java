@@ -301,7 +301,18 @@ public class UserAccessService {
 
     public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        Admin admin = getAdmin();
+        Report report = new Report(username,comment,storeId,productId);
+        user.addReport(report.getReportId());
+        admin.addReport(report.getReportId());
+        //reportRepository.save(report);
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    private Admin getAdmin() {
+        // Assuming you have a method to get the admin user
+        User userAdmin = userRepository.findByUsername(realAdmin).orElseThrow(()-> new IllegalArgumentException("admin not found!"));
+        return (Admin) userAdmin;
     }
 
     public User returnInfo(String username) {
