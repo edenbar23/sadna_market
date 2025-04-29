@@ -145,6 +145,6 @@ public class User extends IUser {
     }
 
     public void addReport(UUID reportId) {
-        myReports.add(reportId)
+        myReports.add(reportId);
     }
 }
