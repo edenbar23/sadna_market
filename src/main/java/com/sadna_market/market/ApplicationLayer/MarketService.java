@@ -269,7 +269,7 @@ public class MarketService {
 
     //StoreOwner functions here:
     //req 4.1 (a)
-    public Response addProductToStore(String username, String token, UUID storeId, ProductRequest product) {
+    public Response addProductToStore(String username, String token, UUID storeId, ProductRequest product, int quantity) {
         try{
             authenticate(username,token);
         }
@@ -290,7 +290,7 @@ public class MarketService {
         return Response.error("not implemented yet");
     }
     //req 4.1 (c)
-    public Response updateProductOfStore(String username,String token,UUID storeId,ProductRequest product) {
+    public Response updateProductOfStore(String username,String token,UUID storeId,ProductRequest product, int quantity) {
         try{
             authenticate(username,token);
         }

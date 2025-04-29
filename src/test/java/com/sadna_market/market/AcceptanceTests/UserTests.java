@@ -2,10 +2,7 @@ package com.sadna_market.market.AcceptanceTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
-import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.Product.Product;
 
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
@@ -90,27 +87,46 @@ public class UserTests {
         System.out.println("Store owner JWT token: " + ownerToken);
 
         // Create a store
+        StoreRequest storeRequest = new StoreRequest(
+                STORE_NAME,
+                "A test store for acceptance testing",
+                "123 Test Street, Test City",
+                "teststore@example.com",
+                "555-123-4567",
+                ownerUsername
+        );
+
         Response createStoreResponse = bridge.createStore(
                 ownerUsername,
                 ownerToken,
-                null // Here you would typically pass a StoreRequest object, but for simplicity using null
+                storeRequest
         );
         Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
 
         // In a real scenario, you'd extract the storeId from the JSON response
         storeId = UUID.randomUUID();
 
-        // Add a product to the store
+        // Create a ProductRequest object for adding a product
+        ProductRequest productRequest = new ProductRequest(
+                UUID.randomUUID(),  // Generate a random UUID for the new product
+                PRODUCT_NAME,
+                PRODUCT_CATEGORY,
+                PRODUCT_DESCRIPTION,
+                PRODUCT_PRICE
+        );
+
+        // Add a product to the store with the correct parameters
         Response addProductResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
-                null // Here you would typically pass a ProductRequest object, but for simplicity using null
+                productRequest,
+                10  // Adding 10 items of this product to the inventory
         );
         Assertions.assertFalse(addProductResponse.isError(), "Product addition should succeed");
 
         // In a real scenario, you'd extract the productId from the JSON response
-        productId = UUID.randomUUID();
+        productId = productRequest.getProductId();  // Use the UUID we generated for the product
     }
 
     @Test
@@ -463,5 +479,69 @@ public class UserTests {
         }
     }
 
+    @Test
+    @DisplayName("User should be able to logout successfully")
+    void logoutTest() {
+        try {
+            // First ensure the user is logged in by checking if we have a valid token
+            Assertions.assertNotNull(testToken, "User should be logged in with a valid token before logout");
+            Assertions.assertFalse(testToken.isEmpty(), "User token should not be empty before logout");
+
+            // Attempt to perform an operation that requires authentication to verify logged-in status
+            Response beforeLogoutResponse = bridge.viewUserCart(testUsername, testToken);
+            Assertions.assertFalse(beforeLogoutResponse.isError(),
+                    "User should be able to view cart before logout");
+
+            // Call the logout function
+            Response logoutResponse = bridge.logout(testUsername, testToken);
+
+            // Assert that logout was successful
+            Assertions.assertNotNull(logoutResponse, "Logout response should not be null");
+            Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
+            Assertions.assertNotNull(logoutResponse.getJson(), "Logout response JSON should not be null");
+
+            System.out.println("Logout response: " + logoutResponse.getJson());
+
+            // Attempt to perform an operation using the old token - this should now fail
+            Response afterLogoutResponse = bridge.viewUserCart(testUsername, testToken);
+
+            // Assert that the operation fails because the user is now logged out
+            Assertions.assertTrue(afterLogoutResponse.isError(),
+                    "Operations with the token should fail after logout");
+            Assertions.assertNotNull(afterLogoutResponse.getErrorMessage(),
+                    "Error message should be present when using an invalidated token");
+
+            // Verify the error message indicates an authentication issue
+            String errorMessage = afterLogoutResponse.getErrorMessage();
+            System.out.println("After logout error message: " + errorMessage);
+
+            Assertions.assertTrue(
+                    errorMessage.contains("token") ||
+                            errorMessage.contains("authentication") ||
+                            errorMessage.contains("logged") ||
+                            errorMessage.contains("unauthorized") ||
+                            errorMessage.contains("authorized"),
+                    "Error message should indicate an authentication issue"
+            );
+
+            // Try to log back in to verify the account is still valid
+            Response loginAgainResponse = bridge.loginUser(testUsername, testPassword);
+            Assertions.assertFalse(loginAgainResponse.isError(),
+                    "User should be able to login again after logout");
+
+            // Get a new valid token
+            String newToken = loginAgainResponse.getJson();
+            Assertions.assertNotNull(newToken, "New token after re-login should not be null");
+            Assertions.assertFalse(newToken.isEmpty(), "New token after re-login should not be empty");
+
+            // Verify the new token works for operations
+            Response afterReloginResponse = bridge.viewUserCart(testUsername, newToken);
+            Assertions.assertFalse(afterReloginResponse.isError(),
+                    "User should be able to perform operations after re-login");
+
+        } catch (Exception e) {
+            Assertions.fail("Logout test failed with exception: " + e.getMessage());
+        }
+    }
 
 }
