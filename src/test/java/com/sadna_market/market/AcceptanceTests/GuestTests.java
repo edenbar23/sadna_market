@@ -7,6 +7,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 
 import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentProxy;
 import org.junit.jupiter.api.Assertions;
@@ -434,7 +435,12 @@ public class GuestTests {
         // Verify the product was added to the cart
         Response viewCartBeforePurchase = bridge.viewGuestCart(cartReq);
         Assertions.assertFalse(viewCartBeforePurchase.isError(), "Viewing cart before purchase should succeed");
-
+        CreditCardDTO creditCard = new CreditCardDTO(
+                "John Doe",
+                "4111111111111111",
+                "12/25",
+                "123"
+        );
         try {
             // Parse cart to verify it contains the product before purchase
             CartRequest cartBeforePurchase = objectMapper.readValue(viewCartBeforePurchase.getJson(), CartRequest.class);
@@ -447,7 +453,7 @@ public class GuestTests {
             );
 
             // Now purchase the items in the cart
-            Response purchaseResponse = bridge.buyGuestCart(cartReq);
+            Response purchaseResponse = bridge.buyGuestCart(cartReq, creditCard);
 
             // Assert - Verify purchase response is valid
             Assertions.assertNotNull(purchaseResponse, "Purchase response should not be null");
