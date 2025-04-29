@@ -22,6 +22,30 @@ public class RegisterRequest {
     private String phoneNumber; // User's phone number (optional)
     private String address;     // User's address (optional)
 
+    public String getUserName() {
+        return userName;
+    }
+   
+    public String getPassword() {
+        return password;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public String getFirstName() {
+        return firstName;
+    }   
+
+    public String getLastName() {
+        return lastName;
+    }   
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    public String getAddress() {
+        return address;
+    }
+
     /**
      * Constructor with essential fields for user registration
      * 

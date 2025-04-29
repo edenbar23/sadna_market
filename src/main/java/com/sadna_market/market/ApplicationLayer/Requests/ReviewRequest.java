@@ -27,7 +27,35 @@ public class ReviewRequest {
     private String username;       // The username of the reviewer/reporter
     private LocalDateTime timestamp; // When the review/report was created
     private boolean isViolationReport; // Whether this is a violation report or product review
-    
+     
+    public UUID getStoreId() {
+        return storeId;
+    }
+
+    public UUID getProductId() {
+        return productId;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+
+    public Integer getRating() {
+        return rating;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public boolean isViolationReport() {
+        return isViolationReport;
+    }
     /**
      * Constructor for product reviews
      * 

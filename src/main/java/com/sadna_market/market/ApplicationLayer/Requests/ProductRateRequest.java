@@ -19,6 +19,27 @@ public class ProductRateRequest {
     private UUID storeId;  // Store that contains the product
     private int rating;    // Rating value (typically 1-5)
     
+
+    public UUID getProductId() {
+        return productId;
+    }   
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public UUID getStoreId() {
+        return storeId;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+    
     /**
      * Constructor with essential fields for product rating
      * 
