@@ -38,7 +38,7 @@ public class Order {
     private OrderStatus status; // e.g., "Pending", "Completed", "Cancelled"
 
     @Getter
-    private String paymentId;
+    private UUID paymentId;
 
     @Getter
     private String deliveryId;
@@ -50,7 +50,7 @@ public class Order {
 
 
     public Order(UUID storeId, String userName, Map<UUID, Integer> products, double totalPrice,
-            double finalPrice,LocalDateTime orderDate, OrderStatus status, String paymentId) {
+            double finalPrice,LocalDateTime orderDate, OrderStatus status, UUID paymentId) {
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
         this.orderId = UUID.randomUUID(); // Generate a unique order ID
         this.storeId = storeId;
@@ -72,7 +72,7 @@ public class Order {
      */
     public Order(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate,
-                 OrderStatus status, String paymentId, String deliveryId) {
+                 OrderStatus status, UUID paymentId, String deliveryId) {
         this.orderId = orderId;
         this.storeId = storeId;
         this.userName = userName;

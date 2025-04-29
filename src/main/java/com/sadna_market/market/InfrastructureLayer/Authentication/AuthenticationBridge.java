@@ -14,7 +14,7 @@ public class AuthenticationBridge {
     public String createUserSessionToken(String username, String password) {
         return authenticate(username,password);
     }
-    public String createGuestSessionToken(String username, String password, int guestId) {
+    public String createGuestSessionToken(String username, String password) {
         return authenticate(username,password);
     }
     private String authenticate(String username, String password){

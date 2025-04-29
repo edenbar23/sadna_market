@@ -20,8 +20,8 @@ public class StoreRequest {
     private String address;
     private String email;
     private String phoneNumber;
-    
-    // For store creation
+
+  // For store creation
     private String founderUsername;
     
     // For store update

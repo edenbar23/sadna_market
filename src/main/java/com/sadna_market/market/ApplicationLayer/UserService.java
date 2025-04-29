@@ -9,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -60,6 +61,63 @@ public class UserService {
         }
     }
 
+    public Response addToCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
+        // Here we would implement the logic to add a product to a user's cart
+        logger.info("Adding product with ID: {} to guest: {}", productId);
+        //maybe add here a domainService to make sure product in stock
+        try {
+            cart.addToCartRequest(storeId, productId, quantity);
+            String json = objectMapper.writeValueAsString(cart);
+            logger.info("Product added to cart successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error processing cart: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response updateCart(CartRequest cart,UUID storeId, UUID productId, int quantity) {
+        // Here we would implement the logic to update a product in a user's cart
+        logger.info("Updating product with ID: {} in user with username: {}", productId);
+        try {
+            cart.updateItem(storeId, productId, quantity);
+            String json = objectMapper.writeValueAsString(cart);
+            logger.info("Product updated in cart successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error updating product in cart: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response viewCart(CartRequest cart) {
+        // Here we would implement the logic to view a user's cart
+        logger.info("Viewing cart for guest");
+        //maybe use a domainService to check all products still in stock and update it if needed
+        try {
+            String json = objectMapper.writeValueAsString(cart);
+            logger.info("Cart viewed successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error viewing cart: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public Response removeFromCart(CartRequest cart, UUID storeId, UUID productId) {
+        // Here we would implement the logic to remove a product from a user's cart
+        logger.info("Removing product with ID: {} from guest", productId);
+        try {
+            cart.removeFromCartRequest(storeId, productId);
+            String json = objectMapper.writeValueAsString(cart);
+            logger.info("Product removed from cart successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
     /**
      * This method returns session token if logged in successfully
      */
@@ -76,28 +134,7 @@ public class UserService {
         //should return a response object of token
     }
 
-    public CartRequest addToCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
-        // Here we would implement the logic to add a product to a user's cart
-        logger.info("Adding product with ID: {} to guest: {}", productId);
-        //maybe add here a domainService to make sure product in stock
-        logger.info("Product added to cart successfully");
-        return cart.addToCartRequest(storeId, productId, quantity);
-    }
 
-
-    public Response viewCart(CartRequest cart) {
-        // Here we would implement the logic to view a user's cart
-        logger.info("Viewing cart for guest");
-        //maybe use a domainService to check all products still in stock and update it if needed
-        try {
-            String json = objectMapper.writeValueAsString(cart);
-            logger.info("Cart viewed successfully");
-            return Response.success(json);
-        } catch (Exception e) {
-            logger.error("Error viewing cart: {}", e.getMessage());
-            return null;
-        }
-    }
 
 
     //Registered functions:
@@ -185,11 +222,26 @@ public class UserService {
         }
     }
 
-    public Response checkout(String userName) {
+    //checkout of guest:
+    public Response checkout(CartRequest cartReq, PaymentMethod pm) {
+        // Here we would implement the logic to checkout a user's cart
+        logger.info("Checking out cart for user with username: {}");
+        try {
+            Cart cart = new Cart(cartReq.getBaskets());
+            userAccessService.checkoutGuest(cart,pm);
+            logger.info("checkout successfully");
+            return Response.success("checkout successfully");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+    //checkout of user:
+    public Response checkout(String userName, PaymentMethod pm) {
         // Here we would implement the logic to checkout a user's cart
         logger.info("Checking out cart for user with username: {}", userName);
         try {
-            userAccessService.checkout(userName);
+            userAccessService.checkout(userName,pm);
             logger.info("checkout successfully");
             return Response.success("checkout successfully");
         } catch (Exception e) {

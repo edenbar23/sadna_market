@@ -2,6 +2,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.StoreRepository;
 import com.sadna_market.market.InfrastructureLayer.UserRepository;
 import org.slf4j.Logger;
@@ -19,12 +20,14 @@ import java.util.UUID;
 public class UserAccessService {
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
+    private final IReportRepository reportRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
 
     public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, String realAdmin) {
         this.userRepository = userRepository;
         this.storeRepository = storeRepository;
+        this.reportRepository = null;
         this.realAdmin = realAdmin;
     }
 
@@ -252,7 +255,23 @@ public class UserAccessService {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    public void checkout(String username) {
+    //checkout for guest:
+    public void checkoutGuest(Cart cart, PaymentMethod pm) {
+        try {
+            if (cart.isEmpty()) {
+                throw new IllegalArgumentException("Cart is empty");
+            }
+            // Process the checkout (e.g., create an order, charge payment, etc.)
+            OrderProcessingService.getInstance().processGuestPurchase(cart,pm);
+            logger.info("Checkout successful for guest: {}");
+            throw new UnsupportedOperationException("Not implemented yet");
+        } catch (Exception e) {
+            logger.error("Failed to checkout for guest: {}");
+            throw new RuntimeException("Failed to checkout for guest: " + e.getMessage());
+        }
+    }
+    //checkout for user:
+    public void checkout(String username, PaymentMethod pm) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             Cart cart = user.getCart();
@@ -260,11 +279,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            // This is not implemented here yet.
-            //first thing should check all products still available
-            //secondly, create an order
-            //thirdly, charge payment
-            // Finally, clear the cart
+            OrderProcessingService.getInstance().processPurchase(username,cart,pm);
             logger.info("Checkout successful for user: {}", username);
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
@@ -288,7 +303,18 @@ public class UserAccessService {
 
     public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        Admin admin = getAdmin();
+        Report report = new Report(username,comment,storeId,productId);
+        user.addReport(report.getReportId());
+        admin.addReport(report.getReportId());
+        reportRepository.save(report);
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    private Admin getAdmin() {
+        // Assuming you have a method to get the admin user
+        User userAdmin = userRepository.findByUsername(realAdmin).orElseThrow(()-> new IllegalArgumentException("admin not found!"));
+        return (Admin) userAdmin;
     }
 
     public User returnInfo(String username) {

@@ -22,5 +22,39 @@ public class CartRequest {
     public Map<UUID, Map<UUID, Integer>> getBaskets() {
         return this.baskets;
     }
+
+    public void addToCartRequest(UUID storeId, UUID productId, int quantity) {
+        if (baskets.containsKey(storeId)) {
+            Map<UUID, Integer> storeBasket = baskets.get(storeId);
+            storeBasket.put(productId, storeBasket.getOrDefault(productId, 0) + quantity);
+        } else {
+            Map<UUID, Integer> newBasket = new HashMap<>();
+            newBasket.put(productId, quantity);
+            baskets.put(storeId, newBasket);
+        }
+    }
+
+    public void updateItem(UUID storeId, UUID productId, int quantity) {
+        if (baskets.containsKey(storeId)) {
+            Map<UUID, Integer> storeBasket = baskets.get(storeId);
+            if (storeBasket.containsKey(productId)) {
+                if (quantity <= 0) {
+                    storeBasket.remove(productId);
+                } else {
+                    storeBasket.put(productId, quantity);
+                }
+            }
+        }
+    }
+
+    public void removeFromCartRequest(UUID storeId, UUID productId) {
+        if (baskets.containsKey(storeId)) {
+            Map<UUID, Integer> storeBasket = baskets.get(storeId);
+            storeBasket.remove(productId);
+            if (storeBasket.isEmpty()) {
+                baskets.remove(storeId);
+            }
+        }
+    }
 }
 

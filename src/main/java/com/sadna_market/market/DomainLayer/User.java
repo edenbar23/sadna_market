@@ -29,6 +29,7 @@ public class User extends IUser {
     private Cart cart;
     private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
     private ArrayList<UUID> ordersHistory; // List of order IDs
+    private ArrayList<UUID> myReports;
 
     public User(String userName, String password, String email, String firstName, String lastName) {
         this.userName = userName;
@@ -38,6 +39,9 @@ public class User extends IUser {
         this.lastName = lastName;
         this.isLoggedIn = false;
         this.cart = new Cart();
+        this.userStoreRoles = new ArrayList<>();
+        this.ordersHistory = new ArrayList<>();
+        this.myReports = new ArrayList<>();
     }
 
     @Override
@@ -138,5 +142,9 @@ public class User extends IUser {
                 .findFirst()
                 .map(UserStoreRoles::getPermissions)
                 .orElse(new ArrayList<>());
+    }
+
+    public void addReport(UUID reportId) {
+        myReports.add(reportId);
     }
 }

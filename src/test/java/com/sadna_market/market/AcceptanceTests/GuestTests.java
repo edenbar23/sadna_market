@@ -389,6 +389,39 @@ public class GuestTests {
     }
 
     @Test
+    @DisplayName("Guests should receive an error when trying to remove a product not in their cart")
+    void removeNonExistentProductFromUserCartTest() {
+        // Create a UUID for a product that isn't in the cart
+        UUID nonExistentProductId = UUID.randomUUID();
+
+        // Try to remove a product that isn't in the cart
+        Response response = bridge.removeProductFromGuestCart(cartReq, nonExistentProductId);
+        // Assert - Verify response indicates an error
+        Assertions.assertNotNull(response, "Response should not be null");
+        Assertions.assertTrue(response.isError(), "Response should indicate an error when removing non-existent product");
+        Assertions.assertNotNull(response.getErrorMessage(), "Error message should not be null");
+        // Verify the error message contains relevant information
+        String errorMessage = response.getErrorMessage();
+        System.out.println("Error message: " + errorMessage);
+        // Verify that the cart state remains unchanged
+        Response viewCartResponse = bridge.viewGuestCart(cartReq);
+        Assertions.assertNotNull(viewCartResponse, "View cart response should not be null");
+        Assertions.assertFalse(viewCartResponse.isError(), "View cart should not indicate an error");
+        try{
+            // Parse cart JSON to verify state
+            CartRequest cartJSON = objectMapper.readValue(viewCartResponse.getJson(), CartRequest.class);
+
+            // Print the cart structure for debugging
+            System.out.println("Cart after removal attempt: " + cartJSON);
+
+            // Since we're removing a non-existent product, we don't expect any changes
+            // But we can verify the cart is accessible and parseable
+            Assertions.assertNotNull(cartJSON.getBaskets(), "Cart baskets should still be accessible");
+        } catch (IOException e) {
+            Assertions.fail("Failed to parse cart JSON: " + e.getMessage());
+        }
+    }
+    @Test
     @DisplayName("Guest should be able to purchase items in their cart")
     void buyGuestCartTest() {
         // First add a product to the cart to ensure there's something to purchase
