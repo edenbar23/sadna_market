@@ -1,5 +1,6 @@
 package com.sadna_market.market.ApplicationLayer;
 
+import com.sadna_market.market.ApplicationLayer.DTOs.OrderDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StorePersonnelDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
@@ -8,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,40 +29,51 @@ import java.util.stream.Collectors;
 public class StoreService {
 
     private static StoreService instance;
-
     private static final Logger logger = LoggerFactory.getLogger(StoreService.class);
-
     private final StoreManagementService storeManagementService;
     private final IStoreRepository storeRepository;
+    private final IOrderRepository orderRepository;
     private final ObjectMapper objectMapper;
 
-    @Autowired
-    private StoreService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository.getInstance();
-        this.storeManagementService = new StoreManagementService(storeRepository, userRepository);
+
+    private StoreService(RepositoryConfiguration RC) {
+        this.storeRepository = RC.storeRepository();
+        this.orderRepository = RC.orderRepository();
+        this.storeManagementService = StoreManagementService.getInstance(storeRepository, RC.userRepository());
         this.objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules(); // Enable Java 8 date/time modules
         logger.info("StoreService initialized");
     }
 
-    public static synchronized StoreService getInstance() {
+    /**
+     * Get singleton instance with repository dependency resolution
+     */
+    public static synchronized StoreService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new StoreService(IStoreRepository storeRepository, IUserRepository userRepository);
+            instance = new StoreService(RC);
         }
         return instance;
     }
+
 
     /**
      * Opens a new store with the given details
      * Orchestrates the domain service and handles error mapping
      */
-    public Response openStore(StoreRequest storeRequest) {
-        String founderUsername = storeRequest.getFounderUsername();
+    public Response openStore(String username, String token, StoreRequest storeRequest) {
         logger.info("Opening new store with name: {} for founder: {}",
-                storeRequest.getStoreName(), founderUsername);
+                storeRequest.getStoreName(), username);
 
         try {
+            // Set founder username from authenticated user
+            if (storeRequest.getFounderUsername() == null) {
+                storeRequest.setFounderUsername(username);
+            } else if (!storeRequest.getFounderUsername().equals(username)) {
+                return Response.error("Cannot open store for another user");
+            }
+
             Store store = storeManagementService.createStore(
-                    founderUsername,
+                    username,
                     storeRequest.getStoreName(),
                     storeRequest.getDescription(),
                     storeRequest.getAddress(),
@@ -243,7 +257,7 @@ public class StoreService {
         } catch (CannotRemoveFounderException e) {
             logger.error("Cannot remove founder: {}", e.getMessage());
             return Response.error(e.getMessage());
-        }  catch (StoreNotActiveException e) {
+        } catch (StoreNotActiveException e) {
             logger.error("Store not active: {}", e.getMessage());
             return Response.error(e.getMessage());
         } catch (Exception e) {
@@ -253,7 +267,7 @@ public class StoreService {
     }
 
     /**
-     * Appoints a store manager
+     * Appoints a store manager with specific permissions
      */
     public Response appointStoreManager(String appointerUsername, UUID storeId, String newManagerUsername,
                                         PermissionsRequest permissionsRequest) {
@@ -321,8 +335,8 @@ public class StoreService {
     /**
      * Updates manager permissions
      */
-    public Response updateManagerPermissions(String updaterUsername, UUID storeId, String managerUsername,
-                                             PermissionsRequest permissionsRequest) {
+    public Response changePermissions(String updaterUsername, UUID storeId, String managerUsername,
+                                      PermissionsRequest permissionsRequest) {
         logger.info("User {} updating permissions for manager {} in store {}",
                 updaterUsername, managerUsername, storeId);
 
@@ -374,8 +388,8 @@ public class StoreService {
             StorePersonnelDTO personnelDTO = new StorePersonnelDTO(
                     storeId,
                     store.getFounder().getUsername(),
-                    store.getOwnerUsernames(),
-                    store.getManagerUsernames()
+                    new ArrayList<>(store.getOwnerUsernames()),
+                    new ArrayList<>(store.getManagerUsernames())
             );
 
             String json = objectMapper.writeValueAsString(personnelDTO);
@@ -398,22 +412,51 @@ public class StoreService {
 
     /**
      * Searches for stores matching criteria
-     * Simple repository operation with filtering
+     * Enhanced to include product category searches via product repository
      */
     public Response searchStore(SearchRequest searchRequest) {
         logger.info("Searching stores with criteria: {}", searchRequest);
 
         try {
             List<Store> stores = storeRepository.findAll();
-            List<StoreDTO> result = new ArrayList<>();
+            Set<Store> result = new HashSet<>();
 
-            for (Store store : stores) {
-                if (store.isActive() && matchesSearchCriteria(store, searchRequest)) {
-                    result.add(convertToDTO(store));
+            // Basic name filtering
+            if (searchRequest.getName() != null && !searchRequest.getName().isEmpty()) {
+                stores.stream()
+                        .filter(store -> store.isActive() &&
+                                store.getName().toLowerCase().contains(searchRequest.getName().toLowerCase()))
+                        .forEach(result::add);
+            }
+
+            // Product category filtering - if specified
+            if (searchRequest.getProductCategory() != null && !searchRequest.getProductCategory().isEmpty()) {
+                Set<Store> storesByCategory = storeRepository.findByProductCategory(searchRequest.getProductCategory());
+
+                if (result.isEmpty()) {
+                    // No name filter was applied
+                    result.addAll(storesByCategory.stream()
+                            .filter(Store::isActive)
+                            .collect(Collectors.toSet()));
+                } else {
+                    // Name filter was applied, intersect the results
+                    result.retainAll(storesByCategory);
                 }
             }
 
-            String json = objectMapper.writeValueAsString(result);
+            // If no filters were applied, return all active stores
+            if ((searchRequest.getName() == null || searchRequest.getName().isEmpty()) &&
+                    (searchRequest.getProductCategory() == null || searchRequest.getProductCategory().isEmpty())) {
+                result = stores.stream()
+                        .filter(Store::isActive)
+                        .collect(Collectors.toSet());
+            }
+
+            List<StoreDTO> storeDTOs = result.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            String json = objectMapper.writeValueAsString(storeDTOs);
             return Response.success(json);
 
         } catch (JsonProcessingException e) {
@@ -426,10 +469,10 @@ public class StoreService {
     }
 
     /**
-     * Gets store order history
+     * Gets store purchase history - Requires admin or store owner/manager permission
      */
-    public Response getStoreOrderHistory(String username, UUID storeId) {
-        logger.info("Getting order history for store ID: {} by user: {}", storeId, username);
+    public Response getStorePurchaseHistory(String username, UUID storeId) {
+        logger.info("Getting purchase history for store ID: {} requested by user: {}", storeId, username);
 
         try {
             Store store = storeRepository.findById(storeId)
@@ -440,11 +483,14 @@ public class StoreService {
                 throw new InsufficientPermissionsException("Not authorized to view store order history");
             }
 
-            List<UUID> orderIds = storeRepository.getStoreOrdersIds(storeId);
+            List<Order> orders = orderRepository.getStorePurchaseHistory(storeId);
 
-            // In a full implementation, we would fetch actual orders from order repository
-            // For now, return the order IDs
-            String json = objectMapper.writeValueAsString(orderIds);
+            // Convert to DTOs
+            List<OrderDTO> orderDTOs = orders.stream()
+                    .map(OrderDTO::new)
+                    .collect(Collectors.toList());
+
+            String json = objectMapper.writeValueAsString(orderDTOs);
             return Response.success(json);
 
         } catch (StoreNotFoundException e) {
@@ -462,6 +508,70 @@ public class StoreService {
         }
     }
 
+    /**
+     * Gets buyer rate statistics for the system admin
+     * Returns data about shopping patterns over time
+     */
+    public Response getBuyersRate(String adminUsername) {
+        logger.info("Getting buyers rate statistics requested by admin: {}", adminUsername);
+
+        try {
+
+            // Statistics map to hold our results
+            Map<String, Object> statistics = new HashMap<>();
+
+            // Get all orders
+            List<Order> allOrders = orderRepository.findAll();
+
+            // Count orders by date ranges
+            LocalDateTime now = LocalDateTime.now();
+
+            // Last day
+            long lastDayOrders = countOrdersInRange(allOrders, now.minusDays(1), now);
+            statistics.put("ordersLast24Hours", lastDayOrders);
+
+            // Last week
+            long lastWeekOrders = countOrdersInRange(allOrders, now.minusDays(7), now);
+            statistics.put("ordersLastWeek", lastWeekOrders);
+
+            // Last month
+            long lastMonthOrders = countOrdersInRange(allOrders, now.minusDays(30), now);
+            statistics.put("ordersLastMonth", lastMonthOrders);
+
+            // Get unique buyers count
+            long uniqueBuyers = allOrders.stream()
+                    .map(Order::getUserName)
+                    .distinct()
+                    .count();
+            statistics.put("uniqueBuyers", uniqueBuyers);
+
+            // Average orders per store
+            Map<UUID, Long> ordersByStore = allOrders.stream()
+                    .collect(Collectors.groupingBy(Order::getStoreId, Collectors.counting()));
+
+            double avgOrdersPerStore = !ordersByStore.isEmpty() ?
+                    (double) allOrders.size() / ordersByStore.size() : 0;
+            statistics.put("averageOrdersPerStore", avgOrdersPerStore);
+
+            // Average order value
+            double avgOrderValue = allOrders.stream()
+                    .mapToDouble(Order::getFinalPrice)
+                    .average()
+                    .orElse(0);
+            statistics.put("averageOrderValue", avgOrderValue);
+
+            String json = objectMapper.writeValueAsString(statistics);
+            return Response.success(json);
+
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize buyers rate statistics: {}", e.getMessage());
+            return Response.error("Internal error: Failed to process statistics");
+        } catch (Exception e) {
+            logger.error("Unexpected error getting buyers rate statistics: {}", e.getMessage(), e);
+            return Response.error("Internal error: Failed to get buyers rate statistics");
+        }
+    }
+
     // Helper methods
 
     private StoreDTO convertToDTO(Store store) {
@@ -476,35 +586,20 @@ public class StoreService {
         );
     }
 
-    private boolean matchesSearchCriteria(Store store, SearchRequest request) {
-        if (request.getName() != null && !request.getName().isEmpty()) {
-            if (!store.getName().toLowerCase().contains(request.getName().toLowerCase())) {
-                return false;
-            }
-        }
-
-        // Add more search criteria as needed
-        // For example, searching by product category would require integration with product service
-
-        return true;
+    private long countOrdersInRange(List<Order> orders, LocalDateTime startDate, LocalDateTime endDate) {
+        return orders.stream()
+                .filter(order -> {
+                    LocalDateTime orderDate = order.getOrderDate();
+                    return !orderDate.isBefore(startDate) && !orderDate.isAfter(endDate);
+                })
+                .count();
     }
 
-    public static synchronized void reset(){
+    /**
+     * Reset the singleton instance (primarily for testing)
+     */
+    public static synchronized void reset() {
         instance = null;
         logger.info("StoreService instance reset");
     }
-
-    public Response getBuyersRate(String admin) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBuyersRate'");
-    }
-
-    public Response getStorePurchaseHistory(String admin, UUID storeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
-    }
-//appointStoreManager(username,storeId,manager,permissions);
-public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
 }
