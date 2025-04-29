@@ -20,12 +20,14 @@ import java.util.UUID;
 public class UserAccessService {
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
+    private final IReportRepository reportRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
 
     public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, String realAdmin) {
         this.userRepository = userRepository;
         this.storeRepository = storeRepository;
+        this.reportRepository = null;
         this.realAdmin = realAdmin;
     }
 
@@ -305,7 +307,7 @@ public class UserAccessService {
         Report report = new Report(username,comment,storeId,productId);
         user.addReport(report.getReportId());
         admin.addReport(report.getReportId());
-        //reportRepository.save(report);
+        reportRepository.save(report);
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
