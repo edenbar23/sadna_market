@@ -2,6 +2,8 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.*;
@@ -15,15 +17,17 @@ public class StoreManagementService {
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
+    private RepositoryConfiguration RC;
 
-    private StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository.getInstance();
-        this.userRepository = userRepository.getInstance();
+    private StoreManagementService(RepositoryConfiguration RC) {
+        this.RC = RC;
+        this.storeRepository = RC.storeRepository();
+        this.userRepository = RC.userRepository();
     }
 
-    public static StoreManagementService getInstance(IStoreRepository storeRepository, IUserRepository userRepository) {
+    public static StoreManagementService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new StoreManagementService(storeRepository, userRepository);
+            instance = new StoreManagementService(RC);
         }
         return instance;
     }
