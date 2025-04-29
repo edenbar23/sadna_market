@@ -22,6 +22,8 @@ public class MarketService {
     ProductService productService;
 //    IStoreRepository storeRepository;
     StoreService storeService;
+
+    MessageApplicationService messageService;
     //IPaymentGateway service
     //supplySystem+
 
@@ -213,15 +215,15 @@ public class MarketService {
         return Response.error("not implemented yet");
     }
     //req 3.5
-    public Response sendMessageToStore(String username, String token,UUID storeId, String message) {
-        try{
-            authenticate(username,token);
-        }
-        catch (IllegalArgumentException e) {
+    public Response sendMessageToStore(String username, String token, UUID storeId, String message) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-//        storeService.receiveMessage(storeId,username,message);
-        return Response.error("not implemented yet");
+
+        MessageRequest request = new MessageRequest(storeId, message);
+        return messageService.sendMessage(username, request);
     }
     //req 3.6
     public Response reportViolation(String username, String token,ReviewRequest report) {
@@ -471,14 +473,15 @@ public class MarketService {
         return userService.viewStoreMessages(username,storeId);
     }
     //req 4.12 (b)
-    public Response replyToStoreMessage(String username,String token,UUID storeId,UUID messageId,String targetUser, String message) {
-        try{
-            authenticate(username,token);
-        }
-        catch (IllegalArgumentException e) {
+    public Response replyToMessage(String username, String token, UUID messageId, String replyContent) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.replyToStoreMessage(username,storeId,messageId,targetUser,message);
+
+        MessageReplyRequest request = new MessageReplyRequest(messageId, replyContent);
+        return messageService.replyToMessage(username, request);
     }
     //req 4.13
     public Response getPurchaseHistory(String username,String token,UUID storeId) {
@@ -620,6 +623,86 @@ public class MarketService {
         }
         //close the market (not allowing anyone to access market)
         return Response.error("not implemented yet");
+    }
+
+    public Response getStoreMessages(String username, String token, UUID storeId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.getStoreMessages(username, storeId);
+    }
+
+    public Response getUnansweredStoreMessages(String username, String token, UUID storeId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.getUnansweredStoreMessages(username, storeId);
+    }
+
+    public Response getUnreadStoreMessages(String username, String token, UUID storeId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.getUnreadStoreMessages(username, storeId);
+    }
+
+    public Response getUserMessages(String username, String token) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.getUserMessages(username);
+    }
+
+    public Response getUserStoreConversation(String username, String token, UUID storeId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.getUserStoreConversation(username, storeId);
+    }
+
+    public Response deleteMessage(String username, String token, UUID messageId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.deleteMessage(username, messageId);
+    }
+
+    public Response markMessageAsRead(String username, String token, UUID messageId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.markMessageAsRead(username, messageId);
+    }
+
+    public Response markAllStoreMessagesAsRead(String username, String token, UUID storeId) {
+        try {
+            authenticate(username, token);
+        } catch (IllegalArgumentException e) {
+            return Response.error(e.getMessage());
+        }
+
+        return messageService.markAllStoreMessagesAsRead(username, storeId);
     }
 
 
