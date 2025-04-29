@@ -8,6 +8,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,16 +35,18 @@ public class StoreService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    private StoreService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository.getInstance();
-        this.storeManagementService = new StoreManagementService(storeRepository, userRepository);
+    private StoreService(RepositoryConfiguration RC) {
+        IStoreRepository storeRepository = RC.storeRepository();
+        IUserRepository userRepository = RC.userRepository();
+        this.storeRepository = storeRepository;
+        this.storeManagementService = StoreManagementService.getInstance(RC);
         this.objectMapper = new ObjectMapper();
         logger.info("StoreService initialized");
     }
 
-    public static synchronized StoreService getInstance() {
+    public static synchronized StoreService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new StoreService(IStoreRepository storeRepository, IUserRepository userRepository);
+            instance = new StoreService(RC);
         }
         return instance;
     }
@@ -494,17 +497,73 @@ public class StoreService {
         logger.info("StoreService instance reset");
     }
 
-    public Response getBuyersRate(String admin) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getBuyersRate'");
+
+    //appointStoreManager(username,storeId,manager,permissions);
+    public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
+        logger.info("User {} appointing {} as store manager for store {}", username, manager, storeId);
+        try {
+            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
+            storeManagementService.appointStoreManager(username, storeId, manager, permissionsSet);
+            return Response.success("Store manager appointed successfully");
+        } catch (Exception e) {
+            logger.error("Error appointing store manager: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
     }
 
-    public Response getStorePurchaseHistory(String admin, UUID storeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
+    public Response leaveOwnership(String username, UUID storeId) {
+        logger.info("User {} leaving store ownership for store {}", username, storeId);
+        try {
+            storeManagementService.leaveOwnership(username, storeId);
+            return Response.success("Left ownership successfully");
+        } catch (StoreNotFoundException e) {
+            logger.error("Store not found: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (UserNotFoundException e) {
+            logger.error("User not found: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (InsufficientPermissionsException e) {
+            logger.error("Permission denied: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error leaving ownership: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
     }
-//appointStoreManager(username,storeId,manager,permissions);
-public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
+
+    public Response changePermissions(String username, UUID storeId, String manager, PermissionsRequest permissions) {
+        logger.info("User {} changing permissions for store manager {} in store {}", username, manager, storeId);
+        try {
+            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
+            storeManagementService.updateManagerPermissions(username, storeId, manager, permissionsSet);
+            return Response.success("Permissions updated successfully");
+        } catch (Exception e) {
+            logger.error("Error changing permissions: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response viewStoreMessages(String username, UUID storeId) {
+        logger.info("User {} viewing store messages for store {}", username, storeId);
+        try {
+            List<String> messages = storeManagementService.getStoreMessages(username, storeId);
+            String json = objectMapper.writeValueAsString(messages);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error viewing store messages: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response getStoreManagerPermissions(String username, UUID storeId) {
+        logger.info("User {} getting store manager permissions for store {}", username, storeId);
+        try {
+            Set<Permission> permissions = storeManagementService.getStoreManagerPermissions(username, storeId);
+            String json = objectMapper.writeValueAsString(permissions);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error getting store manager permissions: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 }
