@@ -99,7 +99,7 @@ public class ProductService {
         UUID productId = review.getProductId();
         UUID userId = review.getUserId();
         String reviewText = review.getReviewText();
-        logger.info("User {} added review for product {}: {}", userId, productId, reviewText);
+        logger.info("User {} added review for product {}: {}", review.getUserId(), review.getProductId(), review.getReviewText());
         try {
             productRepository.handleUserReview(userId, productId, reviewText);
             return Response.success("Review added successfully");

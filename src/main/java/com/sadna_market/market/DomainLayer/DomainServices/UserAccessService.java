@@ -9,10 +9,9 @@ import com.sadna_market.market.InfrastructureLayer.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * UserAccessService is responsible for managing user access and permissions in the system.
@@ -27,19 +26,24 @@ public class UserAccessService {
     private final IReportRepository reportRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
-    private RepositoryConfiguration RC;
+    private final Queue<LocalDateTime> transactionTimestamps;
+    private final Queue<LocalDateTime> subscriptionTimestamps;
+    private final RepositoryConfiguration RC;
 
-    private UserAccessService(RepositoryConfiguration RC, String realAdmin) {
+
+    private UserAccessService(RepositoryConfiguration RC) {
         this.RC = RC;
         this.userRepository = RC.userRepository();
         this.storeRepository = RC.storeRepository();
         this.reportRepository = RC.reportRepository();
-        this.realAdmin = realAdmin;
+        this.realAdmin = RC.getAdminUsername();
+        this.transactionTimestamps = new ConcurrentLinkedQueue<>();
+        this.subscriptionTimestamps = new ConcurrentLinkedQueue<>();
     }
 
-    public static UserAccessService getInstance(RepositoryConfiguration RC, String realAdmin) {
+    public static UserAccessService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new UserAccessService(RC,realAdmin);
+            instance = new UserAccessService(RC);
         }
         return instance;
     }
@@ -275,7 +279,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance().processGuestPurchase(cart,pm);
+            OrderProcessingService.getInstance(RC).processGuestPurchase(cart,pm);
             logger.info("Checkout successful for guest: {}");
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
@@ -292,7 +296,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance().processPurchase(username,cart,pm);
+            OrderProcessingService.getInstance(RC).processPurchase(username,cart,pm);
             logger.info("Checkout successful for user: {}", username);
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
@@ -393,6 +397,27 @@ public class UserAccessService {
         return user.getStoreManagerPermissions(storeId);
     }
 
+
+    public List<Report> getViolationReports(String admin) {
+        validateAdmin(admin);
+        List<Report> reports = reportRepository.getAllReports();
+        if (reports.isEmpty()) {
+            logger.info("No violation reports found");
+            return null;
+        }
+        return reports;
+    }
+
+    public double getTransactionsRatePerHour(String admin) {
+        validateAdmin(admin);
+        return cleanupAndCount(transactionTimestamps);
+    }
+
+    public double getSubscriptionsRatePerHour(String admin) {
+        validateAdmin(admin);
+        return cleanupAndCount(subscriptionTimestamps);
+    }
+
     //Validation functions here:
 
     /*
@@ -461,6 +486,21 @@ public class UserAccessService {
             throw new IllegalArgumentException("Not authorized! only admin can operate this!");
     }
 
+    // Call this when a transaction occurs
+    private void recordTransaction() {
+        transactionTimestamps.add(LocalDateTime.now());
+    }
 
+    // Call this when a subscription occurs
+    private void recordSubscription() {
+        subscriptionTimestamps.add(LocalDateTime.now());
+    }
 
+    private double cleanupAndCount(Queue<LocalDateTime> timestamps) {
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        while (!timestamps.isEmpty() && timestamps.peek().isBefore(oneHourAgo)) {
+            timestamps.poll(); // remove old entries
+        }
+        return timestamps.size(); // rate = count in past hour
+    }
 }

@@ -2,6 +2,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.*;
@@ -15,15 +16,18 @@ public class StoreManagementService {
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
+    private final RepositoryConfiguration RC;
 
-    private StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository.getInstance();
-        this.userRepository = userRepository.getInstance();
+    private StoreManagementService(RepositoryConfiguration RC) {
+        this.RC = RC;
+        this.storeRepository = RC.storeRepository();
+        this.userRepository = RC.userRepository();
+
     }
 
-    public static StoreManagementService getInstance(IStoreRepository storeRepository, IUserRepository userRepository) {
+    public static StoreManagementService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new StoreManagementService(storeRepository, userRepository);
+            instance = new StoreManagementService(RC);
         }
         return instance;
     }
@@ -144,7 +148,9 @@ public class StoreManagementService {
             logger.error("User '{}' is not a store owner", appointerUsername);
             throw new InsufficientPermissionsException("Only store owners can appoint new owners");
         }
-
+        if(!appointer.hasPermission(storeId,Permission.APPOINT_STORE_OWNER)) {
+            throw new IllegalArgumentException("User {} has no permit to appoint store owner!");
+        }
 
 
         StoreOwner newOwnerRole = new StoreOwner(newOwnerUsername, storeId, appointerUsername);
@@ -382,5 +388,44 @@ public class StoreManagementService {
                 }
             }
         }
+    }
+
+    public void leaveOwnership(String username, UUID storeId) {
+        logger.debug("User '{}' attempting to leave ownership of store '{}'", username, storeId);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isFounder(username)) {
+            logger.error("User '{}' is not the founder of store '{}'", username, storeId);
+            throw new InsufficientPermissionsException("User is not the founder of the store: " + storeId);
+        }
+
+        if (store.getOwnerUsernames().size() <= 1) {
+            logger.error("Cannot leave ownership as this is the only owner");
+            throw new IllegalStateException("Cannot leave ownership as this is the only owner");
+        }
+        cascadeRemoveAppointees(user, storeId);
+        store.removeStoreOwner(username);
+        user.removeStoreRole(storeId, RoleType.STORE_FOUNDER);
+        storeRepository.save(store);
+
+        logger.info("User '{}' has left ownership of store '{}'", username, store.getName());
+    }
+
+    public List<Message> getStoreMessages(String username, UUID storeId) {
+        logger.debug("User '{}' requesting messages for store '{}'", username, storeId);
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isStoreOwner(username)) {
+            logger.error("User '{}' is not a store owner", username);
+            throw new InsufficientPermissionsException("Only store owners can view messages");
+        }
+        MessageService ms = MessageService.getInstance(RC);
+        List<Message> messages = ms.getStoreMessages(username, storeId);
+        logger.info("User '{}' retrieved {} messages for store '{}'", username, messages.size(), store.getName());
+        return messages;
     }
 }

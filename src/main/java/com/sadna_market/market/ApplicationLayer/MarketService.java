@@ -34,12 +34,9 @@ public class MarketService {
         IUserRepository userRepository=RC.userRepository();
          IProductRepository productRepository=  RC.productRepository();
         IStoreRepository storeRepository= RC.storeRepository();
-//        this.userRepository = userRepository;
-//        this.productRepository = productRepository;
-//        this.storeRepository = storeRepository;
-//        this.userService = new UserService(userRepository);
-//        this.productService = new ProductService(productRepository);
-       // this.storeService = new StoreService(storeRepository, userRepository);
+        this.userService = UserService.getInstance(RC);
+        this.productService = ProductService.getInstance(productRepository);
+        this.storeService = StoreService.getInstance();
     }
 
 
@@ -386,17 +383,17 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.appointStoreOwner(username,storeId,newOwner);
+        return storeService.appointStoreOwner(username,storeId,newOwner);
     }
     //req 4.4
-    public Response removeStoreOwner(String username,String token,UUID storeId) {
+    public Response removeStoreOwner(String username,String token,UUID storeId,String toRemove) {
         try{
             authenticate(username,token);
         }
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.removeStoreOwner(username,storeId);
+        return storeService.removeStoreOwner(username,storeId,toRemove);
     }
     //req 4.5
     public Response leaveOwnership(String username,String token,UUID storeId) {
@@ -406,7 +403,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.leaveOwnership(username,storeId);
+        return storeService.leaveOwnership(username,storeId);
     }
     //req 4.6
     public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
@@ -426,7 +423,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.changePermissions(username,storeId,manager,permissions);
+        return storeService.changePermissions(username,storeId,manager,permissions);
     }
     //req 4.8
     public Response removeStoreManager(String username,String token,UUID storeId, String manager) {
@@ -436,7 +433,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.removeStoreManager(username,storeId,manager);
+        return storeService.removeStoreManager(username,storeId,manager);
     }
     //req 4.9 + req 6.1
     public Response closeStore(String username,String token,UUID storeId) {
@@ -476,7 +473,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.viewStoreMessages(username,storeId);
+        return storeService.viewStoreMessages(username,storeId);
     }
     //req 4.12 (b)
     public Response replyToMessage(String username, String token, UUID messageId, String replyContent) {
@@ -509,7 +506,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getStoreManagerPermissions(username,storeId);
+        return storeService.getStoreManagerPermissions(username,storeId);
     }
     //Store functions here:
     //
@@ -546,7 +543,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.replyViolationReport(admin,reportId,message);
+        return messageService.replyViolationReport(admin,reportId,message);
     }
     //req 6.3 (c)
     public Response sendMessageToUser(String admin,String token,String addresse,String message) {
@@ -556,7 +553,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.sendMessageToUser(admin,addresse,message);
+        return messageService.sendMessageToUser(admin,addresse,message);
     }
     //req 6.4 (a)
     public Response getUserPurchaseHistory(String admin,String username,String token) {
@@ -596,7 +593,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getTransactionsRate(admin);//todo check if this is correct
+        return userService.getTransactionsRate(admin);
     }
     //req 6.5 (c)
     public Response getSubscriptionsRate(String admin,String token) {
@@ -606,7 +603,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getSubscriptionsRate(admin);//todo check if this is correct
+        return userService.getSubscriptionsRate(admin);
     }
 
     //System functions here:

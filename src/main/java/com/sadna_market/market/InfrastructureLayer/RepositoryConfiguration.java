@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class RepositoryConfiguration {
     
     private static final Logger logger = LoggerFactory.getLogger(RepositoryConfiguration.class);
-
+    private String adminUsername = "admin";
     /**
      * Creates and configures the StoreRepository bean.
      * @return An implementation of IStoreRepository
@@ -79,5 +79,13 @@ public class RepositoryConfiguration {
     public IReportRepository reportRepository() {
         logger.info("Initializing Report Repository");
         return InMemoryReportRepository.getInstance();
+    }
+
+    /**
+     * Returns the admin username according to this configuration.
+     * @return The admin username
+     */
+    public String getAdminUsername() {
+        return adminUsername;
     }
 }

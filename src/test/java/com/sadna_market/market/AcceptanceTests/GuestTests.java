@@ -7,6 +7,9 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 
 import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentProxy;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -301,7 +304,7 @@ public class GuestTests {
             int newQuantity = PRODUCT_QUANTITY + 3;  // Increase the quantity
 
             // Now update the product quantity in the cart
-            Response updateResponse = bridge.updateGuestCart(cartReq, productId, newQuantity);
+            Response updateResponse = bridge.updateGuestCart(cartReq,storeId, productId, newQuantity);
 
             // Assert - Verify update response is valid
             Assertions.assertNotNull(updateResponse, "Update response should not be null");
@@ -358,7 +361,7 @@ public class GuestTests {
             );
 
             // Now remove the product from the cart
-            Response removeResponse = bridge.removeProductFromGuestCart(cartReq, productId);
+            Response removeResponse = bridge.removeProductFromGuestCart(cartReq,storeId, productId);
 
             // Assert - Verify removal response is valid
             Assertions.assertNotNull(removeResponse, "Remove response should not be null");
@@ -395,7 +398,7 @@ public class GuestTests {
         UUID nonExistentProductId = UUID.randomUUID();
 
         // Try to remove a product that isn't in the cart
-        Response response = bridge.removeProductFromGuestCart(cartReq, nonExistentProductId);
+        Response response = bridge.removeProductFromGuestCart(cartReq,storeId, nonExistentProductId);
         // Assert - Verify response indicates an error
         Assertions.assertNotNull(response, "Response should not be null");
         Assertions.assertTrue(response.isError(), "Response should indicate an error when removing non-existent product");
@@ -427,11 +430,17 @@ public class GuestTests {
         // First add a product to the cart to ensure there's something to purchase
         Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
+        PaymentProxy payment = new PaymentProxy();
 
         // Verify the product was added to the cart
         Response viewCartBeforePurchase = bridge.viewGuestCart(cartReq);
         Assertions.assertFalse(viewCartBeforePurchase.isError(), "Viewing cart before purchase should succeed");
-
+        CreditCardDTO creditCard = new CreditCardDTO(
+                "John Doe",
+                "4111111111111111",
+                "12/25",
+                "123"
+        );
         try {
             // Parse cart to verify it contains the product before purchase
             CartRequest cartBeforePurchase = objectMapper.readValue(viewCartBeforePurchase.getJson(), CartRequest.class);
@@ -444,7 +453,7 @@ public class GuestTests {
             );
 
             // Now purchase the items in the cart
-            Response purchaseResponse = bridge.buyGuestCart(cartReq);
+            Response purchaseResponse = bridge.buyGuestCart(cartReq, creditCard);
 
             // Assert - Verify purchase response is valid
             Assertions.assertNotNull(purchaseResponse, "Purchase response should not be null");

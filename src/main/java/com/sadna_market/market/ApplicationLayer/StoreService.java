@@ -54,7 +54,6 @@ public class StoreService {
         return instance;
     }
 
-
     /**
      * Opens a new store with the given details
      * Orchestrates the domain service and handles error mapping
@@ -600,5 +599,85 @@ public class StoreService {
     public static synchronized void reset() {
         instance = null;
         logger.info("StoreService instance reset");
+    }
+
+
+    //appointStoreManager(username,storeId,manager,permissions);
+    public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
+        logger.info("User {} appointing {} as store manager for store {}", username, manager, storeId);
+        try {
+            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
+            storeManagementService.appointStoreManager(username, storeId, manager, permissionsSet);
+            return Response.success("Store manager appointed successfully");
+        } catch (Exception e) {
+            logger.error("Error appointing store manager: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response leaveOwnership(String username, UUID storeId) {
+        logger.info("User {} leaving store ownership for store {}", username, storeId);
+        try {
+            storeManagementService.leaveOwnership(username, storeId);
+            return Response.success("Left ownership successfully");
+        } catch (StoreNotFoundException e) {
+            logger.error("Store not found: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (UserNotFoundException e) {
+            logger.error("User not found: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (InsufficientPermissionsException e) {
+            logger.error("Permission denied: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error leaving ownership: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response changePermissions(String username, UUID storeId, String manager, PermissionsRequest permissions) {
+        logger.info("User {} changing permissions for store manager {} in store {}", username, manager, storeId);
+        try {
+            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
+            storeManagementService.updateManagerPermissions(username, storeId, manager, permissionsSet);
+            return Response.success("Permissions updated successfully");
+        } catch (Exception e) {
+            logger.error("Error changing permissions: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response viewStoreMessages(String username, UUID storeId) {
+        logger.info("User {} viewing store messages for store {}", username, storeId);
+        try {
+            List<Message> messages = storeManagementService.getStoreMessages(username, storeId);
+            List<MessageDTO> messagesDTO = convertListMessageToDTO(messages);
+            String json = objectMapper.writeValueAsString(messagesDTO);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error viewing store messages: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response getStoreManagerPermissions(String username, UUID storeId) {
+        logger.info("User {} getting store manager permissions for store {}", username, storeId);
+        try {
+            Set<Permission> permissions = storeManagementService.getStoreManagerPermissions(username, storeId);
+            String json = objectMapper.writeValueAsString(permissions);
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error getting store manager permissions: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    private List<MessageDTO> convertListMessageToDTO(List<Message> messages) {
+        List<MessageDTO> messageDTOs = new ArrayList<>();
+        for (Message message : messages) {
+            MessageDTO messageDTO = new MessageDTO(message);
+            messageDTOs.add(messageDTO);
+        }
+        return messageDTOs;
     }
 }
