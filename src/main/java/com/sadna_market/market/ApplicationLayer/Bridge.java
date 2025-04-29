@@ -3,6 +3,7 @@ package com.sadna_market.market.ApplicationLayer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.*;
+import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 
 import java.util.UUID;
 
@@ -18,10 +19,10 @@ public class Bridge {
      */
 
     public Bridge(){
-        this.service = new MarketService(new InMemoryUserRepository(), new InMemoryProductRepository(), new InMemoryStoreRepository());
+        this.service = new MarketService();
     }
     public Response deleteUser( String userName, String token, String userToDelete) {
-        return service.deleteUser(userName, token, userToDelete);
+        return service.removeUser(userName, token, userToDelete);
 
     }
 
@@ -88,19 +89,20 @@ public class Bridge {
         return service.addToCart(cart, storeId, productId, quantity);
     }
 
-    public Response removeProductFromGuestCart(CartRequest cart, UUID productId){
-        return service.removeFromCart(cart, productId);
+    public Response removeProductFromGuestCart(CartRequest cart,UUID storeId, UUID productId){
+        return service.removeFromCart(cart, storeId, productId);
     }
     public Response viewGuestCart(CartRequest cart){
         return service.viewCart(cart);
     }
-    public Response updateGuestCart(CartRequest cart, UUID productId, int quantity){
-        return service.updateCart(cart, productId, quantity);
+
+    public Response updateGuestCart(CartRequest cart,UUID storeId, UUID productId, int quantity){
+        return service.updateCart(cart, storeId, productId, quantity);
     }
 
 
-    public Response buyGuestCart(CartRequest cart){
-        return service.checkout(cart);
+    public Response buyGuestCart(CartRequest cart, PaymentMethod paymentMethod){
+        return service.checkout(cart, paymentMethod);
     }
 
     /**
@@ -110,22 +112,22 @@ public class Bridge {
      * User component. These methods test the functionality for registered users including
      * login/logout, profile management, order history, and user-specific permissions.
      */
-    public Response addProductToUserCart(String userName,String token, UUID productId, int quantity){
-        return service.addToCart(userName, token, productId, quantity);
+    public Response addProductToUserCart(String userName,String token,UUID storeId, UUID productId, int quantity){
+        return service.addToCart(userName, token,storeId, productId, quantity);
     }
 
-    public Response removeProductFromUserCart(String userName,String token, UUID productId){
-        return service.removeFromCart(userName, token, productId);
+    public Response removeProductFromUserCart(String userName,String token,UUID storeId, UUID productId){
+        return service.removeFromCart(userName, token,storeId, productId);
     }
 
     public Response viewUserCart(String userName,String token){
         return service.viewCart(userName,token);
     }
-    public Response updateUserCart(String userName,String token, UUID productId, int quantity){
-        return service.updateCart(userName, token, productId, quantity);
+    public Response updateUserCart(String userName,String token,UUID storeId, UUID productId, int quantity){
+        return service.updateCart(userName, token, storeId, productId, quantity);
     }
-    public Response buyUserCart(String userName,String token){
-        return service.checkout(userName, token);
+    public Response buyUserCart(String userName,String token,PaymentMethod paymentMethod){
+        return service.checkout(userName, token, paymentMethod);
     }
 
     public Response logout(String userName, String token){
@@ -156,8 +158,8 @@ public class Bridge {
     public Response removeManager(String username,String token,UUID storeId, String manager){
         return service.removeStoreManager(username,token,storeId,manager);
     }
-    public Response removeOwner(String username,String token,UUID storeId){
-        return service.removeStoreOwner(username,token,storeId);
+    public Response removeOwner(String username,String token,UUID storeId, String manager){
+        return service.removeStoreOwner(username,token,storeId,manager);
     }
     public Response editManagerPermissions(String username,String token,UUID storeId, String manager,PermissionsRequest permissions){
         return service.changePermissions(username,token,storeId,manager,permissions);
