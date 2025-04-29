@@ -35,10 +35,10 @@ public class OrderProcessingService {
                                   IOrderRepository orderRepository,
                                   IUserRepository userRepository,
                                   IProductRepository productRepository) {
-        this.storeRepository = storeRepository;
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
-        this.productRepository = productRepository;
+        this.storeRepository = storeRepository.getInstance();
+        this.orderRepository = orderRepository.getInstance();
+        this.userRepository = userRepository.getInstance();
+        this.productRepository = productRepository.getInstance();
     }
 
     /**
@@ -50,40 +50,14 @@ public class OrderProcessingService {
      */
     public static synchronized OrderProcessingService getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("OrderProcessingService not initialized. Call initialize() first.");
+            instance = new OrderProcessingService(IStoreRepository storeRepository,
+                    IOrderRepository orderRepository,
+                    IUserRepository userRepository,
+                    IProductRepository productRepository);
         }
         return instance;
     }
 
-    /**
-     * Initialize the singleton instance with required repositories.
-     * Can only be called once.
-     *
-     * @param storeRepository the store repository
-     * @param orderRepository the order repository
-     * @param userRepository the user repository
-     * @param productRepository the product repository
-     * @return the singleton instance
-     * @throws IllegalStateException if already initialized
-     */
-    public static synchronized OrderProcessingService initialize(
-            IStoreRepository storeRepository,
-            IOrderRepository orderRepository,
-            IUserRepository userRepository,
-            IProductRepository productRepository) {
-        if (instance != null) {
-            throw new IllegalStateException("OrderProcessingService already initialized");
-        }
-
-        instance = new OrderProcessingService(
-                storeRepository,
-                orderRepository,
-                userRepository,
-                productRepository
-        );
-
-        return instance;
-    }
 
     /**
      * Process a purchase from a user's cart.

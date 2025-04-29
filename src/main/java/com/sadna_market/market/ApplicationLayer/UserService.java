@@ -21,6 +21,8 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+
+    private static UserService instance;
     // here we will implement the user service logic
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     //private final IUserRepository userRepository;
@@ -28,9 +30,16 @@ public class UserService {
     private ObjectMapper objectMapper;
 
 
-    public UserService(UserAccessService userAccessService) {
+    private UserService(UserAccessService userAccessService) {
         this.objectMapper = new ObjectMapper();
         this.userAccessService = userAccessService;
+    }
+
+    public static synchronized UserService getInstance(UserAccessService userAccessService) {
+        if (instance == null) {
+            instance = new UserService(userAccessService);
+        }
+        return instance;
     }
 
     //admin functions:
@@ -415,5 +424,9 @@ public class UserService {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
+    }
+
+    public static synchronized void reset() {
+        instance = null;
     }
 }

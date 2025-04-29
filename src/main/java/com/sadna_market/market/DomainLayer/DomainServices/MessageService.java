@@ -11,18 +11,29 @@ import java.util.UUID;
 @Service
 public class MessageService {
 
+    private static MessageService instance;
+
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
     private final IMessageRepository messageRepository;
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
 
-    public MessageService(IMessageRepository messageRepository,
+    private MessageService(IMessageRepository messageRepository,
                           IStoreRepository storeRepository,
                           IUserRepository userRepository) {
-        this.messageRepository = messageRepository;
-        this.storeRepository = storeRepository;
-        this.userRepository = userRepository;
+        this.messageRepository = messageRepository.getInstance();
+        this.storeRepository = storeRepository.getInstance();
+        this.userRepository = userRepository.getInstance();
+    }
+
+    public static MessageService getInstance(IMessageRepository messageRepository,
+                                             IStoreRepository storeRepository,
+                                             IUserRepository userRepository) {
+        if (instance == null) {
+            instance = new MessageService(messageRepository, storeRepository, userRepository);
+        }
+        return instance;
     }
 
     /**
