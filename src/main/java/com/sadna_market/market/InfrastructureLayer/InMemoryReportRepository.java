@@ -72,6 +72,12 @@ public class InMemoryReportRepository implements IReportRepository {
     }
 
     @Override
+    public List<Report> getAllReports() {
+        logger.info("Getting all reports");
+        return List.copyOf(reports.values());
+    }
+
+    @Override
     public Optional<Report> findById(UUID reportId) {
         if (reportId == null) {
             logger.severe("Cannot find report with null ID");

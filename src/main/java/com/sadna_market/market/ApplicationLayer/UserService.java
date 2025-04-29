@@ -31,22 +31,19 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     //private final IUserRepository userRepository;
     private UserAccessService userAccessService;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     private RepositoryConfiguration RC;
    
-    private UserService(UserAccessService userAccessService,RepositoryConfiguration RC) {
+    private UserService(RepositoryConfiguration RC) {
         this.RC = RC;
-        IUserRepository userRepository=RC.userRepository();
-         IProductRepository productRepository=  RC.productRepository();
-        IStoreRepository storeRepository= RC.storeRepository();
         this.objectMapper = new ObjectMapper();
-        this.userAccessService = userAccessService;
+        this.userAccessService = userAccessService.getInstance(RC);
     }
 
-    public static synchronized UserService getInstance(UserAccessService userAccessService, RepositoryConfiguration RC) {
+    public static synchronized UserService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new UserService(userAccessService, RC);
+            instance = new UserService(RC);
         }
         return instance;
     }
@@ -420,54 +417,6 @@ public class UserService {
         }
     }
 
-    public Response getStoreManagerPermissions(String username, UUID storeId) {
-        // Here we would implement the logic to get a store manager's permissions
-        logger.info("Getting store manager permissions for user with username: {} and store ID: {}", username, storeId);
-        // Here we would implement the logic to check if a user can update the store purchase policy
-        try {
-            List<Permission> permissions = userAccessService.getStoreManagerPermissions(username,storeId);
-            logger.info("Check result returned successfully");
-            String json = objectMapper.writeValueAsString(permissions);
-            return Response.success(json);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public static synchronized void reset() {
-        instance = null;
-    }
-
-    public Response appointStoreOwner(String username, UUID storeId, String newOwner) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'appointStoreOwner'");
-    }
-
-    public Response removeStoreOwner(String username, UUID storeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeStoreOwner'");
-    }
-
-    public Response leaveOwnership(String username, UUID storeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'leaveOwnership'");
-    }
-
-    public Response changePermissions(String username, UUID storeId, String manager, PermissionsRequest permissions) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'changePermissions'");
-    }
-
-    public Response removeStoreManager(String username, UUID storeId, String manager) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeStoreManager'");
-    }
-
-    public Response viewStoreMessages(String username, UUID storeId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'viewStoreMessages'");
-    }
 
     public Response getPurchaseHistory(String username, UUID storeId) {
         // TODO Auto-generated method stub
@@ -475,24 +424,63 @@ public class UserService {
     }
 
     public Response getViolationReports(String admin) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getViolationReports'");
+        try {
+            logger.info("Getting violation reports for admin with username: {}", admin);
+            List<Report> reports = userAccessService.getViolationReports(admin);
+            String json = objectMapper.writeValueAsString(reports);
+            logger.info("Violation reports retrieved successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
     }
 
-    public Response replyViolationReport(String admin, UUID reportId, String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'replyViolationReport'");
-    }
-
-    public Response sendMessageToUser(String admin, String addresse, String message) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'sendMessageToUser'");
-    }
+//    public Response replyViolationReport(String admin, UUID reportId, String message) {
+//        throw new UnsupportedOperationException("Unimplemented method 'replyViolationReport'");
+//    }
+//
+//    public Response sendMessageToUser(String admin, String addresse, String message) {
+//        throw new UnsupportedOperationException("Unimplemented method 'sendMessageToUser'");
+//    }
 
     public Response getUserPurchasedHistory(String admin, String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUserPurchasedHistory'");
+        logger.info("Getting purchase history for user with username: {}", username);
+        try {
+            List<UUID> orders = userAccessService.getOrdersHistory(username);
+            String json = objectMapper.writeValueAsString(orders);
+            logger.info("Violation reports retrieved successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
     }
 
-   
+
+    public Response getTransactionsRate(String admin) {
+        logger.info("Getting transactions rate for admin with username: {}", admin);
+        try {
+            double transactionsRate = userAccessService.getTransactionsRatePerHour(admin);
+            String json = objectMapper.writeValueAsString(transactionsRate);
+            logger.info("Violation reports retrieved successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response getSubscriptionsRate(String admin) {
+        logger.info("Getting subscriptions rate for admin with username: {}", admin);
+        try {
+            double subsRate = userAccessService.getSubscriptionsRatePerHour(admin);
+            String json = objectMapper.writeValueAsString(subsRate);
+            logger.info("Violation reports retrieved successfully");
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 }
