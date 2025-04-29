@@ -4,11 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.DTOs.CartDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.UserDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductRateRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductReviewRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.RateRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +33,20 @@ public class UserService {
     private UserAccessService userAccessService;
     private ObjectMapper objectMapper;
 
-
-    private UserService(UserAccessService userAccessService) {
+    private RepositoryConfiguration RC;
+   
+    private UserService(UserAccessService userAccessService,RepositoryConfiguration RC) {
+        this.RC = RC;
+        IUserRepository userRepository=RC.userRepository();
+         IProductRepository productRepository=  RC.productRepository();
+        IStoreRepository storeRepository= RC.storeRepository();
         this.objectMapper = new ObjectMapper();
         this.userAccessService = userAccessService;
     }
 
-    public static synchronized UserService getInstance(UserAccessService userAccessService) {
+    public static synchronized UserService getInstance(UserAccessService userAccessService, RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new UserService(userAccessService);
+            instance = new UserService(userAccessService, RC);
         }
         return instance;
     }
@@ -259,7 +268,7 @@ public class UserService {
         }
     }
 
-    public Response saveReview(ReviewRequest review) {
+    public Response saveReview(ProductReviewRequest review) {
         // Here we would implement the logic to save a review
         logger.info("Saving review for product with ID: {}", review.getProductId());
         try {
@@ -272,7 +281,7 @@ public class UserService {
         }
     }
 
-    public Response saveRate(RateRequest rate) {
+    public Response saveRate(ProductRateRequest rate) {
         // Here we would implement the logic to save a rate
         logger.info("Saving rate for product with ID: {}", rate.getProductId());
         try {
@@ -429,4 +438,61 @@ public class UserService {
     public static synchronized void reset() {
         instance = null;
     }
+
+    public Response appointStoreOwner(String username, UUID storeId, String newOwner) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'appointStoreOwner'");
+    }
+
+    public Response removeStoreOwner(String username, UUID storeId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'removeStoreOwner'");
+    }
+
+    public Response leaveOwnership(String username, UUID storeId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'leaveOwnership'");
+    }
+
+    public Response changePermissions(String username, UUID storeId, String manager, PermissionsRequest permissions) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'changePermissions'");
+    }
+
+    public Response removeStoreManager(String username, UUID storeId, String manager) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'removeStoreManager'");
+    }
+
+    public Response viewStoreMessages(String username, UUID storeId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'viewStoreMessages'");
+    }
+
+    public Response getPurchaseHistory(String username, UUID storeId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPurchaseHistory'");
+    }
+
+    public Response getViolationReports(String admin) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getViolationReports'");
+    }
+
+    public Response replyViolationReport(String admin, UUID reportId, String message) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'replyViolationReport'");
+    }
+
+    public Response sendMessageToUser(String admin, String addresse, String message) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sendMessageToUser'");
+    }
+
+    public Response getUserPurchasedHistory(String admin, String username) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getUserPurchasedHistory'");
+    }
+
+   
 }

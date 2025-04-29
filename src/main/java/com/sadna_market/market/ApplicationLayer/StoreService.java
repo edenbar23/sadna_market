@@ -2,6 +2,7 @@ package com.sadna_market.market.ApplicationLayer;
 
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StorePersonnelDTO;
+import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.SearchRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
@@ -492,4 +493,18 @@ public class StoreService {
         instance = null;
         logger.info("StoreService instance reset");
     }
+
+    public Response getBuyersRate(String admin) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getBuyersRate'");
+    }
+
+    public Response getStorePurchaseHistory(String admin, UUID storeId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
+    }
+//appointStoreManager(username,storeId,manager,permissions);
+public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'getStorePurchaseHistory'");
 }
