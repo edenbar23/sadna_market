@@ -24,10 +24,12 @@ public class InMemoryOrderRepository implements IOrderRepository {
     private final Map<UUID, Order> orders = new ConcurrentHashMap<>();
 
     // Private constructor
-    private InMemoryOrderRepository() {}
+    private InMemoryOrderRepository() {
+        logger.info("InMemoryOrderRepository initialized");
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryOrderRepository getInstance() {
+    public synchronized static IOrderRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryOrderRepository();
         }

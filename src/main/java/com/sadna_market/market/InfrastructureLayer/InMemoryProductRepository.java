@@ -24,10 +24,12 @@ public class InMemoryProductRepository implements IProductRepository {
     private static InMemoryProductRepository instance = new InMemoryProductRepository();
 
     // Private constructor
-    private InMemoryProductRepository() {}
+    private InMemoryProductRepository() {
+        logger.info("InMemoryProductRepository initialized");
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryProductRepository getInstance() {
+    public synchronized static IProductRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryProductRepository();
         }

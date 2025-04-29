@@ -23,10 +23,12 @@ public class InMemoryMessageRepository implements IMessageRepository {
     private static InMemoryMessageRepository instance = new InMemoryMessageRepository();
 
     // Private constructor
-    private InMemoryMessageRepository() {}
+    private InMemoryMessageRepository() {
+        logger.info("InMemoryMessageRepository initialized");
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryMessageRepository getInstance() {
+    public synchronized static IMessageRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryMessageRepository();
         }

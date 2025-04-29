@@ -7,6 +7,7 @@ import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 
@@ -26,15 +27,19 @@ public class MarketService {
     MessageApplicationService messageService;
     //IPaymentGateway service
     //supplySystem+
-
+    RepositoryConfiguration RC;
     //Constructor
-    public MarketService(IUserRepository userRepository, IProductRepository productRepository, IStoreRepository storeRepository) {
+    public MarketService() {
+        this.RC = new RepositoryConfiguration();
+        IUserRepository userRepository=RC.userRepository();
+         IProductRepository productRepository=  RC.productRepository();
+        IStoreRepository storeRepository= RC.storeRepository();
 //        this.userRepository = userRepository;
 //        this.productRepository = productRepository;
 //        this.storeRepository = storeRepository;
 //        this.userService = new UserService(userRepository);
 //        this.productService = new ProductService(productRepository);
-        this.storeService = new StoreService(storeRepository, userRepository);
+       // this.storeService = new StoreService(storeRepository, userRepository);
     }
 
 

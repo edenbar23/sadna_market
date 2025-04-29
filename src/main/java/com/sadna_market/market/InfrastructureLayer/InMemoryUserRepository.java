@@ -28,10 +28,13 @@ public class InMemoryUserRepository implements IUserRepository {
     private final Map<String, User> users = new ConcurrentHashMap<>();
 
     // Private constructor
-    private InMemoryUserRepository() {}
+    private InMemoryUserRepository() {
+        logger.info("InMemoryUserRepository initialized");
+
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryUserRepository getInstance() {
+    public synchronized static IUserRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryUserRepository();
         }

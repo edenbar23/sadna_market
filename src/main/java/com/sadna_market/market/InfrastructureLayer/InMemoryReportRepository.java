@@ -16,10 +16,13 @@ public class InMemoryReportRepository implements IReportRepository {
     private static InMemoryReportRepository instance = new InMemoryReportRepository();
 
     // Private constructor
-    private InMemoryReportRepository() {}
+    private InMemoryReportRepository() {
+        logger.info("InMemoryReportRepository initialized");
+
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryReportRepository getInstance() {
+    public synchronized static IReportRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryReportRepository();
         }

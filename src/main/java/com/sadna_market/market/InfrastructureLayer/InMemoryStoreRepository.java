@@ -23,13 +23,15 @@ public class InMemoryStoreRepository implements IStoreRepository {
     // Thread-safe collection to store the stores
     private final Map<UUID, Store> stores = new ConcurrentHashMap<>();
 
-    private static InMemoryStoreRepository instance = new InMemoryStoreRepository();
+    private static volatile InMemoryStoreRepository instance = new InMemoryStoreRepository();
 
     // Private constructor
-    private InMemoryStoreRepository() {}
+    private InMemoryStoreRepository() {
+        logger.info("InMemoryStoreRepository initialized");
+    }
 
     // Synchronized getInstance method
-    public static synchronized InMemoryStoreRepository getInstance() {
+    public synchronized static IStoreRepository getInstance() {
         if (instance == null) {
             instance = new InMemoryStoreRepository();
         }
