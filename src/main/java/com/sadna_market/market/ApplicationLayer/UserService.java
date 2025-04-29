@@ -7,7 +7,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRateRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductReviewRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.RateRequest;
+//import com.sadna_market.market.ApplicationLayer.Requests.RateRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
@@ -282,7 +282,7 @@ public class UserService {
         // Here we would implement the logic to save a rate
         logger.info("Saving rate for product with ID: {}", rate.getProductId());
         try {
-            userAccessService.saveRate(rate.getUsername(), rate.getStore(), rate.getProductId(), rate.getRating());
+            userAccessService.saveRate(rate.getUsername(), rate.getStoreId(), rate.getProductId(), rate.getRating());
             logger.info("Rate saved successfully");
             return Response.success("Rate saved successfully");
         } catch (Exception e) {
