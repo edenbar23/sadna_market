@@ -5,6 +5,7 @@ import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.Product.Product;
 
 import org.junit.jupiter.api.Assertions;
@@ -115,7 +116,7 @@ public class UserTests {
     @DisplayName("User should be able to add a product to their cart")
     void addProductToUserCartTest() {
         // Add product to user cart using the user's credentials and token
-        Response response = bridge.addProductToUserCart(testUsername, testToken, productId, PRODUCT_QUANTITY);
+        Response response = bridge.addProductToUserCart(testUsername, testToken,storeId, productId, PRODUCT_QUANTITY);
 
         // Assert - Verify response is valid
         Assertions.assertNotNull(response, "Response should not be null");
@@ -167,7 +168,7 @@ public class UserTests {
         int excessiveQuantity = 100; // Assuming the store doesn't have 100 units of this product
 
         // Try to add the product with excessive quantity to user cart
-        Response response = bridge.addProductToUserCart(testUsername, testToken, productId, excessiveQuantity);
+        Response response = bridge.addProductToUserCart(testUsername, testToken,storeId, productId, excessiveQuantity);
 
         // Assert - Verify response indicates an error
         Assertions.assertNotNull(response, "Response should not be null");
@@ -221,7 +222,7 @@ public class UserTests {
     @DisplayName("User should be able to update the quantity of a product in their cart")
     void updateProductQuantityInUserCartTest() {
         // First add a product to the user's cart
-        Response addResponse = bridge.addProductToUserCart(testUsername, testToken, productId, PRODUCT_QUANTITY);
+        Response addResponse = bridge.addProductToUserCart(testUsername, testToken,storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
 
         // Verify product was added successfully with initial quantity
@@ -246,7 +247,7 @@ public class UserTests {
             int newQuantity = PRODUCT_QUANTITY + 3;  // Increase the quantity
 
             // Now update the product quantity in the cart
-            Response updateResponse = bridge.updateUserCart(testUsername, testToken, productId, newQuantity);
+            Response updateResponse = bridge.updateUserCart(testUsername, testToken, storeId, productId, newQuantity);
 
             // Assert - Verify update response is valid
             Assertions.assertNotNull(updateResponse, "Update response should not be null");
@@ -284,7 +285,7 @@ public class UserTests {
     @DisplayName("User should be able to remove a product from their cart")
     void removeProductFromUserCartTest() {
         // First add a product to the user's cart
-        Response addResponse = bridge.addProductToUserCart(testUsername, testToken, productId, PRODUCT_QUANTITY);
+        Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
 
         // Verify product was added successfully
@@ -303,7 +304,7 @@ public class UserTests {
             );
 
             // Now remove the product from the cart
-            Response removeResponse = bridge.removeProductFromUserCart(testUsername, testToken, productId);
+            Response removeResponse = bridge.removeProductFromUserCart(testUsername, testToken, storeId, productId);
 
             // Assert - Verify removal response is valid
             Assertions.assertNotNull(removeResponse, "Remove response should not be null");
@@ -343,7 +344,7 @@ public class UserTests {
         UUID nonExistentProductId = UUID.randomUUID();
 
         // Try to remove a product that isn't in the cart
-        Response response = bridge.removeProductFromUserCart(testUsername, testToken, nonExistentProductId);
+        Response response = bridge.removeProductFromUserCart(testUsername, testToken, storeId, nonExistentProductId);
 
         // Assert - Verify response indicates an error
         Assertions.assertNotNull(response, "Response should not be null");
@@ -383,7 +384,7 @@ public class UserTests {
     @DisplayName("User should be able to successfully buy their cart")
     void buyUserCartTest() {
         // First, add a product to the user's cart
-        Response addResponse = bridge.addProductToUserCart(testUsername, testToken, productId, PRODUCT_QUANTITY);
+        Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Adding product to cart should succeed");
 
         // Verify product was added successfully
@@ -428,8 +429,34 @@ public class UserTests {
         }
     }
 
+    @Test
+    @DisplayName("User should be able to create a new store")
+    void createStoreTest() {
+        // Create a StoreRequest object for the new store using the correct constructor
+        StoreRequest newStore = new StoreRequest(
+                "User's Test Store",                // storeName
+                "A store created for testing",      // description
+                "123 Test Street, Test City",       // address
+                "teststore@example.com",            // email
+                "555-123-4567",                     // phoneNumber
+                testUsername                        // founderUsername
+        );
+        try {
 
-    //TODO
-    //add open store test, rate product, get history, edit his details(?)
+            // Call the createStore method from the bridge
+            Response response = bridge.createStore(testUsername, testToken, newStore);
+
+            // Assert - Verify response is valid
+            Assertions.assertNotNull(response, "Response should not be null");
+            Assertions.assertFalse(response.isError(), "Store creation should succeed");
+            Assertions.assertNotNull(response.getJson(), "Response JSON should not be null");
+
+            // Print the success message for debugging
+            System.out.println("Store creation response: " + response.getJson());
+        } catch (Exception e) {
+            Assertions.fail("Test failed with exception: " + e.getMessage());
+        }
+    }
+
 
 }
