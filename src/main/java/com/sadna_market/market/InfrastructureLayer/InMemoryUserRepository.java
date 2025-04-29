@@ -23,10 +23,28 @@ import org.springframework.stereotype.Repository;
 public class InMemoryUserRepository implements IUserRepository {
     
     private static final Logger logger = LoggerFactory.getLogger(InMemoryUserRepository.class);
-    
+    private static InMemoryUserRepository instance = new InMemoryUserRepository();
     // Thread-safe map to store users by username
     private final Map<String, User> users = new ConcurrentHashMap<>();
-    
+
+    // Private constructor
+    private InMemoryUserRepository() {}
+
+    // Synchronized getInstance method
+    public static synchronized InMemoryUserRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryUserRepository();
+        }
+        return instance;
+    }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+
+
     /**
      * Finds a user by their username
      * 

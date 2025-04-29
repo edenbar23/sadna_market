@@ -21,6 +21,25 @@ public class InMemoryProductRepository implements IProductRepository {
     private List<UserRate> userRates = new ArrayList<>();
     private List<UserReview> userReviews = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
+    private static InMemoryProductRepository instance = new InMemoryProductRepository();
+
+    // Private constructor
+    private InMemoryProductRepository() {}
+
+    // Synchronized getInstance method
+    public static synchronized InMemoryProductRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryProductRepository();
+        }
+        return instance;
+    }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+
     @Override
     public Optional<Product> findById(UUID id) {
         synchronized (productStorage) {
