@@ -47,4 +47,5 @@ public interface IReportRepository {
     List<Report> findBySender(String username);
 
 
+    List<Report> getAllReports();
 }

@@ -144,7 +144,9 @@ public class StoreManagementService {
             logger.error("User '{}' is not a store owner", appointerUsername);
             throw new InsufficientPermissionsException("Only store owners can appoint new owners");
         }
-
+        if(!appointer.hasPermission(storeId,Permission.APPOINT_STORE_OWNER)) {
+            throw new IllegalArgumentException("User {} has no permit to appoint store owner!");
+        }
 
 
         StoreOwner newOwnerRole = new StoreOwner(newOwnerUsername, storeId, appointerUsername);
