@@ -2,6 +2,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class OrderProcessingService {
     private final IOrderRepository orderRepository;
     private final IUserRepository userRepository;
     private final IProductRepository productRepository;
+    private RepositoryConfiguration RC;
 
     private PaymentService paymentService = new PaymentService();
     //private SupplyService supplyService = new SupplyService();
@@ -31,14 +33,12 @@ public class OrderProcessingService {
     /**
      * Private constructor to prevent instantiation from outside
      */
-    private OrderProcessingService(IStoreRepository storeRepository,
-                                  IOrderRepository orderRepository,
-                                  IUserRepository userRepository,
-                                  IProductRepository productRepository) {
-        this.storeRepository = storeRepository.getInstance();
-        this.orderRepository = orderRepository.getInstance();
-        this.userRepository = userRepository.getInstance();
-        this.productRepository = productRepository.getInstance();
+    private OrderProcessingService(RepositoryConfiguration RC) {
+        this.RC=RC;
+        this.storeRepository = RC.storeRepository();
+        this.orderRepository = RC.orderRepository();
+        this.userRepository = RC.userRepository();
+        this.productRepository = RC.productRepository();;
     }
 
     /**
@@ -48,12 +48,9 @@ public class OrderProcessingService {
      * @return the singleton instance
      * @throws IllegalStateException if instance hasn't been initialized
      */
-    public static synchronized OrderProcessingService getInstance() {
+    public static synchronized OrderProcessingService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new OrderProcessingService(IStoreRepository storeRepository,
-                    IOrderRepository orderRepository,
-                    IUserRepository userRepository,
-                    IProductRepository productRepository);
+            instance = new OrderProcessingService(RC);
         }
         return instance;
     }
