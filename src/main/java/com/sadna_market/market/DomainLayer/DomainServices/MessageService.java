@@ -1,6 +1,8 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,20 +20,17 @@ public class MessageService {
     private final IMessageRepository messageRepository;
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
+    private RepositoryConfiguration RC;
 
-    private MessageService(IMessageRepository messageRepository,
-                          IStoreRepository storeRepository,
-                          IUserRepository userRepository) {
-        this.messageRepository = messageRepository.getInstance();
-        this.storeRepository = storeRepository.getInstance();
-        this.userRepository = userRepository.getInstance();
+    private MessageService(RepositoryConfiguration RC) {
+        this.messageRepository = RC.messageRepository();
+        this.storeRepository = RC.storeRepository();
+        this.userRepository = RC.userRepository();
     }
 
-    public static MessageService getInstance(IMessageRepository messageRepository,
-                                             IStoreRepository storeRepository,
-                                             IUserRepository userRepository) {
+    public static MessageService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new MessageService(messageRepository, storeRepository, userRepository);
+            instance = new MessageService( RC);
         }
         return instance;
     }
