@@ -495,4 +495,16 @@ public class UserService {
             return Response.error(e.getMessage());
         }
     }
+
+    public Response sendMessageToUser(String admin, String addresse, String message) {
+        logger.info("Sending message to user with username: {} from admin with username: {}", addresse, admin);
+        try {
+            userAccessService.sendMessageToUser(admin, addresse, message);
+            logger.info("Message sent successfully");
+            return Response.success("Message sent successfully");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 }

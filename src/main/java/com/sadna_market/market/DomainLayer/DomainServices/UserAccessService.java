@@ -509,4 +509,12 @@ public class UserAccessService {
         MessageService ms = MessageService.getInstance(RC);
         ms.replyReport(admin,reportId,user,message);
     }
+
+    public void sendMessageToUser(String admin, String addresse, String message) {
+        validateAdmin(admin);
+        MessageService ms = MessageService.getInstance(RC);
+        //to fix this later
+        UUID receiver = UUID.fromString(addresse);
+        ms.sendMessage(admin,receiver,message);
+    }
 }
