@@ -386,4 +386,28 @@ public class StoreManagementService {
             }
         }
     }
+
+    public void leaveOwnership(String username, UUID storeId) {
+        logger.debug("User '{}' attempting to leave ownership of store '{}'", username, storeId);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isFounder(username)) {
+            logger.error("User '{}' is not the founder of store '{}'", username, storeId);
+            throw new InsufficientPermissionsException("User is not the founder of the store: " + storeId);
+        }
+
+        if (store.getOwnerUsernames().size() <= 1) {
+            logger.error("Cannot leave ownership as this is the only owner");
+            throw new IllegalStateException("Cannot leave ownership as this is the only owner");
+        }
+        cascadeRemoveAppointees(user, storeId);
+        store.removeStoreOwner(username);
+        user.removeStoreRole(storeId, RoleType.STORE_FOUNDER);
+        storeRepository.save(store);
+
+        logger.info("User '{}' has left ownership of store '{}'", username, store.getName());
+    }
 }
