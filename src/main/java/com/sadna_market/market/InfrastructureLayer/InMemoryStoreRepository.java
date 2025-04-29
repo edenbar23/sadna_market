@@ -21,12 +21,13 @@ public class InMemoryStoreRepository implements IStoreRepository {
     private static final Logger logger = LogManager.getLogger(InMemoryStoreRepository.class);
     
     // Thread-safe collection to store the stores
-    private final Map<UUID, Store> stores = new ConcurrentHashMap<>();
+    private final Map<UUID, Store> stores;
 
     private static volatile InMemoryStoreRepository instance = new InMemoryStoreRepository();
 
     // Private constructor
     private InMemoryStoreRepository() {
+        this.stores = new ConcurrentHashMap<>();
         logger.info("InMemoryStoreRepository initialized");
     }
 
