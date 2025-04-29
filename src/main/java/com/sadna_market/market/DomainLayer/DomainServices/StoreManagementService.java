@@ -428,4 +428,37 @@ public class StoreManagementService {
         logger.info("User '{}' retrieved {} messages for store '{}'", username, messages.size(), store.getName());
         return messages;
     }
+
+
+    public Set<Permission> getStoreManagerPermissions(String username, UUID storeId) {
+
+        logger.debug("Getting permissions for manager '{}' in store '{}'", username, storeId);
+
+        // Validate store exists
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        // Validate user exists
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
+
+        // Get user's role for this store
+        UserStoreRoles role = findUserStoreRole(user, storeId, RoleType.STORE_MANAGER);
+
+        // Validate user is a manager
+        if (role == null) {
+            logger.error("User '{}' is not a manager of store '{}'", username, storeId);
+            throw new UserNotManagerException("User is not a manager of this store");
+        }
+
+        // Cast to StoreManager and get permissions
+        StoreManager managerRole = (StoreManager) role;
+        Set<Permission> permissions = new HashSet<>(managerRole.getPermissions());
+
+        logger.info("Retrieved {} permissions for manager '{}' in store '{}'",
+                permissions.size(), username, storeId);
+
+        return permissions;
+        
+    }
 }

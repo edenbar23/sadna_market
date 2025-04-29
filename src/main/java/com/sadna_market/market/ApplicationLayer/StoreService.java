@@ -1,10 +1,10 @@
 package com.sadna_market.market.ApplicationLayer;
 
+import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.OrderDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StorePersonnelDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.SearchRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
@@ -38,7 +38,7 @@ public class StoreService {
     private StoreService(RepositoryConfiguration RC) {
         this.storeRepository = RC.storeRepository();
         this.orderRepository = RC.orderRepository();
-        this.storeManagementService = StoreManagementService.getInstance(storeRepository, RC.userRepository());
+        this.storeManagementService = StoreManagementService.getInstance(RC);
         this.objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules(); // Enable Java 8 date/time modules
         logger.info("StoreService initialized");
@@ -408,63 +408,6 @@ public class StoreService {
         }
     }
 
-    /**
-     * Searches for stores matching criteria
-     * Enhanced to include product category searches via product repository
-     */
-    public Response searchStore(SearchRequest searchRequest) {
-        logger.info("Searching stores with criteria: {}", searchRequest);
-
-        try {
-            List<Store> stores = storeRepository.findAll();
-            Set<Store> result = new HashSet<>();
-
-            // Basic name filtering
-            if (searchRequest.getName() != null && !searchRequest.getName().isEmpty()) {
-                stores.stream()
-                        .filter(store -> store.isActive() &&
-                                store.getName().toLowerCase().contains(searchRequest.getName().toLowerCase()))
-                        .forEach(result::add);
-            }
-
-            // Product category filtering - if specified
-            if (searchRequest.getProductCategory() != null && !searchRequest.getProductCategory().isEmpty()) {
-                Set<Store> storesByCategory = storeRepository.findByProductCategory(searchRequest.getProductCategory());
-
-                if (result.isEmpty()) {
-                    // No name filter was applied
-                    result.addAll(storesByCategory.stream()
-                            .filter(Store::isActive)
-                            .collect(Collectors.toSet()));
-                } else {
-                    // Name filter was applied, intersect the results
-                    result.retainAll(storesByCategory);
-                }
-            }
-
-            // If no filters were applied, return all active stores
-            if ((searchRequest.getName() == null || searchRequest.getName().isEmpty()) &&
-                    (searchRequest.getProductCategory() == null || searchRequest.getProductCategory().isEmpty())) {
-                result = stores.stream()
-                        .filter(Store::isActive)
-                        .collect(Collectors.toSet());
-            }
-
-            List<StoreDTO> storeDTOs = result.stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-
-            String json = objectMapper.writeValueAsString(storeDTOs);
-            return Response.success(json);
-
-        } catch (JsonProcessingException e) {
-            logger.error("Failed to serialize search response: {}", e.getMessage());
-            return Response.error("Internal error: Failed to process response");
-        } catch (Exception e) {
-            logger.error("Unexpected error searching stores: {}", e.getMessage(), e);
-            return Response.error("Internal error: Failed to search stores");
-        }
-    }
 
     /**
      * Gets store purchase history - Requires admin or store owner/manager permission
@@ -631,18 +574,6 @@ public class StoreService {
             return Response.error(e.getMessage());
         } catch (Exception e) {
             logger.error("Error leaving ownership: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response changePermissions(String username, UUID storeId, String manager, PermissionsRequest permissions) {
-        logger.info("User {} changing permissions for store manager {} in store {}", username, manager, storeId);
-        try {
-            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
-            storeManagementService.updateManagerPermissions(username, storeId, manager, permissionsSet);
-            return Response.success("Permissions updated successfully");
-        } catch (Exception e) {
-            logger.error("Error changing permissions: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
