@@ -483,4 +483,16 @@ public class UserService {
             return Response.error(e.getMessage());
         }
     }
+
+    public Response replyViolationReport(String admin, UUID reportId, String user, String message) {
+        logger.info("Replying to violation report with ID: {} for admin with username: {}", reportId, admin);
+        try {
+            userAccessService.replyViolationReport(admin, reportId,user, message);
+            logger.info("Reply sent successfully");
+            return Response.success("Reply sent successfully");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 }

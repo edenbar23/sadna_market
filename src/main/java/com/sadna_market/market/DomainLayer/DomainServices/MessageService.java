@@ -364,4 +364,26 @@ public class MessageService {
 
         return count;
     }
+
+    public Message replyReport(String admin,UUID reportId,String user,String content) {
+        logger.info("admin {} replying to report of user {}", admin, user);
+
+        // Verify user exists
+        if (!userRepository.contains(admin)) {
+            logger.error("User {} not found", admin);
+            throw new IllegalArgumentException("User not found: " + admin);
+        }
+
+        if (!userRepository.contains(user)) {
+            logger.error("User {} not found", user);
+            throw new IllegalArgumentException("User not found: " + user);
+        }
+
+        // Create and save the message
+        Message message = new Message(admin, reportId, content);
+        messageRepository.save(message);
+
+        logger.info("Message sent successfully: {}", message.getMessageId());
+        return message;
+    }
 }
