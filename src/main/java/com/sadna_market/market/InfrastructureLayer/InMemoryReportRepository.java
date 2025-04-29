@@ -12,13 +12,25 @@ import java.util.logging.Logger;
 
 public class InMemoryReportRepository implements IReportRepository {
     Logger logger = Logger.getLogger(InMemoryReportRepository.class.getName());
-    private final Map<UUID, Report> reports;
+    private final Map<UUID, Report> reports= new java.util.concurrent.ConcurrentHashMap<>();
+    private static InMemoryReportRepository instance = new InMemoryReportRepository();
 
-    public InMemoryReportRepository() {
-        // Initialize the in-memory storage for reports
-        this.reports = new java.util.concurrent.ConcurrentHashMap<>();
+    // Private constructor
+    private InMemoryReportRepository() {}
 
+    // Synchronized getInstance method
+    public static synchronized InMemoryReportRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryReportRepository();
+        }
+        return instance;
     }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
 
     @Override
     public boolean save(Report report) {

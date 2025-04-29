@@ -41,10 +41,10 @@ public class Order {
     private UUID paymentId;
 
     @Getter
-    private String deliveryId;
+    private UUID deliveryId;
 
     @Getter
-    private String DeliveryId; 
+//    private UUID DeliveryId;
 
     private final Object statusLock = new Object();
 
@@ -72,7 +72,7 @@ public class Order {
      */
     public Order(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate,
-                 OrderStatus status, UUID paymentId, String deliveryId) {
+                 OrderStatus status, UUID paymentId, UUID deliveryId) {
         this.orderId = orderId;
         this.storeId = storeId;
         this.userName = userName;
@@ -144,7 +144,7 @@ public class Order {
      * @param deliveryId The delivery tracking ID
      * @return true if the delivery ID was set
      */
-    public boolean setDeliveryTracking(String deliveryId) {
+    public boolean setDeliveryTracking(UUID deliveryId) {
         if (this.status != OrderStatus.PAID) {
             logger.warn("Cannot set delivery tracking for order {} in status {}", 
                        orderId, status);

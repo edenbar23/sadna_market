@@ -66,7 +66,7 @@ public interface IOrderRepository {
 
     UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate, 
-                 OrderStatus status, String paymentId);
+                 OrderStatus status, UUID paymentId);
     
     /**
      * Updates the status of an order
