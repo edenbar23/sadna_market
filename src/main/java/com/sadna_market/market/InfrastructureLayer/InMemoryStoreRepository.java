@@ -22,7 +22,28 @@ public class InMemoryStoreRepository implements IStoreRepository {
     
     // Thread-safe collection to store the stores
     private final Map<UUID, Store> stores = new ConcurrentHashMap<>();
-    
+
+    private static volatile InMemoryStoreRepository instance = new InMemoryStoreRepository();
+
+    // Private constructor
+    private InMemoryStoreRepository() {
+        logger.info("InMemoryStoreRepository initialized");
+    }
+
+    // Synchronized getInstance method
+    public synchronized static IStoreRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryStoreRepository();
+        }
+        return instance;
+    }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+
     @Override
     public Optional<Store> findById(UUID id) {
         logger.debug("Finding store by ID: {}", id);

@@ -17,14 +17,23 @@ import java.util.stream.Collectors;
 @Service
 public class MessageApplicationService {
 
+    private static MessageApplicationService instance;
+
     private static final Logger logger = LoggerFactory.getLogger(MessageApplicationService.class);
     private final MessageService messageService;
     private final ObjectMapper objectMapper;
 
-    public MessageApplicationService(MessageService messageService) {
-        this.messageService = messageService;
+    private MessageApplicationService(MessageService messageService) {
+        this.messageService = messageService.getInstance();
         this.objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules(); // This enables proper serialization for Java 8 time classes
+    }
+
+    public static MessageApplicationService getInstance(MessageService messageService) {
+        if (instance == null) {
+            instance = new MessageApplicationService(messageService);
+        }
+        return instance;
     }
 
     /**

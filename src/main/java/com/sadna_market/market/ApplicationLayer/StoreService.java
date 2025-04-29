@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
  */
 @Service
 public class StoreService {
+
+    private static StoreService instance;
+
     private static final Logger logger = LoggerFactory.getLogger(StoreService.class);
 
     private final StoreManagementService storeManagementService;
@@ -30,11 +33,18 @@ public class StoreService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public StoreService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository;
+    private StoreService(IStoreRepository storeRepository, IUserRepository userRepository) {
+        this.storeRepository = storeRepository.getInstance();
         this.storeManagementService = new StoreManagementService(storeRepository, userRepository);
         this.objectMapper = new ObjectMapper();
         logger.info("StoreService initialized");
+    }
+
+    public static synchronized StoreService getInstance() {
+        if (instance == null) {
+            instance = new StoreService(IStoreRepository storeRepository, IUserRepository userRepository);
+        }
+        return instance;
     }
 
     /**
@@ -476,5 +486,10 @@ public class StoreService {
         // For example, searching by product category would require integration with product service
 
         return true;
+    }
+
+    public static synchronized void reset(){
+        instance = null;
+        logger.info("StoreService instance reset");
     }
 }

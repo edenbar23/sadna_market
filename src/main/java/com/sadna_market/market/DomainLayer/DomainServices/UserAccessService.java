@@ -18,17 +18,27 @@ import java.util.UUID;
  * It handles user registration, authentication, authorization, and other user-related operations.
  */
 public class UserAccessService {
+
+    private static UserAccessService instance;
+
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
     private final IReportRepository reportRepository;
     private final Logger logger = LoggerFactory.getLogger(UserAccessService.class);
     private final String realAdmin;
 
-    public UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, String realAdmin) {
-        this.userRepository = userRepository;
-        this.storeRepository = storeRepository;
-        this.reportRepository = null;
+    private UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, IReportRepository reportRepository, String realAdmin) {
+        this.userRepository = userRepository.getInstance();
+        this.storeRepository = storeRepository.getInstance();
+        this.reportRepository = reportRepository.getInstance();
         this.realAdmin = realAdmin;
+    }
+
+    public static UserAccessService getInstance() {
+        if (instance == null) {
+            instance = new UserAccessService(IUserRepository userRepository, IStoreRepository storeRepository, IReportRepository reportRepository, String realAdmin);
+        }
+        return instance;
     }
 
 

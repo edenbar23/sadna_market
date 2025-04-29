@@ -9,14 +9,23 @@ import java.util.*;
 
 public class StoreManagementService {
 
+    private static StoreManagementService instance;
+
     private static final Logger logger = LoggerFactory.getLogger(StoreManagementService.class);
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
 
-    public StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
-        this.storeRepository = storeRepository;
-        this.userRepository = userRepository;
+    private StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
+        this.storeRepository = storeRepository.getInstance();
+        this.userRepository = userRepository.getInstance();
+    }
+
+    public static StoreManagementService getInstance(IStoreRepository storeRepository, IUserRepository userRepository) {
+        if (instance == null) {
+            instance = new StoreManagementService(storeRepository, userRepository);
+        }
+        return instance;
     }
 
     /**

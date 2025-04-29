@@ -19,10 +19,29 @@ import org.slf4j.LoggerFactory;
 public class InMemoryOrderRepository implements IOrderRepository {
     
     private static final Logger logger = LoggerFactory.getLogger(InMemoryOrderRepository.class);
-    
+    private static InMemoryOrderRepository instance = new InMemoryOrderRepository();
     // Thread-safe map to store orders by ID
     private final Map<UUID, Order> orders = new ConcurrentHashMap<>();
-    
+
+    // Private constructor
+    private InMemoryOrderRepository() {
+        logger.info("InMemoryOrderRepository initialized");
+    }
+
+    // Synchronized getInstance method
+    public synchronized static IOrderRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryOrderRepository();
+        }
+        return instance;
+    }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+
     @Override
     public Order save(Order order) {
         if (order == null) {
@@ -78,7 +97,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     @Override
     public UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                         double totalPrice, double finalPrice, LocalDateTime orderDate, 
-                        OrderStatus status, String paymentId) {
+                        OrderStatus status, UUID paymentId) {
         // Validate input parameters
         if (storeId == null) {
             logger.error("Cannot create order with null store ID");
@@ -151,7 +170,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
     
     @Override
-    public boolean setDeliveryId(UUID orderId, String deliveryId) {
+    public boolean setDeliveryId(UUID orderId, UUID deliveryId) {
         if (orderId == null) {
             logger.error("Cannot set delivery ID for order with null ID");
             return false;
@@ -276,4 +295,5 @@ public class InMemoryOrderRepository implements IOrderRepository {
         logger.info("Found {} orders for store: {}", storeOrders.size(), storeId);
         return storeOrders;
     }
+
 }

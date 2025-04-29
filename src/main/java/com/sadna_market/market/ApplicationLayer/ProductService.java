@@ -13,13 +13,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ProductService {
+
+    private static ProductService instance;
+
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final IProductRepository productRepository;
 
-    public ProductService(IProductRepository productRepository) {
+    private ProductService(IProductRepository productRepository) {
         this.productRepository = productRepository;
+    }
+
+    public static ProductService getInstance(IProductRepository productRepository) {
+        if (instance == null) {
+            instance = new ProductService(productRepository);
+        }
+        return instance;
     }
 
     public ProductDTO getProductInfo(UUID productId) {
@@ -173,4 +183,8 @@ public class ProductService {
     }
 //    public void addRate(RateRequest rate) {
 //    }
+
+    public static synchronized void reset(){
+        instance = null;
+    }
 }

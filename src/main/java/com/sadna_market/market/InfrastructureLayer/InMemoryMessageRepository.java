@@ -20,6 +20,27 @@ public class InMemoryMessageRepository implements IMessageRepository {
     // Thread-safe map to store messages by ID
     private final Map<UUID, Message> messages = new ConcurrentHashMap<>();
 
+    private static InMemoryMessageRepository instance = new InMemoryMessageRepository();
+
+    // Private constructor
+    private InMemoryMessageRepository() {
+        logger.info("InMemoryMessageRepository initialized");
+    }
+
+    // Synchronized getInstance method
+    public synchronized static IMessageRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryMessageRepository();
+        }
+        return instance;
+    }
+
+    // Optional: Reset method for testing
+    public static synchronized void reset() {
+        instance = null;
+    }
+
+
     @Override
     public Message save(Message message) {
         if (message == null) {
