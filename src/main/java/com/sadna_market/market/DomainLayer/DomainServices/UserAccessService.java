@@ -28,9 +28,11 @@ public class UserAccessService {
     private final String realAdmin;
     private final Queue<LocalDateTime> transactionTimestamps;
     private final Queue<LocalDateTime> subscriptionTimestamps;
+    private final RepositoryConfiguration RC;
 
 
     private UserAccessService(RepositoryConfiguration RC) {
+        this.RC = RC;
         this.userRepository = RC.userRepository();
         this.storeRepository = RC.storeRepository();
         this.reportRepository = RC.reportRepository();
@@ -277,7 +279,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance().processGuestPurchase(cart,pm);
+            OrderProcessingService.getInstance(RC).processGuestPurchase(cart,pm);
             logger.info("Checkout successful for guest: {}");
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
@@ -294,7 +296,7 @@ public class UserAccessService {
                 throw new IllegalArgumentException("Cart is empty");
             }
             // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance().processPurchase(username,cart,pm);
+            OrderProcessingService.getInstance(RC).processPurchase(username,cart,pm);
             logger.info("Checkout successful for user: {}", username);
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
