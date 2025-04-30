@@ -73,7 +73,7 @@ public class ProductService {
     public Response rateProduct(ProductRateRequest rate){
         UUID productId = rate.getProductId();
         UUID userId = rate.getUserId();
-        int rateValue = rate.getRate();
+        int rateValue = rate.getRating();
         logger.info("User {} rated product {} with value {}", userId, productId, rateValue);
         try {
             Optional<UserRate> userRateOptional = productRepository.handleUserRate(userId, productId, rateValue);

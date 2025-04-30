@@ -1,8 +1,10 @@
 package com.sadna_market.market.UnitTests;
 
+import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.RoleType;
 import com.sadna_market.market.DomainLayer.User;
 import com.sadna_market.market.InfrastructureLayer.InMemoryUserRepository;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,18 +16,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryUserRepositoryTest {
 
-    private InMemoryUserRepository repository;
+    private IUserRepository repository;
     private User testUser;
     private String username;
     private String password;
     private String email;
     private String firstName;
     private String lastName;
+    private RepositoryConfiguration RC = new RepositoryConfiguration();
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryUserRepository();
-        
+        //repository = new InMemoryUserRepository();
+        repository=RC.userRepository();
         // Set up test data
         username = "testUser";
         password = "Password123!";

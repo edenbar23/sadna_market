@@ -1,9 +1,11 @@
 
 package com.sadna_market.market.UnitTests;
 
+import com.sadna_market.market.DomainLayer.IOrderRepository;
 import com.sadna_market.market.DomainLayer.Order;
 import com.sadna_market.market.DomainLayer.OrderStatus;
 import com.sadna_market.market.InfrastructureLayer.InMemoryOrderRepository;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,20 +21,24 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryOrderRepositoryUnitTest {
 
-    private InMemoryOrderRepository repository;
+    private IOrderRepository repository;
     private Order testOrder;
-    private UUID storeId;
+    private UUID storeId= UUID.randomUUID();
     private String userName;
-    private Map<UUID, Integer> products;
+    private HashMap<UUID, Integer> products;
     private LocalDateTime orderDate;
-    private String paymentId;
+    private UUID paymentId1= UUID.randomUUID();
+    private UUID paymentId2=UUID.randomUUID();
+    private UUID paymentId3=UUID.randomUUID();
+    private UUID deliveryId=UUID.randomUUID();
+     private RepositoryConfiguration RC;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryOrderRepository();
+        repository = RC.orderRepository();
         
         // Set up test data
-        storeId = UUID.randomUUID();
+       // storeId = UUID.randomUUID();
         userName = "testUser";
         products = new HashMap<>();
         UUID productId1 = UUID.randomUUID();
@@ -43,12 +49,14 @@ class InMemoryOrderRepositoryUnitTest {
         double finalPrice = 90.0; // After discount
         orderDate = LocalDateTime.now();
         OrderStatus initialStatus = OrderStatus.PENDING;
-        paymentId = "pay_123456";
+        //paymentId = UUID.randomUUID();
        
 
 
-
-        testOrder = new Order(storeId, userName, products, totalPrice, finalPrice, orderDate, initialStatus, paymentId);
+       // UUID storeId, String userName, Map<UUID, Integer> products, double totalPrice,
+       // double finalPrice,LocalDateTime orderDate, OrderStatus status, UUID paymentId)
+       
+        testOrder = new Order(storeId, userName, products, totalPrice, finalPrice, orderDate, initialStatus, paymentId1);
     }
 
     @Test
@@ -100,7 +108,7 @@ class InMemoryOrderRepositoryUnitTest {
         
         // Save some orders
         repository.save(testOrder);
-        Order secondOrder = new Order(storeId, "anotherUser", products, 200.0, 180.0, orderDate, OrderStatus.PAID, "pay_789");
+        Order secondOrder = new Order(storeId, "anotherUser", products, 200.0, 180.0, orderDate, OrderStatus.PAID, paymentId2);
         repository.save(secondOrder);
         
         // Find all orders
@@ -155,7 +163,7 @@ class InMemoryOrderRepositoryUnitTest {
     void testCreateOrder() {
         // Create a new order using the repository method
         UUID orderId = repository.createOrder(
-            storeId, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId
+            storeId, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1
         );
         
         // Verify
@@ -176,37 +184,37 @@ class InMemoryOrderRepositoryUnitTest {
     void testCreateOrderWithInvalidParams() {
         // Test with null store ID
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(null, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId);
+            repository.createOrder(null, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with null username
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, null, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId);
+            repository.createOrder(storeId, null, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with empty username
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, "", products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId);
+            repository.createOrder(storeId, "", products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with null products
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, userName, null, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId);
+            repository.createOrder(storeId, userName, null, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with empty products
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, userName, new HashMap<>(), 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId);
+            repository.createOrder(storeId, userName, new HashMap<>(), 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with null order date
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, userName, products, 100.0, 90.0, null, OrderStatus.PENDING, paymentId);
+            repository.createOrder(storeId, userName, products, 100.0, 90.0, null, OrderStatus.PENDING, paymentId1);
         });
         
         // Test with null status
         assertThrows(IllegalArgumentException.class, () -> {
-            repository.createOrder(storeId, userName, products, 100.0, 90.0, orderDate, null, paymentId);
+            repository.createOrder(storeId, userName, products, 100.0, 90.0, orderDate, null, paymentId1);
         });
     }
 
@@ -273,7 +281,7 @@ class InMemoryOrderRepositoryUnitTest {
         repository.updateOrderStatus(testOrder.getOrderId(), OrderStatus.PAID);
         
         // Set delivery ID
-        String deliveryId = "del_123456";
+       // String deliveryId = "del_123456";
         boolean updated = repository.setDeliveryId(testOrder.getOrderId(), deliveryId);
         
         // Verify
@@ -291,7 +299,7 @@ class InMemoryOrderRepositoryUnitTest {
         repository.save(testOrder);
         
         // Try to set delivery ID (should fail for PENDING)
-        boolean updated = repository.setDeliveryId(testOrder.getOrderId(), "del_123456");
+        boolean updated = repository.setDeliveryId(testOrder.getOrderId(), deliveryId);
         
         // Verify
         assertFalse(updated);
@@ -301,7 +309,7 @@ class InMemoryOrderRepositoryUnitTest {
     void testSetDeliveryIdNonExistentOrder() {
         // Try to set delivery ID for non-existent order
         UUID orderId = UUID.randomUUID();
-        boolean updated = repository.setDeliveryId(orderId, "del_123456");
+        boolean updated = repository.setDeliveryId(orderId, deliveryId);
         
         // Verify
         assertFalse(updated);
@@ -310,7 +318,7 @@ class InMemoryOrderRepositoryUnitTest {
     @Test
     void testSetDeliveryIdNullOrderId() {
         // Try to set delivery ID with null order ID
-        boolean updated = repository.setDeliveryId(null, "del_123456");
+        boolean updated = repository.setDeliveryId(null, deliveryId);
         
         // Verify
         assertFalse(updated);
@@ -323,7 +331,7 @@ class InMemoryOrderRepositoryUnitTest {
         
         //Long anotherStoreId = 1002L;
         UUID anotherStoreIdUUID = UUID.randomUUID();
-        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
         repository.save(anotherStoreOrder);
         
         // Find orders for store 1001L
@@ -349,7 +357,7 @@ class InMemoryOrderRepositoryUnitTest {
         repository.save(testOrder); // Username: testUser
         
         String anotherUserName = "anotherUser";
-        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
         repository.save(anotherUserOrder);
         
         // Find orders for testUser
@@ -383,7 +391,7 @@ class InMemoryOrderRepositoryUnitTest {
         // Save some orders
         repository.save(testOrder); // Status: PENDING
         
-        Order paidOrder = new Order(storeId, userName, products, 200.0, 180.0, orderDate, OrderStatus.PAID, paymentId);
+        Order paidOrder = new Order(storeId, userName, products, 200.0, 180.0, orderDate, OrderStatus.PAID, paymentId1);
         repository.save(paidOrder);
         
         // Find PENDING orders
@@ -416,11 +424,11 @@ class InMemoryOrderRepositoryUnitTest {
         repository.save(testOrder); // Date: now
         
         LocalDateTime pastDate = LocalDateTime.now().minusDays(2);
-        Order pastOrder = new Order(storeId, userName, products, 200.0, 180.0, pastDate, OrderStatus.PENDING, paymentId);
+        Order pastOrder = new Order(storeId, userName, products, 200.0, 180.0, pastDate, OrderStatus.PENDING, paymentId1);
         repository.save(pastOrder);
         
         LocalDateTime futureDate = LocalDateTime.now().plusDays(2);
-        Order futureOrder = new Order(storeId, userName, products, 300.0, 270.0, futureDate, OrderStatus.PENDING, paymentId);
+        Order futureOrder = new Order(storeId, userName, products, 300.0, 270.0, futureDate, OrderStatus.PENDING, paymentId1);
         repository.save(futureOrder);
         
         // Find orders within range (past to future)
@@ -473,12 +481,12 @@ class InMemoryOrderRepositoryUnitTest {
         repository.save(testOrder); // User: testUser
         
         String anotherUserName = "anotherUser";
-        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
         repository.save(anotherUserOrder);
         
         // Also save an older order for testUser
         LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
-        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId);
+        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId1);
         repository.save(olderOrder);
         
         // Get purchase history for testUser
@@ -514,12 +522,12 @@ class InMemoryOrderRepositoryUnitTest {
         
         ///Long anotherStoreId = 1002L;
         UUID anotherStoreIdUUID = UUID.randomUUID();
-        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId);
+        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
         repository.save(anotherStoreOrder);
         
         // Also save an older order for the test store
         LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
-        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId);
+        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId1);
         repository.save(olderOrder);
         
         // Get purchase history for test store

@@ -2,11 +2,13 @@ package com.sadna_market.market.UnitTests;
 
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
+import com.sadna_market.market.DomainLayer.IProductRepository;
 //import com.sadna_market.market.ApplicationLayer.ProductRequest;
 //import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
 import com.sadna_market.market.InfrastructureLayer.InMemoryProductRepository;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryProductRepositoryTest {
 
-    private InMemoryProductRepository repository;
+    private IProductRepository repository;
     private UUID storeId;
     private UUID productId;
     private String productName;
@@ -29,11 +31,12 @@ class InMemoryProductRepositoryTest {
     private String description;
     private double price;
     private boolean isAvailable;
+    private RepositoryConfiguration RC = new RepositoryConfiguration();
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryProductRepository();
-        
+       // repository = new InMemoryProductRepository();
+       repository=RC.productRepository();
         // Set up test data
         storeId = UUID.randomUUID();
         productName = "Test Product";
