@@ -127,7 +127,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
         
         // Create a defensive copy of the products map
-        Map<UUID, Integer> productsCopy = new HashMap<>(products);
+        HashMap<UUID, Integer> productsCopy = new HashMap<>(products);
         
         Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice, 
                               orderDate, status, paymentId);

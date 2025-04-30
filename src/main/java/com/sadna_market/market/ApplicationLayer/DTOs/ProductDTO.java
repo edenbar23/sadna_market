@@ -12,7 +12,7 @@ public class ProductDTO {
     private UUID storeId;
     @Getter
     private String name;
-    Getter
+    @Getter
     private String description;
     @Getter
     private String category;

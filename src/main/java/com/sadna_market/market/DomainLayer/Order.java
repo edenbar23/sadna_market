@@ -23,7 +23,7 @@ public class Order {
     @Getter
     private String userName;
 
-    private Map<UUID, Integer> products; // productId -> quantity
+    private HashMap<UUID, Integer> products; // productId -> quantity
 
     @Getter
     private double totalPrice;
@@ -49,7 +49,7 @@ public class Order {
     private final Object statusLock = new Object();
 
 
-    public Order(UUID storeId, String userName, Map<UUID, Integer> products, double totalPrice,
+    public Order(UUID storeId, String userName, HashMap<UUID, Integer> products, double totalPrice,
             double finalPrice,LocalDateTime orderDate, OrderStatus status, UUID paymentId) {
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
         this.orderId = UUID.randomUUID(); // Generate a unique order ID
@@ -70,7 +70,7 @@ public class Order {
     /**
      * Constructor for reconstructing an order from the repository.
      */
-    public Order(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
+    public Order(UUID orderId, UUID storeId, String userName, HashMap<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate,
                  OrderStatus status, UUID paymentId, UUID deliveryId) {
         this.orderId = orderId;

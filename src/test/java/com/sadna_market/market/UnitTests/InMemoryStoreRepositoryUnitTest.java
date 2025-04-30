@@ -1,8 +1,10 @@
 package com.sadna_market.market.UnitTests;
 
+import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.Store;
 import com.sadna_market.market.DomainLayer.StoreFounder;
 import com.sadna_market.market.InfrastructureLayer.InMemoryStoreRepository;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,10 +18,11 @@ import static org.mockito.Mockito.*;
 
 class InMemoryStoreRepositoryUnitTest {
 
-    private InMemoryStoreRepository repository;
+    private IStoreRepository repository;
     private UUID storeId;
     private String storeName;
     private String founderUsername;
+     private RepositoryConfiguration RC = new RepositoryConfiguration();
     
     @Mock
     private StoreFounder mockFounder;
@@ -27,8 +30,8 @@ class InMemoryStoreRepositoryUnitTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        repository = new InMemoryStoreRepository();
-        
+       // repository = new InMemoryStoreRepository();
+       repository=RC.storeRepository();
         // Set up test data
         storeName = "Test Store";
         founderUsername = "testFounder";

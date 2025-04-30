@@ -27,9 +27,9 @@ public class OrderDTO {
     @Getter
     private OrderStatus status;
     @Getter
-    private String paymentId;
+    private UUID paymentId;
     @Getter
-    private String deliveryId;
+    private UUID deliveryId;
 
     public OrderDTO(Order order) {
         this.orderId = order.getOrderId();
@@ -46,7 +46,7 @@ public class OrderDTO {
 
     public OrderDTO(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
             double totalPrice, double finalPrice, LocalDateTime orderDate, OrderStatus status,
-            String paymentId, String deliveryId) {
+            UUID paymentId, UUID deliveryId) {
         this.orderId = orderId;
         this.storeId = storeId;
         this.userName = userName;
