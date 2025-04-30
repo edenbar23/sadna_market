@@ -42,7 +42,7 @@ public class UserTests {
     void setup() {
         // Create a regular user for testing
         testUsername = "testuser" + UUID.randomUUID().toString().substring(0, 8);
-        testPassword = "password123";
+        testPassword = "Password123!";
         RegisterRequest registerRequest = new RegisterRequest(
                 testUsername,
                 testPassword,
@@ -65,7 +65,7 @@ public class UserTests {
 
         // Create a store owner user for setting up test environment
         String ownerUsername = "storeowner" + UUID.randomUUID().toString().substring(0, 8);
-        String ownerPassword = "password123";
+        String ownerPassword = "Password123!";
         RegisterRequest ownerRegisterRequest = new RegisterRequest(
                 ownerUsername,
                 ownerPassword,

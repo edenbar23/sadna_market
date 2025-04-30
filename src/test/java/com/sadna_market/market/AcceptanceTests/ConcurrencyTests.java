@@ -321,7 +321,7 @@ public class ConcurrencyTests {
                     String username = "concurrentUser" + userIndex;
                     RegisterRequest request = new RegisterRequest(
                             username, 
-                            "Pass123!", 
+                            "Password123!",
                             username + "@test.com", 
                             "Concurrent", 
                             "User" + userIndex);
@@ -348,7 +348,7 @@ public class ConcurrencyTests {
         // Verify that all users can log in
         for (int i = 0; i < NUM_THREADS; i++) {
             String username = "concurrentUser" + i;
-            Response loginResponse = bridge.loginUser(username, "Pass123!");
+            Response loginResponse = bridge.loginUser(username, "Password123!");
             assertFalse(loginResponse.isError(), 
                     "User " + username + " should be able to log in");
         }
