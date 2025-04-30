@@ -37,6 +37,7 @@ public class MarketService {
         this.userService = UserService.getInstance(RC);
         this.productService = ProductService.getInstance(productRepository);
         this.storeService = StoreService.getInstance(RC);
+        this.messageService = MessageApplicationService.getInstance(RC);
     }
 
 
@@ -69,15 +70,10 @@ public class MarketService {
         return storeService.getStoreInfo(storeId);
     }
 
-    //req 2.2 (a)
+    //req 2.2
     public Response searchProduct(ProductSearchRequest search) {
         //search for a product
         return productService.searchProduct(search);
-    }
-    //req 2.2 (b)
-    public Response searchStore(SearchRequest search) {
-        //search for a store
-        return storeService.searchStore(search);
     }
 
     //req 2.3
@@ -177,7 +173,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return storeService.openStore(newStore);
+        return storeService.openStore(username,newStore);
     }
 
     //req 3.3
@@ -206,7 +202,7 @@ public class MarketService {
         //return output;
     }
     //req 3.4 (b)
-    public Response rateStore(String username, String token, RateRequest rate) {
+    public Response rateStore(String username, String token, StoreRateRequest rate) {
         try{
             authenticate(username,token);
         }

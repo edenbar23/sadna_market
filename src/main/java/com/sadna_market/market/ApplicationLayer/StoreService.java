@@ -58,7 +58,7 @@ public class StoreService {
      * Opens a new store with the given details
      * Orchestrates the domain service and handles error mapping
      */
-    public Response openStore(String username, String token, StoreRequest storeRequest) {
+    public Response openStore(String username, StoreRequest storeRequest) {
         logger.info("Opening new store with name: {} for founder: {}",
                 storeRequest.getStoreName(), username);
 
