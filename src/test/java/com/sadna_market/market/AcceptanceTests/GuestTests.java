@@ -42,7 +42,7 @@ public class GuestTests {
 
         // 1. Register a dummy user
         String dummyUsername = "storeowner" + UUID.randomUUID().toString().substring(0, 8);
-        String dummyPassword = "password123";
+        String dummyPassword = "Password123!";
         RegisterRequest registerRequest = new RegisterRequest(
                 dummyUsername,
                 dummyPassword,

@@ -40,7 +40,7 @@ public class StoreOwnerTests {
     void setup() {
         // Create a store owner user
         ownerUsername = "storeowner" + UUID.randomUUID().toString().substring(0, 8);
-        ownerPassword = "owner123";
+        ownerPassword = "Owner123!";
         RegisterRequest ownerRegisterRequest = new RegisterRequest(
                 ownerUsername,
                 ownerPassword,
@@ -243,7 +243,7 @@ public class StoreOwnerTests {
     void appointManagerTest() {
         // First, create a new user who will be appointed as a manager
         String managerUsername = "manager" + UUID.randomUUID().toString().substring(0, 8);
-        String managerPassword = "manager123";
+        String managerPassword = "Manager123!";
         RegisterRequest managerRegisterRequest = new RegisterRequest(
                 managerUsername,
                 managerPassword,
@@ -292,7 +292,7 @@ public class StoreOwnerTests {
     void removeManagerTest() {
         // First, create a new user who will be appointed as a manager
         String managerUsername = "manager" + UUID.randomUUID().toString().substring(0, 8);
-        String managerPassword = "manager123";
+        String managerPassword = "Manager123!";
         RegisterRequest managerRegisterRequest = new RegisterRequest(
                 managerUsername,
                 managerPassword,
@@ -355,7 +355,7 @@ public class StoreOwnerTests {
     void editManagerPermissionsTest() {
         // First, create a new user who will be appointed as a manager
         String managerUsername = "manager" + UUID.randomUUID().toString().substring(0, 8);
-        String managerPassword = "manager123";
+        String managerPassword = "Manager123!";
         RegisterRequest managerRegisterRequest = new RegisterRequest(
                 managerUsername,
                 managerPassword,
@@ -433,7 +433,7 @@ public class StoreOwnerTests {
     void managerWithoutPermissionTest() {
         // First, create a new user who will be appointed as a manager
         String managerUsername = "manager" + UUID.randomUUID().toString().substring(0, 8);
-        String managerPassword = "manager123";
+        String managerPassword = "Manager123!";
         RegisterRequest managerRegisterRequest = new RegisterRequest(
                 managerUsername,
                 managerPassword,
@@ -646,7 +646,7 @@ public class StoreOwnerTests {
         try {
             // First, create a new user who will be appointed as an owner
             String newOwnerUsername = "owner" + UUID.randomUUID().toString().substring(0, 8);
-            String newOwnerPassword = "owner123";
+            String newOwnerPassword = "Owner123!";
             RegisterRequest newOwnerRegisterRequest = new RegisterRequest(
                     newOwnerUsername,
                     newOwnerPassword,
