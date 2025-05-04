@@ -14,9 +14,7 @@
 //import java.util.Map;
 //import java.util.UUID;
 //
-//import static org.junit.jupiter.api.Assertions.*;
-//import static org.mockito.Mockito.*;
-//import com.sadna_market.market.InfrastructureLayer.*;
+
 package com.sadna_market.market.InfrastructureLayer.Payment;
 
 import org.junit.jupiter.api.BeforeEach;
