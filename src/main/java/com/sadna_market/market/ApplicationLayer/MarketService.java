@@ -715,7 +715,7 @@ public class MarketService {
     protected void authenticate(String username, String token) {
         //authenticate the user
         //if not, throw an exception
-        if(!authentication.checkSessionToken(authentication.checkSessionToken(token)).equals(username)) {
+        if(!authentication.checkSessionToken(token).equals(username)) {
             throw new IllegalArgumentException("Invalid token");
         }
     }
