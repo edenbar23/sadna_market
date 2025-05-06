@@ -44,12 +44,17 @@ public class MarketService {
 
 
 
+
     //II) Users functions here:
     //Guest functions here:
     //req 1.3
     public Response registerUser(RegisterRequest registerRequest) {
         //register a new user
-        return userService.registerUser(registerRequest);
+        Response json = userService.registerUser(registerRequest);
+        if(!json.isError()) {
+            authentication.saveUser(registerRequest.getUserName(),registerRequest.getPassword());
+        }
+        return json;
     }
     //req 1.4
     public Response login(String userName, String password) {
@@ -710,7 +715,7 @@ public class MarketService {
     protected void authenticate(String username, String token) {
         //authenticate the user
         //if not, throw an exception
-        if(!authentication.checkSessionToken(authentication.checkSessionToken(token)).equals(username)) {
+        if(!authentication.checkSessionToken(token).equals(username)) {
             throw new IllegalArgumentException("Invalid token");
         }
     }

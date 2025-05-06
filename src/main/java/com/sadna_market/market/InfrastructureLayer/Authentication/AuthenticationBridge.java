@@ -14,8 +14,8 @@ public class AuthenticationBridge {
     public String createUserSessionToken(String username, String password) {
         return authenticate(username,password);
     }
-    public String createGuestSessionToken(String username, String password) {
-        return authenticate(username,password);
+    public void saveUser(String username, String password) {
+        iAuthRepository.addUser(username,password);
     }
     private String authenticate(String username, String password){
         iAuthRepository.login(username,password);
