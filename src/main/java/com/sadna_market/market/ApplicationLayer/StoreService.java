@@ -9,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class StoreService {
 
     private static StoreService instance;
     private static final Logger logger = LoggerFactory.getLogger(StoreService.class);
+    private AuthenticationBridge authentication = new AuthenticationBridge();
     private final StoreManagementService storeManagementService;
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
@@ -58,11 +60,14 @@ public class StoreService {
      * Opens a new store with the given details
      * Orchestrates the domain service and handles error mapping
      */
-    public Response openStore(String username, StoreRequest storeRequest) {
+    //req 3.2
+    public Response openStore(String username, String token, StoreRequest storeRequest) {
         logger.info("Opening new store with name: {} for founder: {}",
                 storeRequest.getStoreName(), username);
 
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             // Set founder username from authenticated user
             if (storeRequest.getFounderUsername() == null) {
                 storeRequest.setFounderUsername(username);
@@ -105,10 +110,12 @@ public class StoreService {
      * Closes a store
      * Delegates to domain service for business rule enforcement
      */
-    public Response closeStore(String username, UUID storeId) {
+    public Response closeStore(String username,String token, UUID storeId) {
         logger.info("Attempting to close store with ID: {} by user: {}", storeId, username);
 
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             storeManagementService.closeStore(username, storeId);
             return Response.success("Store closed successfully");
 
@@ -130,10 +137,12 @@ public class StoreService {
     /**
      * Reopens a closed store
      */
-    public Response reopenStore(String username, UUID storeId) {
+    public Response reopenStore(String username,String token, UUID storeId) {
         logger.info("Attempting to reopen store with ID: {} by user: {}", storeId, username);
 
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             storeManagementService.reopenStore(username, storeId);
             return Response.success("Store reopened successfully");
 
@@ -155,6 +164,7 @@ public class StoreService {
     /**
      * Gets information about a store - Simple repository operation
      */
+    //req 2.1 (b)
     public Response getStoreInfo(UUID storeId) {
         logger.info("Getting store info for store ID: {}", storeId);
 
@@ -206,11 +216,13 @@ public class StoreService {
     /**
      * Appoints a store owner
      */
-    public Response appointStoreOwner(String appointerUsername, UUID storeId, String newOwnerUsername) {
+    public Response appointStoreOwner(String appointerUsername,String token, UUID storeId, String newOwnerUsername) {
         logger.info("User {} appointing {} as store owner for store {}",
                 appointerUsername, newOwnerUsername, storeId);
 
         try {
+            logger.info("Validating token for user with username: {}", appointerUsername);
+            authentication.validateToken(appointerUsername,token);
             storeManagementService.appointStoreOwner(appointerUsername, storeId, newOwnerUsername);
             return Response.success("Store owner appointed successfully");
 
@@ -235,11 +247,13 @@ public class StoreService {
     /**
      * Removes a store owner
      */
-    public Response removeStoreOwner(String removerUsername, UUID storeId, String ownerToRemove) {
+    public Response removeStoreOwner(String removerUsername,String token, UUID storeId, String ownerToRemove) {
         logger.info("User {} removing {} as store owner from store {}",
                 removerUsername, ownerToRemove, storeId);
 
         try {
+            logger.info("Validating token for user with username: {}", removerUsername);
+            authentication.validateToken(removerUsername,token);
             storeManagementService.removeStoreOwner(removerUsername, storeId, ownerToRemove);
             return Response.success("Store owner removed successfully");
 
@@ -267,12 +281,14 @@ public class StoreService {
     /**
      * Appoints a store manager with specific permissions
      */
-    public Response appointStoreManager(String appointerUsername, UUID storeId, String newManagerUsername,
+    public Response appointStoreManager(String appointerUsername,String token, UUID storeId, String newManagerUsername,
                                         PermissionsRequest permissionsRequest) {
         logger.info("User {} appointing {} as store manager for store {}",
                 appointerUsername, newManagerUsername, storeId);
 
         try {
+            logger.info("Validating token for user with username: {}", appointerUsername);
+            authentication.validateToken(appointerUsername,token);
             Set<Permission> permissions = permissionsRequest != null ?
                     permissionsRequest.getPermissions() : new HashSet<>();
 
@@ -301,11 +317,13 @@ public class StoreService {
     /**
      * Removes a store manager
      */
-    public Response removeStoreManager(String removerUsername, UUID storeId, String managerToRemove) {
+    public Response removeStoreManager(String removerUsername,String token, UUID storeId, String managerToRemove) {
         logger.info("User {} removing {} as store manager from store {}",
                 removerUsername, managerToRemove, storeId);
 
         try {
+            logger.info("Validating token for user with username: {}", removerUsername);
+            authentication.validateToken(removerUsername,token);
             storeManagementService.removeStoreManager(removerUsername, storeId, managerToRemove);
             return Response.success("Store manager removed successfully");
 
@@ -333,12 +351,14 @@ public class StoreService {
     /**
      * Updates manager permissions
      */
-    public Response changePermissions(String updaterUsername, UUID storeId, String managerUsername,
+    public Response changePermissions(String updaterUsername, String token, UUID storeId, String managerUsername,
                                       PermissionsRequest permissionsRequest) {
         logger.info("User {} updating permissions for manager {} in store {}",
                 updaterUsername, managerUsername, storeId);
 
         try {
+            logger.info("Validating token for user with username: {}", updaterUsername);
+            authentication.validateToken(updaterUsername,token);
             Set<Permission> permissions = permissionsRequest != null ?
                     permissionsRequest.getPermissions() : new HashSet<>();
 
@@ -412,10 +432,12 @@ public class StoreService {
     /**
      * Gets store purchase history - Requires admin or store owner/manager permission
      */
-    public Response getStorePurchaseHistory(String username, UUID storeId) {
+    public Response getStorePurchaseHistory(String username, String token, UUID storeId) {
         logger.info("Getting purchase history for store ID: {} requested by user: {}", storeId, username);
 
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             Store store = storeRepository.findById(storeId)
                     .orElseThrow(() -> new StoreNotFoundException("Store not found"));
 
@@ -453,11 +475,12 @@ public class StoreService {
      * Gets buyer rate statistics for the system admin
      * Returns data about shopping patterns over time
      */
-    public Response getBuyersRate(String adminUsername) {
+    public Response getBuyersRate(String adminUsername, String token) {
         logger.info("Getting buyers rate statistics requested by admin: {}", adminUsername);
 
         try {
-
+            logger.info("Validating token for user with username: {}", adminUsername);
+            authentication.validateToken(adminUsername,token);
             // Statistics map to hold our results
             Map<String, Object> statistics = new HashMap<>();
 
@@ -545,22 +568,24 @@ public class StoreService {
     }
 
 
-    //appointStoreManager(username,storeId,manager,permissions);
-    public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
-        logger.info("User {} appointing {} as store manager for store {}", username, manager, storeId);
-        try {
-            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
-            storeManagementService.appointStoreManager(username, storeId, manager, permissionsSet);
-            return Response.success("Store manager appointed successfully");
-        } catch (Exception e) {
-            logger.error("Error appointing store manager: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
+//    //appointStoreManager(username,storeId,manager,permissions);
+//    public Response appointStoreManager(String username,String token,UUID storeId, String manager, PermissionsRequest permissions) {
+//        logger.info("User {} appointing {} as store manager for store {}", username, manager, storeId);
+//        try {
+//            Set<Permission> permissionsSet = permissions != null ? permissions.getPermissions() : new HashSet<>();
+//            storeManagementService.appointStoreManager(username, storeId, manager, permissionsSet);
+//            return Response.success("Store manager appointed successfully");
+//        } catch (Exception e) {
+//            logger.error("Error appointing store manager: {}", e.getMessage());
+//            return Response.error(e.getMessage());
+//        }
+//    }
 
-    public Response leaveOwnership(String username, UUID storeId) {
+    public Response leaveOwnership(String username, String token, UUID storeId) {
         logger.info("User {} leaving store ownership for store {}", username, storeId);
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             storeManagementService.leaveOwnership(username, storeId);
             return Response.success("Left ownership successfully");
         } catch (StoreNotFoundException e) {
@@ -578,9 +603,11 @@ public class StoreService {
         }
     }
 
-    public Response viewStoreMessages(String username, UUID storeId) {
+    public Response viewStoreMessages(String username,String token, UUID storeId) {
         logger.info("User {} viewing store messages for store {}", username, storeId);
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             List<Message> messages = storeManagementService.getStoreMessages(username, storeId);
             List<MessageDTO> messagesDTO = convertListMessageToDTO(messages);
             String json = objectMapper.writeValueAsString(messagesDTO);
@@ -591,9 +618,11 @@ public class StoreService {
         }
     }
 
-    public Response getStoreManagerPermissions(String username, UUID storeId) {
+    public Response getStoreManagerPermissions(String username, String token, UUID storeId) {
         logger.info("User {} getting store manager permissions for store {}", username, storeId);
         try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username,token);
             Set<Permission> permissions = storeManagementService.getStoreManagerPermissions(username, storeId);
             String json = objectMapper.writeValueAsString(permissions);
             return Response.success(json);

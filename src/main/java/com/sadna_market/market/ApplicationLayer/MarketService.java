@@ -214,7 +214,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-//        productService.addRate(rate);
+//        storeService.addRate(rate);
 //        userService.saveRate(rate);
         return Response.error("not implemented yet");
     }
@@ -495,7 +495,7 @@ public class MarketService {
         catch (IllegalArgumentException e) {
             return Response.error(e.getMessage());
         }
-        return userService.getPurchaseHistory(username,storeId);
+        return storeService.getPurchaseHistory(username,storeId);
     }
 
     //StoreManager functions here:

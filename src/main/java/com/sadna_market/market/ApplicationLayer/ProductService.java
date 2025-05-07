@@ -6,6 +6,7 @@ import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ public class ProductService {
     private static ProductService instance;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+    private AuthenticationBridge authentication = new AuthenticationBridge();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final IProductRepository productRepository;
@@ -32,6 +34,7 @@ public class ProductService {
         return instance;
     }
 
+    //req 2.1 (a)
     public ProductDTO getProductInfo(UUID productId) {
         logger.info("Getting product info for product ID: {}", productId);
         Optional<Product> product_ = productRepository.findById(productId);
@@ -44,6 +47,7 @@ public class ProductService {
         }
     }
 
+    //req 2.2
     public Response searchProduct(ProductSearchRequest request) {
         logger.info("Computing intersection of filtered products with criteria - name: {}, category: {}, price: {} to {}, rate: {} to {}",
                 request.getName(), request.getCategory(), request.getMinPrice(), request.getMaxPrice(),
@@ -70,7 +74,28 @@ public class ProductService {
     }
 
 
-    public Response rateProduct(ProductRateRequest rate){
+    //req 3.3
+    public Response addProductReview(String token,ProductReviewRequest review) {
+        logger.info("Validating token for user with username: {}", review.getUsername());
+        authentication.validateToken(review.getUsername(),token);
+        UUID productId = review.getProductId();
+        UUID userId = review.getUserId();
+        String reviewText = review.getReviewText();
+        logger.info("User {} added review for product {}: {}", review.getUserId(), review.getProductId(), review.getReviewText());
+        try {
+            productRepository.handleUserReview(userId, productId, reviewText);
+            //should add review to user also
+            return Response.success("Review added successfully");
+        } catch (Exception e) {
+            logger.error("Error adding review: {}", e.getMessage(), e);
+            return Response.error("Error adding review: " + e.getMessage());
+        }
+    }
+
+    //req 3.4 (a)
+    public Response rateProduct(String token, ProductRateRequest rate){
+        logger.info("Validating token for user with username: {}", rate.getUsername());
+        authentication.validateToken(rate.getUsername(),token);
         UUID productId = rate.getProductId();
         UUID userId = rate.getUserId();
         int rateValue = rate.getRating();
@@ -95,23 +120,9 @@ public class ProductService {
             return Response.error("Error rating product: " + e.getMessage());
         }    }
 
-    public Response addProductReview(ProductReviewRequest review) {
-        UUID productId = review.getProductId();
-        UUID userId = review.getUserId();
-        String reviewText = review.getReviewText();
-        logger.info("User {} added review for product {}: {}", review.getUserId(), review.getProductId(), review.getReviewText());
-        try {
-            productRepository.handleUserReview(userId, productId, reviewText);
-            return Response.success("Review added successfully");
-        } catch (Exception e) {
-            logger.error("Error adding review: {}", e.getMessage(), e);
-            return Response.error("Error adding review: " + e.getMessage());
-        }
-    }
     public Response addProduct(ProductRequest product, UUID storeId) {
-        logger.info("Adding new product: {}", product);
-
         try {
+            logger.info("Adding new product: {}", product);
             productRepository.addProduct(storeId, product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
             return Response.success("Product added successfully");
         } catch (Exception e) {
@@ -119,6 +130,8 @@ public class ProductService {
             return Response.error("Error adding product: " + e.getMessage());
         }
     }
+
+    //req 4.1 (c)
     public Response updateProduct(ProductRequest product){
         logger.info("Updating product: {}", product);
         try {
@@ -183,6 +196,8 @@ public class ProductService {
     }
 //    public void addRate(RateRequest rate) {
 //    }
+
+
 
     public static synchronized void reset(){
         instance = null;
