@@ -30,6 +30,12 @@ public class AuthenticationBridge {
         }
         else
             return tokenService.extractUsername(jwt);
-
     }
+
+    public void validateToken(String username,String jwt) {
+        if(!checkSessionToken(jwt).equals(username)) {
+            throw new IllegalArgumentException("Invalid token");
+        }
+    }
+
 }
