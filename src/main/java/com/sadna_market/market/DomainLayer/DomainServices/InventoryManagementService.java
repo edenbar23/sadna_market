@@ -485,9 +485,6 @@ public class InventoryManagementService {
         return validationErrors;
     }
 
-    /**
-     * Reset the singleton instance (primarily for testing)
-     */
     public static synchronized void reset() {
         instance = null;
         logger.info("InventoryManagementService instance reset");
