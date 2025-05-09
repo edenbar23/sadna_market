@@ -1,0 +1,14 @@
+/* Reset some default browser styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;  /* Global background color */
+    color: #333;                /* Global text color */
+    font-size: 16px;
+  }
+  

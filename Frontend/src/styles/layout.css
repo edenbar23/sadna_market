@@ -1,0 +1,29 @@
+/* Flexbox container for centering elements */
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  /* Basic grid layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  .section {
+    margin-top: 2rem;
+  }
+    
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem; /* optional spacing */
+    background-color: #f9f9f9; /* optional background */
+    border-bottom: 1px solid #eaeaea; /* optional border */
+    position: relative; /* For absolute positioning of children */
+    overflow: visible; /* Prevent cutting off children */
+    min-height: 100px; /* Ensure header has a minimum height */
+  }

@@ -1,0 +1,9 @@
+/* Define global colors */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-color: #f4f4f4;
+    --text-color: #333;
+    --hover-color: #0056b3;
+  }
+  
