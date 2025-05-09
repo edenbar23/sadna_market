@@ -1,0 +1,17 @@
+.page-background {
+  background-color: #f9fafb;
+}
+
+/* Example theme switch */
+.light-theme {
+    --primary-color: #007bff;
+    --background-color: #f4f4f4;
+    --text-color: #333;
+  }
+  
+  .dark-theme {
+    --primary-color: #ff5733;
+    --background-color: #333;
+    --text-color: #fff;
+  }
+  

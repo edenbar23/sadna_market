@@ -1,0 +1,31 @@
+/* Global font sizes and typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.75rem;
+  }
+  
+  p {
+    line-height: 1.5;
+    font-size: 1rem;
+  }
+  
+  /* Custom text alignment utilities */
+  .text-center {
+    text-align: center;
+  }
+  
+  .text-right {
+    text-align: right;
+  }
+  
+  .text-left {
+    text-align: left;
+  }
+  
