@@ -2,6 +2,7 @@ import React from "react";
 import '../index.css';
 import logo from "../assets/logo.png"; // Adjust the path as necessary
 import UserProfileBadge from "./UserProfileBadge";
+import { Link } from "react-router-dom";
 
 function HeaderBar({ user, onLogout }) {
     return (
@@ -18,14 +19,18 @@ function HeaderBar({ user, onLogout }) {
       <div className="space-x-3">
         {user ? (
           <>
+            <Link to="/cart">
             <button className="button">Cart</button>
+            </Link>
             <button className="button">Messages</button>
             <button className="button">Orders</button>
             <button className="button" onClick={onLogout}>Logout</button>
           </>
         ) : (
           <>
+            <Link to="/cart">
             <button className="button">Cart</button>
+            </Link>
             <button className="button">Login</button>
             <button className="button">Register</button>
           </>
