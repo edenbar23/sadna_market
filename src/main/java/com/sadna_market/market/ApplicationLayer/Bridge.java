@@ -34,7 +34,7 @@ public class Bridge {
         IProductRepository productRepository=  RC.productRepository();
         IStoreRepository storeRepository= RC.storeRepository();
         this.userService = UserService.getInstance(RC);
-        this.productService = ProductService.getInstance(productRepository);
+        this.productService = ProductService.getInstance(RC);
         this.storeService = StoreService.getInstance(RC);
         this.messageService = MessageApplicationService.getInstance(RC);
     }
@@ -63,17 +63,13 @@ public class Bridge {
      * management, product listings, pricing strategies, and store policies.
      */
     public Response addProductToStore(String token, String userName, UUID storeId, ProductRequest product,int quantity)  {
-        //return service.addProductToStore(token, userName, storeId, product, quantity);
-        //TODO: implement this
-        return Response.error("not implemented");
+        return productService.addProduct(userName, token, product, storeId, quantity);
     }
     public Response removeProductFromStore(String token, String userName, UUID storeId,  ProductRequest product) {
-        //TODO: implement this
-        return Response.error("not implemented");
+        return productService.deleteProduct(userName, token, product, storeId);
     }
     public Response editProductDetails(String token, String userName, UUID storeId, ProductRequest product, int quantity) {
-        //TODO: implement this
-        return Response.error("not implemented");
+        return productService.updateProduct(userName, token, storeId, product, quantity);
     }
 
 
