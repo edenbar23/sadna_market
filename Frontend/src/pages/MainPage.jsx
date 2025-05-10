@@ -1,4 +1,3 @@
-import HeaderBar from "@/components/HeaderBar";
 import SearchBar from "@/components/SearchBar";
 import TopProducts from "@/components/TopProducts";
 import TopStores from "@/components/TopStores";

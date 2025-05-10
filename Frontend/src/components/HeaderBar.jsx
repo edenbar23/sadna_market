@@ -22,8 +22,10 @@ function HeaderBar({ user, onLogout }) {
             <Link to="/cart">
             <button className="button">Cart</button>
             </Link>
-            <button className="button">Messages</button>
-            <button className="button">Orders</button>
+              <button className="button">Messages</button>
+            <Link to="/orders">
+                <button className="button">Orders</button>
+            </Link>
             <button className="button" onClick={onLogout}>Logout</button>
           </>
         ) : (
