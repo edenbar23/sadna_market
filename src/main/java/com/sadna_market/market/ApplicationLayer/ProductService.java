@@ -2,11 +2,13 @@ package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
+import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +24,15 @@ public class ProductService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final IProductRepository productRepository;
-
-    private ProductService(IProductRepository productRepository) {
-        this.productRepository = productRepository;
+    private final InventoryManagementService inventoryManagementService;
+    private ProductService(RepositoryConfiguration RC) {
+        this.productRepository = RC.productRepository();
+        this.inventoryManagementService = InventoryManagementService.getInstance(RC);
     }
 
-    public static ProductService getInstance(IProductRepository productRepository) {
+    public static synchronized ProductService getInstance(RepositoryConfiguration RC) {
         if (instance == null) {
-            instance = new ProductService(productRepository);
+            instance = new ProductService(RC);
         }
         return instance;
     }
@@ -120,9 +123,12 @@ public class ProductService {
             return Response.error("Error rating product: " + e.getMessage());
         }    }
 
-    public Response addProduct(ProductRequest product, UUID storeId) {
+    public Response addProduct(String username, String token, ProductRequest product, UUID storeId, int quantity) {
+        logger.info("Validating token for user with username: {}", username);
+        authentication.validateToken(username, token);
         try {
             logger.info("Adding new product: {}", product);
+            inventoryManagementService.addProductToStore(username,storeId,product,quantity);
             productRepository.addProduct(storeId, product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
             return Response.success("Product added successfully");
         } catch (Exception e) {
@@ -132,9 +138,12 @@ public class ProductService {
     }
 
     //req 4.1 (c)
-    public Response updateProduct(ProductRequest product){
+    // if quantity == -1 it means that we don't want to change it
+    public Response updateProduct(String username, String token, UUID storeId, ProductRequest product, int quantity) {
         logger.info("Updating product: {}", product);
+        authentication.validateToken(username, token);
         try {
+            inventoryManagementService.updateProductInStore(username, storeId, product, quantity);
             productRepository.updateProduct(product);
             return Response.success("Product updated successfully");
         } catch (Exception e){
@@ -142,13 +151,18 @@ public class ProductService {
             return Response.error("Error updating product: " + e.getMessage());
             }
     }
-    public Response deleteProduct(ProductRequest product){
+    public Response deleteProduct(String username, String token, ProductRequest product, UUID storeId) {
         logger.info("Deleting product: {}", product);
+        authentication.validateToken(username, token);
+        logger.info("Validating token for user with username: {}", username);
+        UUID productId = product.getProductId();
+
         if (product.getProductId() == null){
             logger.error("Product ID should not be null for existing products");
             return Response.error("Product ID should not be null for existing products");
         }
         try {
+            inventoryManagementService.removeProductFromStore(username, storeId, product.getProductId());
             productRepository.deleteProduct(product);
             return Response.success("Product deleted successfully");
         } catch (Exception e){
@@ -187,13 +201,6 @@ public class ProductService {
         }
     }
 
-    public void updateProductDiscountPolicy(UUID productId, ProductDiscountPolicyRequest discount) {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
-
-    public void updateProductPurchasePolicy(UUID productId, ProductPurchasePolicyRequest policy) {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
 //    public void addRate(RateRequest rate) {
 //    }
 

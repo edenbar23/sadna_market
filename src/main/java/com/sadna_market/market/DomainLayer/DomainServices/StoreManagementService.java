@@ -357,6 +357,7 @@ public class StoreManagementService {
         }
     }
 
+
     private UserStoreRoles findUserStoreRole(User user, UUID storeId, RoleType roleType) {
         return user.getUserStoreRoles().stream()
                 .filter(role -> role.getStoreId().equals(storeId) && role.getRoleType() == roleType)
