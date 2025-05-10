@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainPage from "./pages/MainPage";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
+import MessagesPage from "./pages/MessagesPage";
 
 import HeaderBar from "./components/HeaderBar";
 
@@ -21,6 +22,7 @@ function App() {
         <Route path="/" element={<MainPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/messages" element={<MessagesPage />} />
       </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
     </Router>
