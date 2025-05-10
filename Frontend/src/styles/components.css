@@ -336,3 +336,90 @@
 .delivery-btn:hover {
   background-color: #57afca; /* Darker green */
 }
+
+/* Order history styles */
+.orders-page {
+  padding: 20px;
+}
+
+.order-card {
+  border: 1px solid #ccc;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background-color: #f9f9f9;
+}
+.orders-page {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+.orders-title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.orders-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.order-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.order-card:hover {
+  transform: scale(1.01);
+}
+
+.message-store-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.message-store-btn:hover {
+  background-color: #0056b3;
+}
+
+.order-card-details .product-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5rem 0 1rem;
+}
+
+.order-card-details .store-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.status {
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.status.shipped {
+  color: #17a2b8;
+}
+
+.status.delivered {
+  color: #28a745;
+}
+
+.status.pending {
+  color: #ffc107;
+}
