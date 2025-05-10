@@ -1,5 +1,8 @@
 import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import MainPage from "./pages/MainPage";
+import CartPage from "./pages/CartPage";
 import HeaderBar from "./components/HeaderBar";
 
 function App() {
@@ -10,11 +13,14 @@ function App() {
   const logout = () => setUser(null);
 
   return (
-    <>
+    <Router>
       <HeaderBar user={user} onLogout={logout} />
-      <MainPage />
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/cart" element={<CartPage />} />
+      </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
-    </>
+    </Router>
   );
 }
 
