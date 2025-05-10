@@ -173,17 +173,6 @@ public class InventoryManagementService {
         store.removeProduct(productId);
         storeRepository.save(store);
 
-        ProductRequest productRequest = new ProductRequest();
-        productRequest.setProductId(productId);
-
-        try {
-            productRepository.deleteProduct(productRequest);
-        } catch (Exception e) {
-            logger.error("Error deleting product from repository: {}", e.getMessage());
-            store.addProduct(productId, 0);
-            storeRepository.save(store);
-            throw new RuntimeException("Failed to delete product: " + e.getMessage());
-        }
 
         logger.info("Product: {} removed successfully from store: {}", productId, storeId);
     }
@@ -199,6 +188,7 @@ public class InventoryManagementService {
      * @throws StoreNotFoundException If the store doesn't exist
      * @throws InsufficientPermissionsException If the user doesn't have permission
      */
+    // if newQuantity is -1, it won't change the quantity
     public void updateProductInStore(String username, UUID storeId, ProductRequest productRequest, int newQuantity) {
         logger.info("Updating product in store: {}, by user: {}", storeId, username);
 
@@ -237,16 +227,20 @@ public class InventoryManagementService {
             throw new IllegalArgumentException("Product does not exist in store: " + productId);
         }
 
-        try {
-            productRepository.updateProduct(productRequest);
-        } catch (Exception e) {
-            logger.error("Error updating product in repository: {}", e.getMessage());
-            throw new RuntimeException("Failed to update product information: " + e.getMessage());
-        }
 
         if (newQuantity >= 0) {
             try {
                 store.updateProductQuantity(productId, newQuantity);
+                storeRepository.save(store);
+            } catch (Exception e) {
+                logger.error("Error updating product quantity: {}", e.getMessage());
+                throw new RuntimeException("Failed to update product quantity: " + e.getMessage());
+            }
+        } else {
+            logger.info("Not updating product quantity as it is -1");
+            int currentQuantity = store.getProductQuantity(productId);
+            try {
+                store.updateProductQuantity(productId, currentQuantity);
                 storeRepository.save(store);
             } catch (Exception e) {
                 logger.error("Error updating product quantity: {}", e.getMessage());
