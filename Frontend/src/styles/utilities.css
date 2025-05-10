@@ -1,0 +1,13 @@
+/* Margin utilities */
+.m-0 { margin: 0; }
+.mt-10 { margin-top: 10px; }
+.mb-20 { margin-bottom: 20px; }
+
+/* Padding utilities */
+.p-10 { padding: 10px; }
+.pt-20 { padding-top: 20px; }
+.pb-30 { padding-bottom: 30px; }
+
+/* Text utilities */
+.text-white { color: white; }
+.text-dark { color: #333; }

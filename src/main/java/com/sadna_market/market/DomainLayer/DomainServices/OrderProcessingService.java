@@ -88,13 +88,15 @@ public class OrderProcessingService {
 
             try {
                 Order order = processStoreBasket(user, storeId, basket,paymentMethod);
-                orders.add(order);
+                orders.add(order); //only successful orders added to it
                 logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
                 logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
                 // Rollback any successful orders
                 rollbackOrders(orders);
-                //rollback(orders,paymentMethod);
+                logger.info("rollback orders successfully");
+                rollbackPayment(orders);
+                logger.info("refunded orders successfully");
                 throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
             }
         }
@@ -116,9 +118,6 @@ public class OrderProcessingService {
     public List<Order> processGuestPurchase(Cart cart,PaymentMethod paymentMethod) {
         logger.info("Processing purchase for guest: {}");
 
-        // For guests, we use the guest ID as the "username" in orders
-        ;
-
         // Check if cart is empty
         if (cart.getShoppingBaskets().isEmpty()) {
             logger.warn("Cannot process empty cart for guest: {}");
@@ -134,13 +133,15 @@ public class OrderProcessingService {
 
             try {
                 Order order = processGuestStoreBasket(storeId, basket, paymentMethod);
-                orders.add(order);
+                orders.add(order); //only successful orders added to it
                 logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
                 logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
                 // Rollback any successful orders
                 rollbackOrders(orders);
+                logger.info("rollback orders successfully");
                 rollbackPayment(orders);
+                logger.info("refunded orders successfully");
                 throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
             }
         }
@@ -155,10 +156,9 @@ public class OrderProcessingService {
 
         for (Order order : orders) {
             try {
-                // Simulate payment rollback
                 UUID paymentId = order.getPaymentId();
                 if (paymentId != null) {
-                    //paymentService.refund(paymentId);
+                    paymentService.refund(paymentId);
                     logger.info("Successfully rolled back payment {}", paymentId);
                 }
             } catch (Exception e) {
@@ -283,8 +283,9 @@ public class OrderProcessingService {
                 null // Payment ID will be set later
         );
 
-        // Simulate payment processing (in Version 1, assume payment always succeeds)
+        //Payment processing
         UUID paymentId = operatePayment(guestId, totalPrice, paymentMethod);
+        //throws error if failed
 
         // Update order with payment ID and status
         orderRepository.setDeliveryId(orderId, paymentId);
@@ -351,7 +352,6 @@ public class OrderProcessingService {
         for (Order order : orders) {
             try {
                 orderRepository.updateOrderStatus(order.getOrderId(), OrderStatus.CANCELED);
-
                 // Restore inventory for this order
                 Store store = storeRepository.findById(order.getStoreId())
                         .orElse(null);
