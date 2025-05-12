@@ -131,6 +131,25 @@ public class Bridge {
         return userService.checkout(userName, token, paymentMethod);
     }
 
+    public Response rateProduct(String token, ProductRateRequest request){
+        return productService.rateProduct(token, request);
+    }
+    public Response getOrdersHistory(String userName,String token){
+        return userService.getOrdersHistory(userName, token);
+    }
+
+    public Response sendMessage(String username,String token, MessageRequest request){
+        return messageService.sendMessage(username, token, request);
+    }
+    public Response replyToMessage(String username,String token, MessageReplyRequest request){
+        return messageService.replyToMessage(username, token, request);
+    }
+    public Response getUserMessages(String username,String token){
+        return messageService.getUserMessages(username, token);
+    }
+    public Response deleteMessage(String username,String token, UUID messageId){
+        return messageService.deleteMessage(username, token, messageId);
+    }
     public Response logout(String userName, String token){
         return userService.logoutUser(userName, token);
     }
