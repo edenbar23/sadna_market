@@ -11,7 +11,7 @@ public class AuthenticationBridge {
 
     public AuthenticationBridge(IAuthRepository iAuthRepository) {
         this.iAuthRepository = iAuthRepository;
-        this.tokenService = new TokenService();
+        this.tokenService = TokenService.getInstance();
     }
 
     // Constructor for tests to inject tokenService
@@ -21,7 +21,7 @@ public class AuthenticationBridge {
     }
 
     public AuthenticationBridge() {
-        this.tokenService = new TokenService();
+        this.tokenService = TokenService.getInstance();
         this.iAuthRepository = new InMemoryAuthRepository();
     }
 
