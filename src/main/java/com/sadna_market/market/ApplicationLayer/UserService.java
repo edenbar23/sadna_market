@@ -79,6 +79,7 @@ public class UserService {
             logger.info("User logged in successfully");
             //auth return token
             String token = authentication.createUserSessionToken(username,password);
+            logger.info("Token generated successfully: {}", token);
             return Response.success(token);
         } catch (Exception e) {
             logger.error("Error logging in user: {}", e.getMessage());

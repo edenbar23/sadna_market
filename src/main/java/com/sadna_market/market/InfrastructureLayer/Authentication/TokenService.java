@@ -13,15 +13,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 public class TokenService {
-
     private String secret;
     private final long sessionExpirationTime = 1000 * 60 * 60 * 24;
+    private static final Logger logger = LogManager.getLogger(TokenService.class);
     // 24 hours
     private SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     // create a session token for the user with a imported builder
     public String generateToken(String username) {
-        //logger.info("start-generateToken. args: "+username);
+        logger.info("start-generateToken. args: "+username);
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
@@ -31,15 +31,17 @@ public class TokenService {
     }
 
     public boolean validateToken(String token) {
-        //logger.info("start-validateToken. args: "+token);
+        logger.info("Validate Token: "+token);
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
+            logger.info("Token is valid");
             return true; }
         catch (Exception e) {
-            return false; } }
+            return false; }
+    }
 
 
     public String extractUsername(String token) {

@@ -86,6 +86,7 @@ public class StoreService {
 
             StoreDTO storeDTO = convertToDTO(store);
             String json = objectMapper.writeValueAsString(storeDTO);
+            logger.info("Store created successfully: {}", json);
             return Response.success(json);
 
         } catch (StoreExceptions.UserNotFoundException e) {

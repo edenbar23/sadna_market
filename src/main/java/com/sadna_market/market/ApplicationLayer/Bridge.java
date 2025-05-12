@@ -171,4 +171,10 @@ public class Bridge {
         return storeService.leaveOwnership(username, token, storeId);
     }
 
+    public void clear() {
+        userService.clear();
+        productService.clear();
+        storeService.clear();
+        messageService.clear();
+    }
 }
