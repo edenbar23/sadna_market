@@ -9,12 +9,13 @@ import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @SpringBootTest
 public class UserTests {
     private Bridge bridge = new Bridge();
     ObjectMapper objectMapper = new ObjectMapper();
-
+    private Logger logger = Logger.getLogger(UserTests.class.getName());
     // Test data
     private UUID storeId;
     private UUID productId;
@@ -102,6 +103,7 @@ public class UserTests {
         // Extract store ID from response
         try {
             storeId = UUID.fromString(createStoreResponse.getJson());
+
         } catch (Exception e) {
             // If parsing fails, use a random UUID for testing
             storeId = UUID.randomUUID();
