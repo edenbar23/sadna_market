@@ -6,6 +6,7 @@
 @import './styles/typography.css';
 @import './styles/utilities.css';
 @import './styles/themes.css';
+@import './styles/messages.css';
 
 /* Additional styles specific to this app (optional) */
 body {
