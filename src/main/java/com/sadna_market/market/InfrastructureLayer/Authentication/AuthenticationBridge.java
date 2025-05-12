@@ -8,20 +8,31 @@ public class AuthenticationBridge {
     private IAuthRepository iAuthRepository;
 
     private final Logger logger = LogManager.getLogger(AuthenticationBridge.class);
+
     public AuthenticationBridge(IAuthRepository iAuthRepository) {
         this.iAuthRepository = iAuthRepository;
         this.tokenService = new TokenService();
     }
+
+    // Constructor for tests to inject tokenService
+    public AuthenticationBridge(IAuthRepository iAuthRepository, TokenService tokenService) {
+        this.iAuthRepository = iAuthRepository;
+        this.tokenService = tokenService;
+    }
+
     public AuthenticationBridge() {
         this.tokenService = new TokenService();
         this.iAuthRepository = new InMemoryAuthRepository();
     }
+
     public String createUserSessionToken(String username, String password) {
         return authenticate(username,password);
     }
+
     public void saveUser(String username, String password) {
         iAuthRepository.addUser(username,password);
     }
+
     private String authenticate(String username, String password){
         iAuthRepository.login(username,password);
         // If the user is authenticated, generate a JWT token for the user
@@ -50,4 +61,8 @@ public class AuthenticationBridge {
         }
     }
 
+    // For testing purposes - get the token service
+    public TokenService getTokenService() {
+        return this.tokenService;
+    }
 }

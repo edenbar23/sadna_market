@@ -17,7 +17,22 @@ public class TokenService {
     private final long sessionExpirationTime = 1000 * 60 * 60 * 24;
     private static final Logger logger = LogManager.getLogger(TokenService.class);
     // 24 hours
-    private SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private SecretKey key;
+
+    // Default constructor - generates a new key
+    public TokenService() {
+        this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    }
+
+    // Constructor that accepts a provided key (for testing)
+    public TokenService(SecretKey key) {
+        this.key = key;
+    }
+
+    // Getter for the key (for testing)
+    public SecretKey getKey() {
+        return this.key;
+    }
 
     // create a session token for the user with a imported builder
     public String generateToken(String username) {
