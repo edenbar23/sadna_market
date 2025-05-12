@@ -18,10 +18,23 @@ public class TokenService {
     private static final Logger logger = LogManager.getLogger(TokenService.class);
     // 24 hours
     private SecretKey key;
+    // Your existing fields
+    private static TokenService instance;
 
-    // Default constructor - generates a new key
-    public TokenService() {
+    // Singleton instance
+
+    // Private constructor - can only be called within this class
+    private TokenService() {
         this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        logger.info("TokenService instance created with key: " + key);
+    }
+
+    // Static method to get the singleton instance
+    public static synchronized TokenService getInstance() {
+        if (instance == null) {
+            instance = new TokenService();
+        }
+        return instance;
     }
 
     // Constructor that accepts a provided key (for testing)
@@ -37,6 +50,7 @@ public class TokenService {
     // create a session token for the user with a imported builder
     public String generateToken(String username) {
         logger.info("start-generateToken. args: "+username);
+        logger.info("1111 the secret key is: "+key);
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
@@ -47,6 +61,7 @@ public class TokenService {
 
     public boolean validateToken(String token) {
         logger.info("Validate Token: "+token);
+        logger.info("2222 the secret key is: "+key);
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)

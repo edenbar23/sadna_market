@@ -35,7 +35,7 @@ public class AuthenticationTests {
         void setUp() {
             MockitoAnnotations.openMocks(this);
             // Create a token service first
-            tokenService = new TokenService();
+            tokenService = TokenService.getInstance();
             // Pass it to the auth bridge
             authBridge = new AuthenticationBridge(mockAuthRepository, tokenService);
         }
