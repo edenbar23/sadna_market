@@ -64,6 +64,7 @@ public class StoreManagementService {
         userRepository.update(founder);
 
         logger.info("Store '{}' has been created", storeName);
+        logger.info("Store id is '{}'", storeId);
         return store;
 
     }
