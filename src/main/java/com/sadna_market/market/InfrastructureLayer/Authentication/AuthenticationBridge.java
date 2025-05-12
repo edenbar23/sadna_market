@@ -2,71 +2,73 @@ package com.sadna_market.market.InfrastructureLayer.Authentication;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class AuthenticationBridge {
-    private TokenService tokenService;
-    private IAuthRepository iAuthRepository;
 
+    private final TokenService tokenService;
+    private final IAuthRepository authRepository;
     private final Logger logger = LogManager.getLogger(AuthenticationBridge.class);
 
-    public AuthenticationBridge(IAuthRepository iAuthRepository) {
-        this.iAuthRepository = iAuthRepository;
-        this.tokenService = TokenService.getInstance();
-    }
-
-    // Constructor for tests to inject tokenService
-    public AuthenticationBridge(IAuthRepository iAuthRepository, TokenService tokenService) {
-        this.iAuthRepository = iAuthRepository;
+    @Autowired
+    public AuthenticationBridge(IAuthRepository authRepository, TokenService tokenService) {
+        this.authRepository = authRepository;
         this.tokenService = tokenService;
-    }
-
-    public AuthenticationBridge() {
-        this.tokenService = TokenService.getInstance();
-        this.iAuthRepository = new InMemoryAuthRepository();
+        logger.info("AuthenticationBridge initialized");
     }
 
     public String createUserSessionToken(String username, String password) {
-        return authenticate(username,password);
+        return authenticate(username, password);
     }
 
     public void saveUser(String username, String password) {
-        iAuthRepository.addUser(username,password);
+        logger.info("Saving user: {}", username);
+        authRepository.addUser(username, password);
     }
 
-    private String authenticate(String username, String password){
-        iAuthRepository.login(username,password);
-        // If the user is authenticated, generate a JWT token for the user
-        return tokenService.generateToken(username);
+    private String authenticate(String username, String password) {
+        logger.info("Authenticating user: {}", username);
+        authRepository.login(username, password);
+        // If login was successful (no exception thrown), generate a token
+        String token = tokenService.generateToken(username);
+        logger.info("Authentication successful, token generated for user: {}", username);
+        return token;
     }
 
-    //this method returns the username of the user that is associated with the token
     public String checkSessionToken(String jwt) {
-
-        if(!tokenService.validateToken(jwt)){
-            logger.info("###invalid token###");
+        if (!tokenService.validateToken(jwt)) {
+            logger.info("Invalid token");
             throw new IllegalArgumentException("Invalid token");
         }
-        else {
-            logger.info("username extracted from token: " + tokenService.extractUsername(jwt));
-            return tokenService.extractUsername(jwt);
-        }
+
+        String username = tokenService.extractUsername(jwt);
+        logger.info("Username extracted from token: {}", username);
+        return username;
     }
 
-    public void validateToken(String username,String jwt) {
-        logger.info("Validating token for user: " + username);
-        logger.info("extracted username from token: " + checkSessionToken(jwt));
+    public void validateToken(String username, String jwt) {
+        logger.info("Validating token for user: {}", username);
 
-        if(!checkSessionToken(jwt).equals(username)) {
+        // First check if the token is valid
+        if (!tokenService.validateToken(jwt)) {
+            logger.error("Invalid token");
             throw new IllegalArgumentException("Invalid token");
         }
-    }
 
-    // For testing purposes - get the token service
-    public TokenService getTokenService() {
-        return this.tokenService;
+        // Then check if the token belongs to the specified user
+        String tokenUsername = tokenService.extractUsername(jwt);
+        logger.info("Username extracted from token: {}", tokenUsername);
+
+        if (!tokenUsername.equals(username)) {
+            logger.error("Token does not belong to user: {}", username);
+            throw new IllegalArgumentException("Invalid token");
+        }
     }
 
     public void clear() {
-        iAuthRepository.clear();
+        authRepository.clear();
+        logger.info("Authentication bridge cleared");
     }
 }

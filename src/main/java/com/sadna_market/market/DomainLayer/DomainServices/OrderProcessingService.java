@@ -2,71 +2,41 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Product.Product;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Domain service responsible for processing orders and managing the purchase flow.
- * Handles the business logic of converting shopping carts into orders and updating inventory.
- */
+@Service
 public class OrderProcessingService {
     private static final Logger logger = LoggerFactory.getLogger(OrderProcessingService.class);
-
-    // Singleton instance
-    private static OrderProcessingService instance;
 
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
     private final IUserRepository userRepository;
     private final IProductRepository productRepository;
-    private RepositoryConfiguration RC;
+    private final PaymentService paymentService;
 
-    private PaymentService paymentService = new PaymentService();
-    //private SupplyService supplyService = new SupplyService();
-
-    /**
-     * Private constructor to prevent instantiation from outside
-     */
-    private OrderProcessingService(RepositoryConfiguration RC) {
-        this.RC=RC;
-        this.storeRepository = RC.storeRepository();
-        this.orderRepository = RC.orderRepository();
-        this.userRepository = RC.userRepository();
-        this.productRepository = RC.productRepository();;
+    @Autowired
+    public OrderProcessingService(
+            IStoreRepository storeRepository,
+            IOrderRepository orderRepository,
+            IUserRepository userRepository,
+            IProductRepository productRepository) {
+        this.storeRepository = storeRepository;
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
+        this.productRepository = productRepository;
+        this.paymentService = new PaymentService(); // This would ideally be injected too
+        logger.info("OrderProcessingService initialized");
     }
 
-    /**
-     * Get the singleton instance of OrderProcessingService.
-     * If no instance exists, throws an exception as repositories must be provided.
-     *
-     * @return the singleton instance
-     * @throws IllegalStateException if instance hasn't been initialized
-     */
-    public static synchronized OrderProcessingService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new OrderProcessingService(RC);
-        }
-        return instance;
-    }
-
-
-    /**
-     * Process a purchase from a user's cart.
-     * Creates orders for each store and updates inventory.
-     *
-     * @param username The username of the purchaser
-     * @param cart The cart containing items to purchase
-     * @return List of created orders
-     * @throws IllegalArgumentException if user or products are not found
-     * @throws IllegalStateException if inventory validation fails
-     */
-    public List<Order> processPurchase(String username, Cart cart,PaymentMethod paymentMethod) {
+    public List<Order> processPurchase(String username, Cart cart, PaymentMethod paymentMethod) {
         logger.info("Processing purchase for user: {}", username);
 
         // Validate user exists
@@ -87,16 +57,16 @@ public class OrderProcessingService {
             ShoppingBasket basket = entry.getValue();
 
             try {
-                Order order = processStoreBasket(user, storeId, basket,paymentMethod);
-                orders.add(order); //only successful orders added to it
+                Order order = processStoreBasket(user, storeId, basket, paymentMethod);
+                orders.add(order);
                 logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
                 logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
                 // Rollback any successful orders
                 rollbackOrders(orders);
-                logger.info("rollback orders successfully");
+                logger.info("Rolled back orders successfully");
                 rollbackPayment(orders);
-                logger.info("refunded orders successfully");
+                logger.info("Refunded orders successfully");
                 throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
             }
         }
@@ -104,23 +74,16 @@ public class OrderProcessingService {
         // Clear the user's cart after successful purchase
         clearUserCart(user);
 
-        //supplyService.supplyOrders(orders);
         logger.info("Successfully processed {} orders for user {}", orders.size(), username);
         return orders;
     }
 
-    /**
-     * Process purchase for a guest user
-     *
-     * @param cart The cart containing items to purchase
-     * @return List of created orders
-     */
-    public List<Order> processGuestPurchase(Cart cart,PaymentMethod paymentMethod) {
-        logger.info("Processing purchase for guest: {}");
+    public List<Order> processGuestPurchase(Cart cart, PaymentMethod paymentMethod) {
+        logger.info("Processing purchase for guest");
 
         // Check if cart is empty
         if (cart.getShoppingBaskets().isEmpty()) {
-            logger.warn("Cannot process empty cart for guest: {}");
+            logger.warn("Cannot process empty cart for guest");
             throw new IllegalStateException("Cannot process empty cart");
         }
 
@@ -133,21 +96,20 @@ public class OrderProcessingService {
 
             try {
                 Order order = processGuestStoreBasket(storeId, basket, paymentMethod);
-                orders.add(order); //only successful orders added to it
+                orders.add(order);
                 logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
                 logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
                 // Rollback any successful orders
                 rollbackOrders(orders);
-                logger.info("rollback orders successfully");
+                logger.info("Rolled back orders successfully");
                 rollbackPayment(orders);
-                logger.info("refunded orders successfully");
+                logger.info("Refunded orders successfully");
                 throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
             }
         }
 
-        logger.info("Successfully processed {} orders for guest {}", orders.size());
-        //should return empty CartRequest object
+        logger.info("Successfully processed {} orders for guest", orders.size());
         return orders;
     }
 
@@ -167,17 +129,17 @@ public class OrderProcessingService {
         }
     }
 
-    private Order processStoreBasket(User user, UUID storeId, ShoppingBasket basket,PaymentMethod paymentMethod) {
+    private Order processStoreBasket(User user, UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
         logger.debug("Processing basket for store: {} and user: {}", storeId, user.getUserName());
         return processBasketCommon(user.getUserName(), storeId, basket, paymentMethod);
     }
 
-    private Order processGuestStoreBasket(UUID storeId, ShoppingBasket basket,PaymentMethod paymentMethod) {
-        logger.debug("Processing basket for store: {} and guest: {}", storeId);
+    private Order processGuestStoreBasket(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
+        logger.debug("Processing basket for store: {} and guest", storeId);
         return processGuestBasketCommon(storeId, basket, paymentMethod);
     }
 
-    private Order processBasketCommon(String username, UUID storeId, ShoppingBasket basket,PaymentMethod paymentMethod) {
+    private Order processBasketCommon(String username, UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
         // Get the store
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
@@ -244,7 +206,7 @@ public class OrderProcessingService {
                 .orElseThrow(() -> new IllegalStateException("Order creation failed"));
     }
 
-    private Order processGuestBasketCommon(UUID storeId, ShoppingBasket basket,PaymentMethod paymentMethod) {
+    private Order processGuestBasketCommon(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
         // Get the store
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
@@ -312,7 +274,6 @@ public class OrderProcessingService {
                 .orElseThrow(() -> new IllegalStateException("Order creation failed"));
     }
 
-
     private double calculateTotalPrice(Map<UUID, Integer> items) {
         logger.debug("Calculating total price for {} items", items.size());
 
@@ -322,9 +283,12 @@ public class OrderProcessingService {
             UUID productId = entry.getKey();
             int quantity = entry.getValue();
 
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isEmpty()) {
+                throw new IllegalArgumentException("Product not found: " + productId);
+            }
 
+            Product product = productOpt.get();
             double itemTotal = product.getPrice() * quantity;
             total += itemTotal;
 
@@ -335,14 +299,13 @@ public class OrderProcessingService {
         return total;
     }
 
-    private UUID operatePayment(String username, double amount,PaymentMethod paymentMethod) {
+    private UUID operatePayment(String username, double amount, PaymentMethod paymentMethod) {
         UUID paymentId = UUID.randomUUID();
-        if(!paymentService.pay(paymentMethod, amount)) {
+        if (!paymentService.pay(paymentMethod, amount)) {
             logger.error("Payment failed for user {} amount {}", username, amount);
             throw new IllegalStateException("Payment failed");
         }
-        logger.info("payment successful for user {} amount {} with ID {}",
-                username, amount, paymentId);
+        logger.info("Payment successful for user {} amount {} with ID {}", username, amount, paymentId);
         return paymentId;
     }
 

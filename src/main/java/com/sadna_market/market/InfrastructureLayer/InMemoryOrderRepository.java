@@ -3,44 +3,26 @@ package com.sadna_market.market.InfrastructureLayer;
 import com.sadna_market.market.DomainLayer.IOrderRepository;
 import com.sadna_market.market.DomainLayer.Order;
 import com.sadna_market.market.DomainLayer.OrderStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-/**
- * In-memory implementation of the IOrderRepository interface.
- * Uses thread-safe collections to store and manage order data without an actual database.
- */
+@Repository
 public class InMemoryOrderRepository implements IOrderRepository {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(InMemoryOrderRepository.class);
-    private static InMemoryOrderRepository instance = new InMemoryOrderRepository();
+
     // Thread-safe map to store orders by ID
     private final Map<UUID, Order> orders = new ConcurrentHashMap<>();
 
-    // Private constructor
-    private InMemoryOrderRepository() {
+    public InMemoryOrderRepository() {
         logger.info("InMemoryOrderRepository initialized");
     }
-
-    // Synchronized getInstance method
-    public synchronized static IOrderRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryOrderRepository();
-        }
-        return instance;
-    }
-
-    // Optional: Reset method for testing
-    public static synchronized void reset() {
-        instance = null;
-    }
-
 
     @Override
     public Order save(Order order) {
@@ -48,252 +30,257 @@ public class InMemoryOrderRepository implements IOrderRepository {
             logger.error("Cannot save null order");
             throw new IllegalArgumentException("Order cannot be null");
         }
-        
+
         logger.debug("Saving order: {}", order.getOrderId());
         orders.put(order.getOrderId(), order);
         return order;
     }
-    
+
     @Override
     public Optional<Order> findById(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot find order with null ID");
             return Optional.empty();
         }
-        
+
         logger.debug("Finding order by ID: {}", orderId);
         return Optional.ofNullable(orders.get(orderId));
     }
-    
+
     @Override
     public List<Order> findAll() {
         logger.debug("Getting all orders (total: {})", orders.size());
         return new ArrayList<>(orders.values());
     }
-    
+
     @Override
     public void deleteById(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot delete order with null ID");
             return;
         }
-        
+
         logger.debug("Deleting order with ID: {}", orderId);
         orders.remove(orderId);
     }
-    
+
     @Override
     public boolean exists(UUID orderId) {
         if (orderId == null) {
             logger.error("Cannot check existence of order with null ID");
             return false;
         }
-        
+
         boolean exists = orders.containsKey(orderId);
         logger.debug("Checking if order exists with ID {}: {}", orderId, exists);
         return exists;
     }
-    
+
     @Override
     public UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
-                        double totalPrice, double finalPrice, LocalDateTime orderDate, 
-                        OrderStatus status, UUID paymentId) {
+                            double totalPrice, double finalPrice, LocalDateTime orderDate,
+                            OrderStatus status, UUID paymentId) {
         // Validate input parameters
         if (storeId == null) {
             logger.error("Cannot create order with null store ID");
             throw new IllegalArgumentException("Store ID cannot be null");
         }
-        
+
         if (userName == null || userName.isEmpty()) {
             logger.error("Cannot create order with null or empty username");
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
-        
+
         if (products == null || products.isEmpty()) {
             logger.error("Cannot create order with null or empty products");
             throw new IllegalArgumentException("Products cannot be null or empty");
         }
-        
+
         if (orderDate == null) {
             logger.error("Cannot create order with null order date");
             throw new IllegalArgumentException("Order date cannot be null");
         }
-        
+
         if (status == null) {
             logger.error("Cannot create order with null status");
             throw new IllegalArgumentException("Order status cannot be null");
         }
-        
+
         logger.info("Creating new order for user: {} in store: {}", userName, storeId);
-        
+
         // Create a defensive copy of the products map
         HashMap<UUID, Integer> productsCopy = new HashMap<>(products);
-        
-        Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice, 
-                              orderDate, status, paymentId);
-        
+
+        Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice,
+                orderDate, status, paymentId);
+
         orders.put(order.getOrderId(), order);
         logger.info("Order created with ID: {}", order.getOrderId());
-        
+
         return order.getOrderId();
     }
-    
+
     @Override
     public boolean updateOrderStatus(UUID orderId, OrderStatus newStatus) {
         if (orderId == null) {
             logger.error("Cannot update status for order with null ID");
             return false;
         }
-        
+
         if (newStatus == null) {
             logger.error("Cannot update order status to null");
             return false;
         }
-        
+
         logger.debug("Updating order status. ID: {}, newStatus: {}", orderId, newStatus);
-        
+
         Order order = orders.get(orderId);
         if (order == null) {
             logger.warn("Cannot update status - order not found with ID: {}", orderId);
             return false;
         }
-        
+
         boolean updated = order.updateStatus(newStatus);
         if (updated) {
             logger.info("Order status updated. ID: {}, status: {}", orderId, newStatus);
         } else {
-            logger.warn("Invalid status transition for order {}: {} to {}", 
-                       orderId, order.getStatus(), newStatus);
+            logger.warn("Invalid status transition for order {}: {} to {}",
+                    orderId, order.getStatus(), newStatus);
         }
-        
+
         return updated;
     }
-    
+
     @Override
     public boolean setDeliveryId(UUID orderId, UUID deliveryId) {
         if (orderId == null) {
             logger.error("Cannot set delivery ID for order with null ID");
             return false;
         }
-        
+
         logger.debug("Setting delivery ID for order: {}, deliveryId: {}", orderId, deliveryId);
-        
+
         Order order = orders.get(orderId);
         if (order == null) {
             logger.warn("Cannot set delivery ID - order not found with ID: {}", orderId);
             return false;
         }
-        
+
         boolean updated = order.setDeliveryTracking(deliveryId);
         if (updated) {
             logger.info("Delivery ID set for order: {}, deliveryId: {}", orderId, deliveryId);
         } else {
-            logger.warn("Could not set delivery ID for order {}, invalid status: {}", 
-                       orderId, order.getStatus());
+            logger.warn("Could not set delivery ID for order {}, invalid status: {}",
+                    orderId, order.getStatus());
         }
-        
+
         return updated;
     }
-    
+
     @Override
     public List<Order> findByStoreId(UUID storeId) {
         if (storeId == null) {
             logger.error("Cannot find orders for null store ID");
             return Collections.emptyList();
         }
-        
+
         logger.debug("Finding orders for store: {}", storeId);
-        
+
         return orders.values().stream()
                 .filter(order -> storeId.equals(order.getStoreId()))
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<Order> findByUserName(String userName) {
         if (userName == null || userName.isEmpty()) {
             logger.error("Cannot find orders for null or empty username");
             return Collections.emptyList();
         }
-        
+
         logger.debug("Finding orders for user: {}", userName);
-        
+
         return orders.values().stream()
                 .filter(order -> userName.equals(order.getUserName()))
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<Order> findByStatus(OrderStatus status) {
         if (status == null) {
             logger.error("Cannot find orders with null status");
             return Collections.emptyList();
         }
-        
+
         logger.debug("Finding orders with status: {}", status);
-        
+
         return orders.values().stream()
                 .filter(order -> status == order.getStatus())
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<Order> findByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate == null || endDate == null) {
             logger.error("Cannot find orders with null date range parameters");
             return Collections.emptyList();
         }
-        
+
         if (startDate.isAfter(endDate)) {
             logger.error("Invalid date range: start date is after end date");
             return Collections.emptyList();
         }
-        
+
         logger.debug("Finding orders between dates: {} and {}", startDate, endDate);
-        
+
         return orders.values().stream()
                 .filter(order -> {
                     LocalDateTime orderDate = order.getOrderDate();
-                    return (orderDate.isEqual(startDate) || orderDate.isAfter(startDate)) && 
-                           (orderDate.isEqual(endDate) || orderDate.isBefore(endDate));
+                    return (orderDate.isEqual(startDate) || orderDate.isAfter(startDate)) &&
+                            (orderDate.isEqual(endDate) || orderDate.isBefore(endDate));
                 })
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public List<Order> getUserPurchaseHistory(String userName) {
         if (userName == null || userName.isEmpty()) {
             logger.error("Cannot get purchase history for null or empty username");
             return Collections.emptyList();
         }
-        
+
         logger.info("Getting purchase history for user: {}", userName);
-        
+
         List<Order> userOrders = findByUserName(userName);
-        
+
         // Sort by date, newest first
         userOrders.sort(Comparator.comparing(Order::getOrderDate).reversed());
-        
+
         logger.info("Found {} orders for user: {}", userOrders.size(), userName);
         return userOrders;
     }
-    
+
     @Override
     public List<Order> getStorePurchaseHistory(UUID storeId) {
         if (storeId == null) {
             logger.error("Cannot get purchase history for null store ID");
             return Collections.emptyList();
         }
-        
+
         logger.info("Getting purchase history for store: {}", storeId);
-        
+
         List<Order> storeOrders = findByStoreId(storeId);
-        
+
         // Sort by date, newest first
         storeOrders.sort(Comparator.comparing(Order::getOrderDate).reversed());
-        
+
         logger.info("Found {} orders for store: {}", storeOrders.size(), storeId);
         return storeOrders;
     }
 
+    @Override
+    public void clear() {
+        orders.clear();
+        logger.info("Order repository cleared");
+    }
 }

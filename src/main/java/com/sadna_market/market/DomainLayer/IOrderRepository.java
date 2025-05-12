@@ -134,4 +134,6 @@ public interface IOrderRepository {
      * @return List of orders placed at the store
      */
     List<Order> getStorePurchaseHistory(UUID storeId);
+
+    void clear();
 }

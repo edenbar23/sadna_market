@@ -1,40 +1,26 @@
 package com.sadna_market.market.InfrastructureLayer;
 
 import com.sadna_market.market.DomainLayer.IReportRepository;
-import com.sadna_market.market.DomainLayer.Message;
 import com.sadna_market.market.DomainLayer.Report;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+@Repository
 public class InMemoryReportRepository implements IReportRepository {
-    Logger logger = Logger.getLogger(InMemoryReportRepository.class.getName());
-    private final Map<UUID, Report> reports;
-    private static InMemoryReportRepository instance = new InMemoryReportRepository();
 
-    // Private constructor
-    private InMemoryReportRepository() {
+    private final Logger logger = Logger.getLogger(InMemoryReportRepository.class.getName());
+    private final Map<UUID, Report> reports = new ConcurrentHashMap<>();
+
+    public InMemoryReportRepository() {
         logger.info("InMemoryReportRepository initialized");
-        this.reports = new java.util.concurrent.ConcurrentHashMap<>();
-
     }
-
-    // Synchronized getInstance method
-    public synchronized static IReportRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryReportRepository();
-        }
-        return instance;
-    }
-
-    // Optional: Reset method for testing
-    public static synchronized void reset() {
-        instance = null;
-    }
-
 
     @Override
     public boolean save(Report report) {
@@ -99,11 +85,12 @@ public class InMemoryReportRepository implements IReportRepository {
 
         return reports.values().stream()
                 .filter(report -> username.equals(report.getUsername()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
     public void clear() {
         reports.clear();
+        logger.info("Report repository cleared");
     }
 }
