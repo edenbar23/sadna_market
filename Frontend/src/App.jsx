@@ -5,7 +5,7 @@ import MainPage from "./pages/MainPage";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import MessagesPage from "./pages/MessagesPage";
-
+import SearchResultsPage from "./pages/SearchResultsPage";
 import HeaderBar from "./components/HeaderBar";
 
 function App() {
@@ -23,6 +23,7 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
       </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
     </Router>

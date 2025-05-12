@@ -423,3 +423,32 @@
 .status.pending {
   color: #ffc107;
 }
+
+
+/* Search bar styles */
+.search-results-page {
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.search-results-page h1 {
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.store-results,
+.product-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.no-results {
+  margin-top: 2rem;
+  color: #888;
+  font-style: italic;
+}
