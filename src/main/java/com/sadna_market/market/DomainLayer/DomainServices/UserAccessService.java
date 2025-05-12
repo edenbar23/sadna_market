@@ -517,4 +517,10 @@ public class UserAccessService {
         UUID receiver = UUID.fromString(addresse);
         ms.sendMessage(admin,receiver,message);
     }
+
+    public void clear() {
+        reportRepository.clear();
+        userRepository.clear();
+        storeRepository.clear();
+    }
 }

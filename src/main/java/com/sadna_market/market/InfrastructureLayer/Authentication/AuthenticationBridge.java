@@ -65,4 +65,8 @@ public class AuthenticationBridge {
     public TokenService getTokenService() {
         return this.tokenService;
     }
+
+    public void clear() {
+        iAuthRepository.clear();
+    }
 }

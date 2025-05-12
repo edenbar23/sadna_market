@@ -394,4 +394,13 @@ public class InMemoryProductRepository implements IProductRepository {
         return filteredResults;
     }
 
+    public void clear(){
+        synchronized (productStorage) {
+            productStorage.clear();
+            userRates.clear();
+            userReviews.clear();
+            logger.info("InMemoryProductRepository cleared");
+        }
+    }
+
 }

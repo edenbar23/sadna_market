@@ -363,4 +363,9 @@ public class InMemoryStoreRepository implements IStoreRepository {
         logger.warn("getFilteredProductIds not fully implemented - would require product details");
         return Collections.emptySet();
     }
+
+    @Override
+    public void clear() {
+        stores.clear();
+    }
 }

@@ -213,4 +213,8 @@ public class InMemoryMessageRepository implements IMessageRepository {
                 .sorted(Comparator.comparing(Message::getTimestamp))
                 .collect(Collectors.toList());
     }
+
+    public void clear(){
+        messages.clear();
+    }
 }

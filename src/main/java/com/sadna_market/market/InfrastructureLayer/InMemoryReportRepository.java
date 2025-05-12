@@ -101,4 +101,9 @@ public class InMemoryReportRepository implements IReportRepository {
                 .filter(report -> username.equals(report.getUsername()))
                 .toList();
     }
+
+    @Override
+    public void clear() {
+        reports.clear();
+    }
 }

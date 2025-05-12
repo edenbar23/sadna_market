@@ -48,4 +48,6 @@ public interface IReportRepository {
 
 
     List<Report> getAllReports();
+
+    void clear();
 }

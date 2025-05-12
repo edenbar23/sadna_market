@@ -265,4 +265,6 @@ public interface IStoreRepository {
                                   String category, 
                                   Double maxPrice, 
                                   Double minRating);
+
+    void clear();
 }

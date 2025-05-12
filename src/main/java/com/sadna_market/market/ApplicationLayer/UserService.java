@@ -494,4 +494,8 @@ public class UserService {
         return Response.error("not implemented yet");
     }
 
+    public void clear() {
+        authentication.clear();
+        userAccessService.clear();
+    }
 }
