@@ -386,4 +386,8 @@ public class MessageService {
         logger.info("Message sent successfully: {}", message.getMessageId());
         return message;
     }
+
+    public void clear() {
+        messageRepository.clear();
+    }
 }

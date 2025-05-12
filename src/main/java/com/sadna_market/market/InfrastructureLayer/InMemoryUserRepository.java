@@ -221,4 +221,9 @@ public class InMemoryUserRepository implements IUserRepository {
                 .filter(User::isLoggedIn)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void clear() {
+        users.clear();
+    }
 }

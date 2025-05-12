@@ -641,4 +641,8 @@ public class StoreService {
         }
         return messageDTOs;
     }
+
+    public void clear() {
+        storeRepository.clear();
+    }
 }

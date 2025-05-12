@@ -174,7 +174,8 @@ public class Bridge {
     public void clear() {
         userService.clear();
         productService.clear();
-        storeService.clear();
+        // user service clears also the store repo via UserAccessService
+        //storeService.clear();
         messageService.clear();
     }
 }

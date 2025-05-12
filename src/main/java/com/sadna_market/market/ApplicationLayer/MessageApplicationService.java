@@ -310,4 +310,8 @@ public class MessageApplicationService {
                 .map(MessageDTO::new)
                 .collect(Collectors.toList());
     }
+
+    public void clear() {
+        messageService.clear();
+    }
 }

@@ -16,4 +16,5 @@ public interface IUserRepository {
     List<User> findActiveUsers();
 
 
+    void clear();
 }

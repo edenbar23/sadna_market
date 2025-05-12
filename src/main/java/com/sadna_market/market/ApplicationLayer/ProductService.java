@@ -209,4 +209,8 @@ public class ProductService {
     public static synchronized void reset(){
         instance = null;
     }
+
+    public void clear() {
+        productRepository.clear();
+    }
 }

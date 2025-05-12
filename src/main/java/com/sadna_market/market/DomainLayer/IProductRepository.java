@@ -27,4 +27,6 @@ public interface IProductRepository {
     Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rateValue);
     void handleUserReview(UUID userId, UUID productId, String reviewText);
     List<Optional<Product>> searchProduct(ProductSearchRequest request);
+
+    void clear();
 }

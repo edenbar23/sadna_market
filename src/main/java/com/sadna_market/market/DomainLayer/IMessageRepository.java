@@ -95,4 +95,6 @@ public interface IMessageRepository {
      * @return The number of messages marked as read
      */
     int markAllStoreMessagesAsRead(UUID storeId);
+
+    void clear();
 }
