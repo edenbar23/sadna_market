@@ -1,8 +1,13 @@
 package com.sadna_market.market.InfrastructureLayer.Authentication;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class AuthenticationBridge {
     private TokenService tokenService;
     private IAuthRepository iAuthRepository;
+
+    private final Logger logger = LogManager.getLogger(AuthenticationBridge.class);
 
     public AuthenticationBridge(IAuthRepository iAuthRepository) {
         this.iAuthRepository = iAuthRepository;
@@ -36,14 +41,21 @@ public class AuthenticationBridge {
 
     //this method returns the username of the user that is associated with the token
     public String checkSessionToken(String jwt) {
+
         if(!tokenService.validateToken(jwt)){
+            logger.info("###invalid token###");
             throw new IllegalArgumentException("Invalid token");
         }
-        else
+        else {
+            logger.info("username extracted from token: " + tokenService.extractUsername(jwt));
             return tokenService.extractUsername(jwt);
+        }
     }
 
     public void validateToken(String username,String jwt) {
+        logger.info("Validating token for user: " + username);
+        logger.info("extracted username from token: " + checkSessionToken(jwt));
+
         if(!checkSessionToken(jwt).equals(username)) {
             throw new IllegalArgumentException("Invalid token");
         }
