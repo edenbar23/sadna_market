@@ -44,15 +44,15 @@ public class InMemoryRatingRepository implements IRatingRepository {
     }
 
     @Override
-    public Optional<ProductRating> findProductRatingByUserAndProduct(UUID userId, UUID productId) {
-        if (userId == null || productId == null) {
-            logger.warn("Attempt to find product rating with null user ID or product ID");
+    public Optional<ProductRating> findProductRatingByUserAndProduct(String username, UUID productId) {
+        if (username == null || username.isEmpty() || productId == null) {
+            logger.warn("Attempt to find product rating with null/empty username or null product ID");
             return Optional.empty();
         }
 
-        logger.debug("Finding product rating by user: {} and product: {}", userId, productId);
+        logger.debug("Finding product rating by user: {} and product: {}", username, productId);
         return productRatings.values().stream()
-                .filter(rating -> rating.getUserId().equals(userId) && rating.getProductId().equals(productId))
+                .filter(rating -> rating.getUsername().equals(username) && rating.getProductId().equals(productId))
                 .findFirst();
     }
 
@@ -70,15 +70,15 @@ public class InMemoryRatingRepository implements IRatingRepository {
     }
 
     @Override
-    public List<ProductRating> findProductRatingsByUser(UUID userId) {
-        if (userId == null) {
-            logger.warn("Attempt to find product ratings with null user ID");
+    public List<ProductRating> findProductRatingsByUser(String username) {
+        if (username == null || username.isEmpty()) {
+            logger.warn("Attempt to find product ratings with null/empty username");
             return Collections.emptyList();
         }
 
-        logger.debug("Finding product ratings by user: {}", userId);
+        logger.debug("Finding product ratings by user: {}", username);
         return productRatings.values().stream()
-                .filter(rating -> rating.getUserId().equals(userId))
+                .filter(rating -> rating.getUsername().equals(username))
                 .collect(Collectors.toList());
     }
 
@@ -137,15 +137,15 @@ public class InMemoryRatingRepository implements IRatingRepository {
     }
 
     @Override
-    public Optional<StoreRating> findStoreRatingByUserAndStore(UUID userId, UUID storeId) {
-        if (userId == null || storeId == null) {
-            logger.warn("Attempt to find store rating with null user ID or store ID");
+    public Optional<StoreRating> findStoreRatingByUserAndStore(String username, UUID storeId) {
+        if (username == null || username.isEmpty() || storeId == null) {
+            logger.warn("Attempt to find store rating with null/empty username or null store ID");
             return Optional.empty();
         }
 
-        logger.debug("Finding store rating by user: {} and store: {}", userId, storeId);
+        logger.debug("Finding store rating by user: {} and store: {}", username, storeId);
         return storeRatings.values().stream()
-                .filter(rating -> rating.getUserId().equals(userId) && rating.getStoreId().equals(storeId))
+                .filter(rating -> rating.getUsername().equals(username) && rating.getStoreId().equals(storeId))
                 .findFirst();
     }
 
@@ -163,15 +163,15 @@ public class InMemoryRatingRepository implements IRatingRepository {
     }
 
     @Override
-    public List<StoreRating> findStoreRatingsByUser(UUID userId) {
-        if (userId == null) {
-            logger.warn("Attempt to find store ratings with null user ID");
+    public List<StoreRating> findStoreRatingsByUser(String username) {
+        if (username == null || username.isEmpty()) {
+            logger.warn("Attempt to find store ratings with null/empty username");
             return Collections.emptyList();
         }
 
-        logger.debug("Finding store ratings by user: {}", userId);
+        logger.debug("Finding store ratings by user: {}", username);
         return storeRatings.values().stream()
-                .filter(rating -> rating.getUserId().equals(userId))
+                .filter(rating -> rating.getUsername().equals(username))
                 .collect(Collectors.toList());
     }
 

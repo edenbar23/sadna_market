@@ -6,34 +6,29 @@ import java.util.UUID;
 
 public class ProductRating implements IRating {
     @Getter private final UUID ratingId;
-    @Getter private final UUID userId;
-    @Getter private final String username;
+    @Getter private final String username;  // Username instead of UUID
     @Getter private final UUID productId;
     @Getter private int ratingValue;
-    @Getter private String comment;
     @Getter private LocalDateTime timestamp;
     @Getter private boolean updated;
 
     /**
      * Constructor for a new product rating
      */
-    public ProductRating(UUID userId, String username, UUID productId, int ratingValue, String comment) {
+    public ProductRating(String username, UUID productId, int ratingValue) {
         this.ratingId = UUID.randomUUID();
-        this.userId = userId;
         this.username = username;
         this.productId = productId;
         this.ratingValue = validateRating(ratingValue);
-        this.comment = comment;
         this.timestamp = LocalDateTime.now();
         this.updated = false;
     }
 
     /**
-     * Update the rating value and comment
+     * Update the rating value
      */
-    public void updateRating(int newRatingValue, String newComment) {
+    public void updateRating(int newRatingValue) {
         this.ratingValue = validateRating(newRatingValue);
-        this.comment = newComment;
         this.timestamp = LocalDateTime.now();
         this.updated = true;
     }

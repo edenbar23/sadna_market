@@ -11,7 +11,6 @@ public class ProductRatingDTO {
     @Getter private final String username;
     @Getter private final UUID productId;
     @Getter private final int ratingValue;
-    @Getter private final String comment;
     @Getter private final LocalDateTime timestamp;
     @Getter private final boolean updated;
 
@@ -20,7 +19,6 @@ public class ProductRatingDTO {
         this.username = rating.getUsername();
         this.productId = rating.getProductId();
         this.ratingValue = rating.getRatingValue();
-        this.comment = rating.getComment();
         this.timestamp = rating.getTimestamp();
         this.updated = rating.isUpdated();
     }

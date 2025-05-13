@@ -8,10 +8,8 @@ import java.util.UUID;
  */
 public interface IRating {
     UUID getRatingId();
-    UUID getUserId();
     String getUsername();
     int getRatingValue();
     LocalDateTime getTimestamp();
-    String getComment();
     boolean isUpdated();
 }

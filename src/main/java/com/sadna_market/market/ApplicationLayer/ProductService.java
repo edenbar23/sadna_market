@@ -111,8 +111,7 @@ public class ProductService {
             ProductRating productRating = ratingService.rateProduct(
                     rate.getUsername(),
                     rate.getProductId(),
-                    rate.getRating(),
-                    rate.getComment());
+                    rate.getRating());
 
             ProductRatingDTO ratingDTO = new ProductRatingDTO(productRating);
             String json = objectMapper.writeValueAsString(ratingDTO);
