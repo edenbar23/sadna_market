@@ -2,14 +2,11 @@ package com.sadna_market.market.DomainLayer;
 
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
-import com.sadna_market.market.DomainLayer.Product.Product;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-
-import com.sadna_market.market.DomainLayer.Product.UserRate;
 
 public interface IProductRepository {
     Optional<Product> findById(UUID id);

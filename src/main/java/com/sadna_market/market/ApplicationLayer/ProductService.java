@@ -1,14 +1,13 @@
 package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.IProductRepository;
-import com.sadna_market.market.DomainLayer.Product.Product;
-import com.sadna_market.market.DomainLayer.Product.ProductDTO;
-import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.DomainLayer.ProductRating;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import org.slf4j.Logger;
