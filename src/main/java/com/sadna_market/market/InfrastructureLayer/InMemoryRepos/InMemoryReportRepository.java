@@ -1,4 +1,4 @@
-package com.sadna_market.market.InfrastructureLayer;
+package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
 import com.sadna_market.market.DomainLayer.IReportRepository;
 import com.sadna_market.market.DomainLayer.Report;
