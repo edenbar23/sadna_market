@@ -1,12 +1,11 @@
 package com.sadna_market.market.ApplicationLayer;
 
-import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.OrderDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.StorePersonnelDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.StoreRateRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
@@ -35,6 +34,8 @@ public class StoreService {
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
     private final ObjectMapper objectMapper;
+
+    private RatingService ratingService;
 
     @Autowired
     public StoreService(AuthenticationBridge authentication,
@@ -629,6 +630,30 @@ public class StoreService {
             messageDTOs.add(messageDTO);
         }
         return messageDTOs;
+    }
+
+    public Response rateStore(String token, StoreRateRequest rate) {
+        try {
+            logger.info("Validating token for user with username: {}", rate.getUsername());
+            authentication.validateToken(rate.getUsername(), token);
+
+            logger.info("User {} rating store {} with value {}",
+                    rate.getUsername(), rate.getStoreId(), rate.getRate());
+
+            StoreRating storeRating = ratingService.rateStore(
+                    rate.getUsername(),
+                    rate.getStoreId(),
+                    rate.getRate(),
+                    rate.getComment());
+
+            StoreRatingDTO ratingDTO = new StoreRatingDTO(storeRating);
+            String json = objectMapper.writeValueAsString(ratingDTO);
+
+            return Response.success(json);
+        } catch (Exception e) {
+            logger.error("Error rating store: {}", e.getMessage(), e);
+            return Response.error("Error rating store: " + e.getMessage());
+        }
     }
 
     public void clear() {

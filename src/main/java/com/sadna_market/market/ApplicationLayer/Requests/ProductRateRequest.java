@@ -18,28 +18,9 @@ public class ProductRateRequest {
     private String username; // User who is rating the product
     private UUID storeId;  // Store that contains the product
     private int rating;    // Rating value (typically 1-5)
-    
+    private String comment; // Optional comment accompanying the rating
 
-    public UUID getProductId() {
-        return productId;
-    }   
 
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public UUID getStoreId() {
-        return storeId;
-    }
-
-    public int getRating() {
-        return rating;
-    }
-    
     /**
      * Constructor with essential fields for product rating
      * 
@@ -51,6 +32,10 @@ public class ProductRateRequest {
         this.productId = productId;
         this.userId = userId;
         this.rating = rating;
+        this.storeId = null; // Store ID is not provided
+        this.comment = null; // Comment is not provided
+        this.username = null;
+
     }
     
     /**
@@ -66,6 +51,9 @@ public class ProductRateRequest {
         this.userId = userId;
         this.storeId = storeId;
         this.rating = rating;
+        this.comment = null; // Comment is not provided
+        this.username = null;
+
     }
     
     /**
@@ -81,6 +69,8 @@ public class ProductRateRequest {
         this.username = username;
         this.storeId = storeId;
         this.rating = rating;
+        this.userId = null; // User ID is not provided
+        this.comment = null; // Comment is not provided
     }
     
     /**

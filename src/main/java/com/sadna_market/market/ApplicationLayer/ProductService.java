@@ -1,12 +1,15 @@
 package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
+import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.DomainLayer.ProductRating;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +27,8 @@ public class ProductService {
     private final IProductRepository productRepository;
     private final InventoryManagementService inventoryManagementService;
     private final ObjectMapper objectMapper;
+
+    private RatingService ratingService;
 
     @Autowired
     public ProductService(AuthenticationBridge authentication,
@@ -95,32 +100,29 @@ public class ProductService {
     }
 
     //req 3.4 (a)
-    public Response rateProduct(String token, ProductRateRequest rate){
-        logger.info("Validating token for user with username: {}", rate.getUsername());
-        authentication.validateToken(rate.getUsername(),token);
-        UUID productId = rate.getProductId();
-        UUID userId = rate.getUserId();
-        int rateValue = rate.getRating();
-        logger.info("User {} rated product {} with value {}", userId, productId, rateValue);
+    public Response rateProduct(String token, ProductRateRequest rate) {
         try {
-            Optional<UserRate> userRateOptional = productRepository.handleUserRate(userId, productId, rateValue);
+            logger.info("Validating token for user with username: {}", rate.getUsername());
+            authentication.validateToken(rate.getUsername(), token);
 
-            if (userRateOptional.isPresent()) {
-                UserRate userRate = userRateOptional.get();
-                // Convert the UserRate to JSON or any format you're using for response
-                // This part depends on how you want to serialize your objects
-                // You might be using Jackson, Gson, or a custom serializer
-                String json = objectMapper.writeValueAsString(userRate);
+            logger.info("User {} rating product {} with value {}",
+                    rate.getUsername(), rate.getProductId(), rate.getRating());
 
-                return Response.success(json);
-            } else {
-                // If the Optional is empty, it likely means the product or user wasn't found
-                return Response.error("Failed to rate product: Product or user not found");
-            }
+            ProductRating productRating = ratingService.rateProduct(
+                    rate.getUsername(),
+                    rate.getProductId(),
+                    rate.getRating(),
+                    rate.getComment());
+
+            ProductRatingDTO ratingDTO = new ProductRatingDTO(productRating);
+            String json = objectMapper.writeValueAsString(ratingDTO);
+
+            return Response.success(json);
         } catch (Exception e) {
             logger.error("Error rating product: {}", e.getMessage(), e);
             return Response.error("Error rating product: " + e.getMessage());
-        }    }
+        }
+    }
 
     public Response addProduct(String username, String token, ProductRequest product, UUID storeId, int quantity) {
         logger.info("Validating token for user with username: {}", username);
@@ -199,6 +201,7 @@ public class ProductService {
             return Response.error("Failed to get store products with request: " + e.getMessage());
         }
     }
+
 
 //    public void addRate(RateRequest rate) {
 //    }

@@ -437,6 +437,11 @@ public class Store {
         if (rateValue < 1 || rateValue > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
+
+        if (storeRate == null) {
+            storeRate = new Rate();
+        }
+
         storeRate.addRank(rateValue);
     }
 
@@ -444,14 +449,19 @@ public class Store {
         if (newRate < 1 || newRate > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
+
+        if (storeRate == null) {
+            storeRate = new Rate();
+        }
+
         storeRate.updateRank(oldRate, newRate);
     }
 
-    public double getStoreRate() {
-        return storeRate.getRateVal();
+    public double getStoreRating() {
+        return storeRate != null ? storeRate.getRateVal() : 0.0;
     }
 
-    public int getNumOfRanks() {
-        return storeRate.getNumOfRanks();
+    public int getNumOfRatings() {
+        return storeRate != null ? storeRate.getNumOfRanks() : 0;
     }
 }
