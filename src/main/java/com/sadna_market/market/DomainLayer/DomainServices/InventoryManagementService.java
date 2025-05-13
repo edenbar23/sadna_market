@@ -4,9 +4,10 @@ import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
@@ -15,33 +16,19 @@ import java.util.*;
  * This includes adding, removing, and updating products, as well as
  * checking inventory availability.
  */
+@Service
 public class InventoryManagementService {
-
-    private static InventoryManagementService instance;
     private static final Logger logger = LoggerFactory.getLogger(InventoryManagementService.class);
 
     private final IStoreRepository storeRepository;
     private final IProductRepository productRepository;
-    private final RepositoryConfiguration RC;
+    private final IUserRepository userRepository;
 
-    /**
-     * Private constructor for singleton pattern
-     */
-    private InventoryManagementService(RepositoryConfiguration RC) {
-        this.RC = RC;
-        this.storeRepository = RC.storeRepository();
-        this.productRepository = RC.productRepository();
-        logger.info("InventoryManagementService initialized");
-    }
-
-    /**
-     * Gets the singleton instance with repository dependency resolution
-     */
-    public static synchronized InventoryManagementService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new InventoryManagementService(RC);
-        }
-        return instance;
+    @Autowired
+    public InventoryManagementService(IStoreRepository storeRepository, IProductRepository productRepository, IUserRepository userRepository) {
+        this.storeRepository = storeRepository;
+        this.productRepository = productRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -83,7 +70,7 @@ public class InventoryManagementService {
         }
 
         if (store.isStoreManager(username)) {
-            User user = RC.userRepository().findByUsername(username)
+            User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
 
             if (!user.hasPermission(storeId, Permission.MANAGE_INVENTORY) &&
@@ -156,7 +143,7 @@ public class InventoryManagementService {
 
 
         if (store.isStoreManager(username)) {
-            User user = RC.userRepository().findByUsername(username)
+            User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
 
             if (!user.hasPermission(storeId, Permission.MANAGE_INVENTORY) &&
@@ -214,7 +201,7 @@ public class InventoryManagementService {
         }
 
         if (store.isStoreManager(username)) {
-            User user = RC.userRepository().findByUsername(username)
+            User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
 
             if (!user.hasPermission(storeId, Permission.MANAGE_INVENTORY) &&
@@ -479,8 +466,4 @@ public class InventoryManagementService {
         return validationErrors;
     }
 
-    public static synchronized void reset() {
-        instance = null;
-        logger.info("InventoryManagementService instance reset");
-    }
 }

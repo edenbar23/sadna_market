@@ -1,10 +1,10 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,27 +12,19 @@ import java.util.UUID;
 
 @Service
 public class MessageService {
-
-    private static MessageService instance;
-
     private static final Logger logger = LoggerFactory.getLogger(MessageService.class);
 
     private final IMessageRepository messageRepository;
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
-    private RepositoryConfiguration RC;
 
-    private MessageService(RepositoryConfiguration RC) {
-        this.messageRepository = RC.messageRepository();
-        this.storeRepository = RC.storeRepository();
-        this.userRepository = RC.userRepository();
-    }
-
-    public static MessageService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new MessageService( RC);
-        }
-        return instance;
+    @Autowired
+    public MessageService(IMessageRepository messageRepository,
+                          IStoreRepository storeRepository,
+                          IUserRepository userRepository) {
+        this.messageRepository = messageRepository;
+        this.storeRepository = storeRepository;
+        this.userRepository = userRepository;
     }
 
     /**

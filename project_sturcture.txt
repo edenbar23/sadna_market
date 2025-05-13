@@ -1,0 +1,131 @@
+.
+├── mvnw
+├── mvnw.cmd
+├── pom.xml
+├── project_sturcture.txt
+└── src
+    ├── main
+    │   ├── java
+    │   │   └── com
+    │   │       └── sadna_market
+    │   │           └── market
+    │   │               ├── ApplicationLayer
+    │   │               │   ├── Bridge.java
+    │   │               │   ├── DTOs
+    │   │               │   │   ├── CartDTO.java
+    │   │               │   │   ├── OrderDTO.java
+    │   │               │   │   ├── ProductDTO.java
+    │   │               │   │   ├── ShoppingBasketDTO.java
+    │   │               │   │   ├── StoreDTO.java
+    │   │               │   │   ├── StorePersonnelDTO.java
+    │   │               │   │   └── UserDTO.java
+    │   │               │   ├── MarketService.java
+    │   │               │   ├── ProductService.java
+    │   │               │   ├── Requests
+    │   │               │   │   ├── CartRequest.java
+    │   │               │   │   ├── PermissionsRequest.java
+    │   │               │   │   ├── ProductDiscountPolicyRequest.java
+    │   │               │   │   ├── ProductPurchasePolicyRequest.java
+    │   │               │   │   ├── ProductRateRequest.java
+    │   │               │   │   ├── ProductRequest.java
+    │   │               │   │   ├── ProductReviewRequest.java
+    │   │               │   │   ├── ProductSearchRequest.java
+    │   │               │   │   ├── RateRequest.java
+    │   │               │   │   ├── RegisterRequest.java
+    │   │               │   │   ├── ReviewRequest.java
+    │   │               │   │   ├── SearchRequest.java
+    │   │               │   │   ├── StoreRateRequest.java
+    │   │               │   │   └── StoreRequest.java
+    │   │               │   ├── Response.java
+    │   │               │   ├── StoreService.java
+    │   │               │   └── UserService.java
+    │   │               ├── DomainLayer
+    │   │               │   ├── Cart.java
+    │   │               │   ├── DomainServices
+    │   │               │   │   ├── InventoryManagementService.java
+    │   │               │   │   ├── OrderProcessingService.java
+    │   │               │   │   ├── PolicyManagementService.java
+    │   │               │   │   ├── ProductCatalogService.java
+    │   │               │   │   ├── StoreManagementService.java
+    │   │               │   │   └── UserAccessService.java
+    │   │               │   ├── Guest.java
+    │   │               │   ├── IOrderRepository.java
+    │   │               │   ├── IProductRepository.java
+    │   │               │   ├── IStoreRepository.java
+    │   │               │   ├── IUser.java
+    │   │               │   ├── IUserRepository.java
+    │   │               │   ├── IUserRole.java
+    │   │               │   ├── Order.java
+    │   │               │   ├── OrderStatus.java
+    │   │               │   ├── Permission.java
+    │   │               │   ├── Product
+    │   │               │   │   ├── Product.java
+    │   │               │   │   ├── UserRate.java
+    │   │               │   │   └── UserReview.java
+    │   │               │   ├── Rate.java
+    │   │               │   ├── RoleType.java
+    │   │               │   ├── ShoppingBasket.java
+    │   │               │   ├── Store.java
+    │   │               │   ├── StoreExceptions.java
+    │   │               │   ├── StoreFounder.java
+    │   │               │   ├── StoreManager.java
+    │   │               │   ├── StoreOwner.java
+    │   │               │   ├── User.java
+    │   │               │   ├── UserRoleVisitor.java
+    │   │               │   └── UserStoreRoles.java
+    │   │               ├── InfrastructureLayer
+    │   │               │   ├── Authentication
+    │   │               │   │   ├── AuthenticationBridge.java
+    │   │               │   │   ├── IAuthRepository.java
+    │   │               │   │   ├── InMemoryAuthRepository.java
+    │   │               │   │   ├── PasswordEncryptor.java
+    │   │               │   │   ├── TokenService.java
+    │   │               │   │   └── UserCredential.java
+    │   │               │   ├── InMemoryOrderRepository.java
+    │   │               │   ├── InMemoryProductRepository.java
+    │   │               │   ├── InMemoryStoreRepository.java
+    │   │               │   ├── InMemoryUserRepository.java
+    │   │               │   ├── Payment
+    │   │               │   │   ├── BankAccountDTO.java
+    │   │               │   │   ├── ConcretePaymentVisitor.java
+    │   │               │   │   ├── CreditCardDTO.java
+    │   │               │   │   ├── ExternalPaymentAPI.java
+    │   │               │   │   ├── Main.java
+    │   │               │   │   ├── PayPalDTO.java
+    │   │               │   │   ├── PaymentAdapter.java
+    │   │               │   │   ├── PaymentInterface.java
+    │   │               │   │   ├── PaymentMethod.java
+    │   │               │   │   ├── PaymentProxy.java
+    │   │               │   │   ├── PaymentService.java
+    │   │               │   │   └── PaymentVisitor.java
+    │   │               │   ├── ProductRepository.java
+    │   │               │   ├── StoreRepository.java
+    │   │               │   └── UserRepository.java
+    │   │               └── MarketApplication.java
+    │   └── resources
+    │       └── application.properties
+    └── test
+        └── java
+            └── com
+                └── sadna_market
+                    └── market
+                        ├── AcceptanceTests
+                        │   ├── GuestTests.java
+                        │   ├── MarketApplicationTests.java
+                        │   ├── StoreOwnerTests.java
+                        │   └── UserTests.java
+                        └── UnitTests
+                            ├── CartUnitTest.java
+                            ├── InMemoryAuthRepositoryUnitTest.java
+                            ├── InMemoryOrderRepositoryUnitTest.java
+                            ├── InMemoryProductRepositoryUnitTest.java
+                            ├── InMemoryStoreRepositoryUnitTest.java
+                            ├── InMemoryUserRepositoryUnitTest.java
+                            ├── OrderUnitTest.java
+                            ├── StoreFounderUnitTest.java
+                            ├── StoreManagerUnitTest.java
+                            ├── StoreOwnerUnitTest.java
+                            ├── StoreUnitTest.java
+                            └── UserUnitTest.java
+
+24 directories, 105 files

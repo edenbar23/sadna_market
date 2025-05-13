@@ -8,33 +8,32 @@ import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.ProductDTO;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Service
 public class ProductService {
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
-    private static ProductService instance;
-
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private AuthenticationBridge authentication = new AuthenticationBridge();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
+    private final AuthenticationBridge authentication;
     private final IProductRepository productRepository;
     private final InventoryManagementService inventoryManagementService;
-    private ProductService(RepositoryConfiguration RC) {
-        this.productRepository = RC.productRepository();
-        this.inventoryManagementService = InventoryManagementService.getInstance(RC);
-    }
+    private final ObjectMapper objectMapper;
 
-    public static synchronized ProductService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new ProductService(RC);
-        }
-        return instance;
+    @Autowired
+    public ProductService(AuthenticationBridge authentication,
+                          IProductRepository productRepository,
+                          InventoryManagementService inventoryManagementService,
+                          ObjectMapper objectMapper) {
+        this.authentication = authentication;
+        this.productRepository = productRepository;
+        this.inventoryManagementService = inventoryManagementService;
+        this.objectMapper = objectMapper;
     }
 
     //req 2.1 (a)
@@ -204,11 +203,6 @@ public class ProductService {
 //    public void addRate(RateRequest rate) {
 //    }
 
-
-
-    public static synchronized void reset(){
-        instance = null;
-    }
 
     public void clear() {
         productRepository.clear();

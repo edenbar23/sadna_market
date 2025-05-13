@@ -10,9 +10,10 @@ import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
+import com.sadna_market.market.InfrastructureLayer.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,34 +28,29 @@ import java.util.stream.Collectors;
  */
 @Service
 public class StoreService {
-
-    private static StoreService instance;
     private static final Logger logger = LoggerFactory.getLogger(StoreService.class);
-    private AuthenticationBridge authentication = new AuthenticationBridge();
+
+    private final AuthenticationBridge authentication;
     private final StoreManagementService storeManagementService;
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
     private final ObjectMapper objectMapper;
 
-
-    private StoreService(RepositoryConfiguration RC) {
-        this.storeRepository = RC.storeRepository();
-        this.orderRepository = RC.orderRepository();
-        this.storeManagementService = StoreManagementService.getInstance(RC);
-        this.objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules(); // Enable Java 8 date/time modules
+    @Autowired
+    public StoreService(AuthenticationBridge authentication,
+                        StoreManagementService storeManagementService,
+                        IStoreRepository storeRepository,
+                        IOrderRepository orderRepository,
+                        ObjectMapper objectMapper) {
+        this.authentication = authentication;
+        this.storeManagementService = storeManagementService;
+        this.storeRepository = storeRepository;
+        this.orderRepository = orderRepository;
+        this.objectMapper = objectMapper;
+        this.objectMapper.findAndRegisterModules();
         logger.info("StoreService initialized");
     }
 
-    /**
-     * Get singleton instance with repository dependency resolution
-     */
-    public static synchronized StoreService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new StoreService(RC);
-        }
-        return instance;
-    }
 
     /**
      * Opens a new store with the given details
@@ -560,13 +556,6 @@ public class StoreService {
                 .count();
     }
 
-    /**
-     * Reset the singleton instance (primarily for testing)
-     */
-    public static synchronized void reset() {
-        instance = null;
-        logger.info("StoreService instance reset");
-    }
 
 
 //    //appointStoreManager(username,storeId,manager,permissions);

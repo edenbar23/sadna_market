@@ -7,9 +7,9 @@ import com.sadna_market.market.ApplicationLayer.Requests.MessageRequest;
 import com.sadna_market.market.DomainLayer.DomainServices.MessageService;
 import com.sadna_market.market.DomainLayer.Message;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,25 +18,20 @@ import java.util.stream.Collectors;
 
 @Service
 public class MessageApplicationService {
-
-    private static MessageApplicationService instance;
-
     private static final Logger logger = LoggerFactory.getLogger(MessageApplicationService.class);
-    private AuthenticationBridge authentication = new AuthenticationBridge();
-    private MessageService messageService;
+
+    private final AuthenticationBridge authentication;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper;
 
-    private MessageApplicationService(RepositoryConfiguration RC) {
-        this.messageService = messageService.getInstance(RC);
-        this.objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules(); // This enables proper serialization for Java 8 time classes
-    }
-
-    public static MessageApplicationService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new MessageApplicationService(RC);
-        }
-        return instance;
+    @Autowired
+    public MessageApplicationService(AuthenticationBridge authentication,
+                                     MessageService messageService,
+                                     ObjectMapper objectMapper) {
+        this.authentication = authentication;
+        this.messageService = messageService;
+        this.objectMapper = objectMapper;
+        this.objectMapper.findAndRegisterModules(); // Enable Java 8 date/time modules
     }
 
     /**
