@@ -1,12 +1,12 @@
 package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
-import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product;
-import com.sadna_market.market.DomainLayer.UserReview;
+import com.sadna_market.market.DomainLayer.ProductRating;
+import com.sadna_market.market.DomainLayer.IRatingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -15,352 +15,283 @@ import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryProductRepository implements IProductRepository {
-    // In-memory storage for products
     private final Map<UUID, Product> productStorage = new ConcurrentHashMap<>();
-    private final List<UserRate> userRates = new ArrayList<>();
-    private final List<UserReview> userReviews = new ArrayList<>();
+    private final List<String> productReviews = new ArrayList<>(); // Simple storage for reviews
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
 
-    public InMemoryProductRepository() {
+    private final IRatingRepository ratingRepository;
+
+    @Autowired
+    public InMemoryProductRepository(IRatingRepository ratingRepository) {
+        this.ratingRepository = ratingRepository;
         logger.info("InMemoryProductRepository initialized");
     }
 
     @Override
     public Optional<Product> findById(UUID id) {
-        synchronized (productStorage) {
-            logger.debug("Searching for product with ID: {}", id);
-
-            Optional<Product> result = Optional.ofNullable(productStorage.get(id));
-
-            if (result.isPresent()) {
-                logger.info("Product found: ID={}, Name={}", id, result.get().getName());
-            } else {
-                logger.warn("Product not found for ID: {}", id);
-            }
-
-            return result;
-        }
+        logger.debug("Searching for product with ID: {}", id);
+        return Optional.ofNullable(productStorage.get(id));
     }
 
     @Override
     public List<Optional<Product>> filterByName(String name) {
-        synchronized (productStorage) {
-            logger.debug("Attempting to filter products by name: '{}'", name);
-
-            List<Optional<Product>> results = productStorage.values().stream()
-                    .filter(product -> product.getName().equalsIgnoreCase(name) && product.isAvailable())
-                    .map(Optional::of)
-                    .collect(Collectors.toList());
-
-            if (results.isEmpty()) {
-                logger.warn("No products found matching name: '{}'", name);
-            }
-
-            return results;
-        }
+        logger.debug("Filtering products by name: '{}'", name);
+        return productStorage.values().stream()
+                .filter(product -> product.getName().equalsIgnoreCase(name) && product.isAvailable())
+                .map(Optional::of)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Optional<Product>> filterByCategory(String category) {
-        synchronized (productStorage) {
-            logger.debug("Attempting to filter products by category: '{}'", category);
-
-            List<Optional<Product>> results = productStorage.values().stream()
-                    .filter(product -> product.getCategory().equalsIgnoreCase(category) && product.isAvailable())
-                    .map(Optional::of)
-                    .collect(Collectors.toList());
-            if (results.isEmpty()) {
-                logger.warn("No products found matching category: '{}'", category);
-            }
-
-            return results;
-        }
+        logger.debug("Filtering products by category: '{}'", category);
+        return productStorage.values().stream()
+                .filter(product -> product.getCategory().equalsIgnoreCase(category) && product.isAvailable())
+                .map(Optional::of)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Optional<Product>> filterByPriceRange(double minPrice, double maxPrice) {
-        synchronized (productStorage) {
-            logger.debug("Attempting to filter products by price range: {} to {}", minPrice, maxPrice);
-
-            List<Optional<Product>> results = productStorage.values().stream()
-                    .filter(product -> product.getPrice() >= minPrice && product.getPrice() <= maxPrice && product.isAvailable())
-                    .map(Optional::of)
-                    .collect(Collectors.toList());
-
-            if (results.isEmpty()) {
-                logger.warn("No products found in price range: {} to {}", minPrice, maxPrice);
-            }
-
-            return results;
-        }
+        logger.debug("Filtering products by price range: {} to {}", minPrice, maxPrice);
+        return productStorage.values().stream()
+                .filter(product -> product.getPrice() >= minPrice && product.getPrice() <= maxPrice && product.isAvailable())
+                .map(Optional::of)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<Optional<Product>> filterByRate(double minRate, double maxRate) {
-        synchronized (productStorage) {
-            logger.debug("Attempting to filter products by rate range: {} to {}", minRate, maxRate);
-
-            List<Optional<Product>> results = productStorage.values().stream()
-                    .filter(product -> product.getRate() >= minRate && product.getRate() <= maxRate && product.isAvailable())
-                    .map(Optional::of)
-                    .collect(Collectors.toList());
-
-            if (results.isEmpty()) {
-                logger.warn("No products found in rate range: {} to {}", minRate, maxRate);
-            }
-
-            return results;
-        }
-    }
-
-    @Override
-    public void addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
-        synchronized (productStorage) {
-            Product product = new Product(name, storeId, description, category, price, isAvailable);
-            logger.debug("Adding new product with ID: {}", product.getProductId());
-
-            // Check if a product with the same name already exists
-            Optional<Product> existingProduct = productStorage.values().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(name))
-                    .findFirst();
-            if (existingProduct.isPresent()) {
-                logger.warn("Product with name '{}' already exists. Not adding.", name);
-                throw new IllegalArgumentException("Product with the same name already exists.");
-            }
-            productStorage.put(product.getProductId(), product);
-            logger.info("Product successfully added: {}", product.getProductId());
-        }
-    }
-
-    @Override
-    public void updateProduct(ProductRequest product) {
-        synchronized (productStorage) {
-            if (product.getProductId() == null){
-                logger.error("Product ID should not be null for existing products");
-                throw new IllegalArgumentException("Product ID should not be null for existing products");
-            }
-            Optional<Product> existingProduct_ = findById(product.getProductId());
-            if (existingProduct_.isEmpty()) {
-                logger.error("Product not found");
-                throw new IllegalArgumentException("Product not found");
-            }
-            Product existingProduct = existingProduct_.get();
-            existingProduct.updateProduct(product);
-            logger.debug("Updating product with ID: {}", product.getProductId());
-            productStorage.put(existingProduct.getProductId(), existingProduct);
-            logger.info("Product successfully updated: {}", product.getProductId());
-        }
-    }
-
-    @Override
-    public void deleteProduct(ProductRequest product) {
-        synchronized (productStorage) {
-            if (product.getProductId() == null){
-                logger.error("Product ID should not be null for existing products");
-                throw new IllegalArgumentException("Product ID should not be null for existing products");
-            }
-            Optional<Product> existingProduct_ = findById(product.getProductId());
-            if (existingProduct_.isEmpty()) {
-                logger.error("Product not found");
-                throw new IllegalArgumentException("Product not found");
-            }
-            Product existingProduct = existingProduct_.get();
-            logger.debug("Deleting product with ID: {}", existingProduct.getProductId());
-            productStorage.remove(existingProduct.getProductId());
-            logger.info("Product successfully deleted: {}", existingProduct.getProductId());
-        }
-    }
-
-    @Override
-    public List<Optional<Product>> getProductsByIds(Set<UUID> intersectionIds) {
-        logger.debug("Retrieving {} products by their IDs", intersectionIds.size());
-
-        List<Optional<Product>> result = intersectionIds.stream()
-                .map(id -> Optional.ofNullable(productStorage.get(id)))
-                .collect(Collectors.toList());
-
-        int foundCount = (int) result.stream().filter(Optional::isPresent).count();
-        logger.debug("Found {}/{} products from the provided IDs", foundCount, intersectionIds.size());
-
-        return result;
-    }
-
-    @Override
-    public Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rate) {
-        synchronized (userRates) {
-            logger.debug("Handling user rate: User ID={}, Product ID={}, Rate={}", userId, productId, rate);
-
-            // check if product exist in the system
-            Optional<Product> productOpt = findById(productId);
-            if (productOpt.isPresent()) {
-                Product product = productOpt.get();
-                // check if user already rated the product
-                Optional<UserRate> existingRate = userRates.stream()
-                        .filter(userRate -> userRate.getUserId().equals(userId) && userRate.getProductId().equals(productId))
-                        .findFirst();
-                if (existingRate.isPresent()) {
-                    logger.warn("User has already rated this product. Updating rate.");
-                    // update userRate list
-                    UserRate userRate = existingRate.get();
-                    int oldRate = userRate.getRatingValue();
-                    userRates.remove(userRate);
-                    userRate.changeRatingValue(rate);
-                    userRates.add(userRate);
-                    // Update the product's rate
-                    product.updateRank(oldRate, rate);
-                    productStorage.put(product.getProductId(), product);
-                    return Optional.of(userRate);
-                } else {
-                    logger.info("Adding new user rate.");
-                    UserRate userRate = new UserRate(userId, productId, rate);
-                    userRates.add(userRate);
-                    // Update the product's rate
-                    product.addRank(rate);
-                    productStorage.put(product.getProductId(), product);
-                    return Optional.of(userRate);
-                }
-            } else {
-                logger.error("Product not found for ID: {}", productId);
-                return Optional.empty();
-            }
-        }
-    }
-
-    @Override
-    public void handleUserReview(UUID userId, UUID productId, String reviewText) {
-        synchronized (productStorage) {
-            logger.debug("Handling user review: User ID={}, Product ID={}, Review={}", userId, productId, reviewText);
-            // check if product exist in the system
-            Optional<Product> productOpt = findById(productId);
-            if (productOpt.isPresent()) {
-                Product product = productOpt.get();
-                // add the review to the product
-                userReviews.add(new UserReview(userId, productId, reviewText));
-                logger.info("User review added successfully.");
-            } else {
-                logger.error("Product not found for ID: {}", productId);
-            }
-        }
-    }
-
-    @Override
-    public List<Optional<Product>> searchProduct(ProductSearchRequest request) {
-        logger.debug("Searching for products with parameters: {}", request);
-        // Get products by parameters
-        List<Optional<Product>> results = getProductsByParameters(request);
-
-        if (results.isEmpty()) {
-            logger.warn("No products found matching the search criteria.");
-        } else {
-            logger.info("Found {} products matching the search criteria.", results.size());
-        }
-
-        return results;
-    }
-
-    // helper method to search products by parameters
-    private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request) {
-        // Initialize the result as all products
-        List<Optional<Product>> result = productStorage.values().stream()
+        logger.debug("Filtering products by rate range: {} to {}", minRate, maxRate);
+        return productStorage.values().stream()
+                .filter(product -> product.getRate() >= minRate && product.getRate() <= maxRate && product.isAvailable())
                 .map(Optional::of)
                 .collect(Collectors.toList());
+    }
 
-        Set<UUID> resultIds = productStorage.keySet();
+    @Override
+    public UUID addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
+        logger.debug("Adding new product");
 
-        // Filter by name if it's not null
-        if (request.getName() != null && !request.getName().isEmpty()) {
-            List<Optional<Product>> nameFiltered = filterByName(request.getName());
-            Set<UUID> nameIds = nameFiltered.stream()
-                    .filter(Optional::isPresent)
-                    .map(opt -> opt.get().getProductId())
-                    .collect(Collectors.toSet());
+        // Check if a product with the same name already exists
+        Optional<Product> existingProduct = productStorage.values().stream()
+                .filter(p -> p.getName().equalsIgnoreCase(name) && p.getStoreId().equals(storeId))
+                .findFirst();
 
-            resultIds.retainAll(nameIds); // Intersect with current results
+        if (existingProduct.isPresent()) {
+            logger.warn("Product with name '{}' already exists in store {}", name, storeId);
+            throw new IllegalArgumentException("Product with the same name already exists in this store");
         }
 
-        // Filter by category if it's not null
-        if (request.getCategory() != null && !request.getCategory().isEmpty()) {
-            List<Optional<Product>> categoryFiltered = filterByCategory(request.getCategory());
-            Set<UUID> categoryIds = categoryFiltered.stream()
-                    .filter(Optional::isPresent)
-                    .map(opt -> opt.get().getProductId())
-                    .collect(Collectors.toSet());
+        Product product = new Product(name, storeId, description, category, price, isAvailable);
+        productStorage.put(product.getProductId(), product);
+        logger.info("Product successfully added: {}", product.getProductId());
 
-            resultIds.retainAll(categoryIds); // Intersect with current results
+        return product.getProductId();
+    }
+
+    @Override
+    public void updateProduct(UUID productId, String name, String category, String description, double price) {
+        logger.debug("Updating product with ID: {}", productId);
+
+        if (productId == null) {
+            logger.error("Product ID should not be null for existing products");
+            throw new IllegalArgumentException("Product ID should not be null for existing products");
         }
 
-        // Filter by price range if both min and max are not -1
-        if (request.getMinPrice() != -1 && request.getMaxPrice() != -1) {
-            List<Optional<Product>> priceFiltered = filterByPriceRange(
-                    request.getMinPrice(), request.getMaxPrice());
-            Set<UUID> priceIds = priceFiltered.stream()
-                    .filter(Optional::isPresent)
-                    .map(opt -> opt.get().getProductId())
-                    .collect(Collectors.toSet());
-
-            resultIds.retainAll(priceIds); // Intersect with current results
+        Optional<Product> existingProductOpt = findById(productId);
+        if (existingProductOpt.isEmpty()) {
+            logger.error("Product not found");
+            throw new IllegalArgumentException("Product not found");
         }
 
-        // Filter by rate range if both min and max are not -1
-        if (request.getMinRank() != -1 && request.getMaxRank() != -1) {
-            List<Optional<Product>> rateFiltered = filterByRate(
-                    request.getMinRank(), request.getMaxRank());
-            Set<UUID> rateIds = rateFiltered.stream()
-                    .filter(Optional::isPresent)
-                    .map(opt -> opt.get().getProductId())
-                    .collect(Collectors.toSet());
+        Product existingProduct = existingProductOpt.get();
+        existingProduct.updateProduct(name, description, category, price);
+        productStorage.put(existingProduct.getProductId(), existingProduct);
+        logger.info("Product successfully updated: {}", productId);
+    }
 
-            resultIds.retainAll(rateIds); // Intersect with current results
+    @Override
+    public void deleteProduct(UUID productId) {
+        logger.debug("Deleting product with ID: {}", productId);
+
+        if (productId == null) {
+            logger.error("Product ID should not be null");
+            throw new IllegalArgumentException("Product ID should not be null");
         }
 
-        // Get the final list of products from the filtered IDs
+        if (!productStorage.containsKey(productId)) {
+            logger.error("Product not found");
+            throw new IllegalArgumentException("Product not found");
+        }
+
+        productStorage.remove(productId);
+        logger.info("Product successfully deleted: {}", productId);
+    }
+
+    @Override
+    public List<Optional<Product>> getProductsByIds(Set<UUID> productIds) {
+        logger.debug("Retrieving {} products by their IDs", productIds.size());
+        return productIds.stream()
+                .map(id -> Optional.ofNullable(productStorage.get(id)))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Optional<Product>> findByStoreId(UUID storeId) {
+        logger.debug("Finding products by store ID: {}", storeId);
+        return productStorage.values().stream()
+                .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
+                .map(Optional::of)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Optional<Product>> filterByStoreWithCriteria(UUID storeId, String name, String category,
+                                                             Double minPrice, Double maxPrice,
+                                                             Double minRate, Double maxRate) {
+        logger.debug("Filtering products by store with criteria");
+
+        // Start with all products from this store
+        List<Product> storeProducts = productStorage.values().stream()
+                .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
+                .collect(Collectors.toList());
+
+        // Apply filters based on provided criteria
+        if (name != null && !name.isEmpty()) {
+            storeProducts = storeProducts.stream()
+                    .filter(product -> product.getName().toLowerCase().contains(name.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        if (category != null && !category.isEmpty()) {
+            storeProducts = storeProducts.stream()
+                    .filter(product -> product.getCategory().equalsIgnoreCase(category))
+                    .collect(Collectors.toList());
+        }
+
+        if (minPrice != null && maxPrice != null) {
+            storeProducts = storeProducts.stream()
+                    .filter(product -> product.getPrice() >= minPrice && product.getPrice() <= maxPrice)
+                    .collect(Collectors.toList());
+        }
+
+        if (minRate != null && maxRate != null) {
+            storeProducts = storeProducts.stream()
+                    .filter(product -> product.getRate() >= minRate && product.getRate() <= maxRate)
+                    .collect(Collectors.toList());
+        }
+
+        return storeProducts.stream()
+                .map(Optional::of)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addProductRating(UUID productId, String username, int ratingValue) {
+        logger.debug("Adding rating for product {} by user {}: {}", productId, username, ratingValue);
+
+        Optional<Product> productOpt = findById(productId);
+        if (productOpt.isEmpty()) {
+            logger.error("Product not found: {}", productId);
+            throw new IllegalArgumentException("Product not found: " + productId);
+        }
+
+        Product product = productOpt.get();
+
+        // Check if user already rated this product using the ratingRepository
+        Optional<ProductRating> existingRating = ratingRepository.findProductRatingByUserAndProduct(username, productId);
+
+        if (existingRating.isPresent()) {
+            // Update existing rating
+            ProductRating rating = existingRating.get();
+            int oldRatingValue = rating.getRatingValue();
+            rating.updateRating(ratingValue);
+            ratingRepository.saveProductRating(rating);
+
+            // Update product's overall rating
+            product.updateRank(oldRatingValue, ratingValue);
+        } else {
+            // Create new rating
+            ProductRating rating = new ProductRating(username, productId, ratingValue);
+            ratingRepository.saveProductRating(rating);
+
+            // Update product's overall rating
+            product.addRank(ratingValue);
+        }
+
+        // Update the product in storage
+        productStorage.put(product.getProductId(), product);
+        logger.info("Rating added/updated successfully");
+    }
+
+    @Override
+    public void addProductReview(UUID productId, String username, String reviewText) {
+        logger.debug("Adding review for product {} by user {}", productId, username);
+
+        if (!productStorage.containsKey(productId)) {
+            logger.error("Product not found: {}", productId);
+            throw new IllegalArgumentException("Product not found: " + productId);
+        }
+
+        // Simple storage of reviews - in a real system you'd have a Review entity
+        String reviewEntry = String.format("%s|%s|%s|%s",
+                UUID.randomUUID(), // Generate review ID
+                username,
+                productId,
+                reviewText);
+
+        productReviews.add(reviewEntry);
+        logger.info("Review added successfully");
+    }
+
+    @Override
+    public List<Optional<Product>> searchProduct(String name, String category, Double minPrice, Double maxPrice, Double minRate, Double maxRate) {
+        logger.debug("Searching products with criteria");
+
+        // Start with all products
+        Set<UUID> resultIds = new HashSet<>(productStorage.keySet());
+
+        // Apply filters based on provided criteria
+        if (name != null && !name.isEmpty()) {
+            Set<UUID> nameIds = productStorage.values().stream()
+                    .filter(product -> product.getName().toLowerCase().contains(name.toLowerCase()))
+                    .map(Product::getProductId)
+                    .collect(Collectors.toSet());
+            resultIds.retainAll(nameIds);
+        }
+
+        if (category != null && !category.isEmpty()) {
+            Set<UUID> categoryIds = productStorage.values().stream()
+                    .filter(product -> product.getCategory().equalsIgnoreCase(category))
+                    .map(Product::getProductId)
+                    .collect(Collectors.toSet());
+            resultIds.retainAll(categoryIds);
+        }
+
+        if (minPrice != null && maxPrice != null) {
+            Set<UUID> priceIds = productStorage.values().stream()
+                    .filter(product -> product.getPrice() >= minPrice && product.getPrice() <= maxPrice)
+                    .map(Product::getProductId)
+                    .collect(Collectors.toSet());
+            resultIds.retainAll(priceIds);
+        }
+
+        if (minRate != null && maxRate != null) {
+            Set<UUID> rateIds = productStorage.values().stream()
+                    .filter(product -> product.getRate() >= minRate && product.getRate() <= maxRate)
+                    .map(Product::getProductId)
+                    .collect(Collectors.toSet());
+            resultIds.retainAll(rateIds);
+        }
+
         return getProductsByIds(resultIds);
     }
 
     @Override
-    public List<Optional<Product>> findByStoreId(UUID storeId){
-        synchronized (productStorage) {
-            logger.debug("Searching for products by store ID: {}", storeId);
-
-            List<Optional<Product>> results = productStorage.values().stream()
-                    .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
-                    .map(Optional::of)
-                    .collect(Collectors.toList());
-
-            if (results.isEmpty()) {
-                logger.warn("No products found for store ID: {}", storeId);
-            }
-
-            return results;
-        }
-    }
-
-    @Override
-    public List<Optional<Product>> filterByStoreWithRequest(UUID storeId, ProductSearchRequest request) {
-        logger.debug("Searching for products by store ID: {} with request", storeId);
-        // First get all products by the search parameters
-        List<Optional<Product>> allResults = getProductsByParameters(request);
-
-        // Then filter to include only products with matching storeId
-        List<Optional<Product>> filteredResults = allResults.stream()
-                .filter(productOpt -> productOpt.isPresent() &&
-                        productOpt.get().getStoreId().equals(storeId))
-                .collect(Collectors.toList());
-
-        if (filteredResults.isEmpty()) {
-            logger.warn("No products found for store ID: {}", storeId);
-        }
-
-        return filteredResults;
-    }
-
-    @Override
-    public void clear(){
-        synchronized (productStorage) {
-            productStorage.clear();
-            userRates.clear();
-            userReviews.clear();
-            logger.info("Product repository cleared");
-        }
+    public void clear() {
+        productStorage.clear();
+        productReviews.clear();
+        logger.info("Product repository cleared");
     }
 }

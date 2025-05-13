@@ -1,16 +1,16 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.Product;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class RatingService {
     private static final Logger logger = LoggerFactory.getLogger(RatingService.class);
 
@@ -18,17 +18,6 @@ public class RatingService {
     private final IUserRepository userRepository;
     private final IProductRepository productRepository;
     private final IStoreRepository storeRepository;
-
-    @Autowired
-    public RatingService(IRatingRepository ratingRepository,
-                         IUserRepository userRepository,
-                         IProductRepository productRepository,
-                         IStoreRepository storeRepository) {
-        this.ratingRepository = ratingRepository;
-        this.userRepository = userRepository;
-        this.productRepository = productRepository;
-        this.storeRepository = storeRepository;
-    }
 
     /**
      * Rate a product or update an existing rating
@@ -69,6 +58,15 @@ public class RatingService {
             Product product = productOpt.get();
             product.updateRank(oldRatingValue, ratingValue);
 
+            // Update product in repository (in a real system, you'd use a transaction)
+            productRepository.updateProduct(
+                    product.getProductId(),
+                    product.getName(),
+                    product.getCategory(),
+                    product.getDescription(),
+                    product.getPrice()
+            );
+
             logger.info("Updated product rating: {}", rating.getRatingId());
         } else {
             // Create new rating
@@ -78,6 +76,15 @@ public class RatingService {
             // Update product's overall rating
             Product product = productOpt.get();
             product.addRank(ratingValue);
+
+            // Update product in repository
+            productRepository.updateProduct(
+                    product.getProductId(),
+                    product.getName(),
+                    product.getCategory(),
+                    product.getDescription(),
+                    product.getPrice()
+            );
 
             logger.info("Created new product rating: {}", rating.getRatingId());
         }
@@ -132,8 +139,37 @@ public class RatingService {
             logger.info("Created new store rating: {}", rating.getRatingId());
         }
 
+        // Save updated store
+        storeRepository.save(store);
+
         return rating;
     }
 
-    // Other methods remain the same...
+    /**
+     * Get average product rating
+     */
+    public double getAverageProductRating(UUID productId) {
+        return ratingRepository.getAverageProductRating(productId);
+    }
+
+    /**
+     * Get product rating count
+     */
+    public int getProductRatingCount(UUID productId) {
+        return ratingRepository.getProductRatingCount(productId);
+    }
+
+    /**
+     * Get average store rating
+     */
+    public double getAverageStoreRating(UUID storeId) {
+        return ratingRepository.getAverageStoreRating(storeId);
+    }
+
+    /**
+     * Get store rating count
+     */
+    public int getStoreRatingCount(UUID storeId) {
+        return ratingRepository.getStoreRatingCount(storeId);
+    }
 }

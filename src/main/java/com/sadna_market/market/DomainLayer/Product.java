@@ -1,36 +1,22 @@
 package com.sadna_market.market.DomainLayer;
 
-import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.UUID;
 
+@Getter
 public class Product {
-    @Setter
-    @Getter
-    private String name;
-    @Getter
-    private UUID storeId;
+    @Setter private String name;
+    private final UUID storeId;
+    private final UUID productId;
+    @Setter private String description;
+    @Setter private String category;
+    @Setter private double price;
+    @Setter private boolean isAvailable;
 
-    @Getter
-    private UUID productId;
-    @Setter
-    @Getter
-    private String description;
-
-
-    private double ratingValue;
+    // Direct rating properties
+    private double ratingSum;
     private int ratingCount;
-
-    @Setter
-    @Getter
-    private String category;
-    @Setter
-    @Getter
-    private double price;
-    @Getter
-    private boolean isAvailable;
 
     // Constructor
     public Product(String name, UUID storeId, String description, String category, double price, boolean isAvailable) {
@@ -41,12 +27,26 @@ public class Product {
         this.category = category;
         this.price = price;
         this.isAvailable = isAvailable;
-        this.ratingValue = 0.0;
+        this.ratingSum = 0.0;
         this.ratingCount = 0;
     }
 
+    // Constructor for repository reconstruction
+    public Product(UUID productId, String name, UUID storeId, String description, String category,
+                   double price, boolean isAvailable, double ratingSum, int ratingCount) {
+        this.productId = productId;
+        this.name = name;
+        this.storeId = storeId;
+        this.description = description;
+        this.category = category;
+        this.price = price;
+        this.isAvailable = isAvailable;
+        this.ratingSum = ratingSum;
+        this.ratingCount = ratingCount;
+    }
 
-    public void updateDetails(String name, String description, String category, double price) {
+
+    public void updateProduct(String name, String description, String category, double price) {
         if (name != null) {
             this.name = name;
         }
@@ -61,19 +61,30 @@ public class Product {
         }
     }
 
+    // Add a new rating
+    public void addRank(double newRank) {
+        if (newRank < 1 || newRank > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        this.ratingSum += newRank;
+        this.ratingCount++;
+    }
 
-    public void setRating(double ratingValue, int ratingCount) {
-        this.ratingValue = ratingValue;
-        this.ratingCount = ratingCount;
+    // Update an existing rating
+    public void updateRank(double oldRank, double newRank) {
+        if (newRank < 1 || newRank > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        this.ratingSum = this.ratingSum - oldRank + newRank;
     }
 
 
     public double getRate() {
-        return ratingValue;
+        return ratingCount > 0 ? ratingSum / ratingCount : 0.0;
     }
+
 
     public int getNumOfRanks() {
         return ratingCount;
     }
-
 }
