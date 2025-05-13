@@ -1,51 +1,30 @@
-package com.sadna_market.market.InfrastructureLayer;
+package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
-import com.sadna_market.market.ApplicationLayer.Response;
 import com.sadna_market.market.DomainLayer.IProductRepository;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 import com.sadna_market.market.DomainLayer.Product.Product;
 import com.sadna_market.market.DomainLayer.Product.UserRate;
 import com.sadna_market.market.DomainLayer.Product.UserReview;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+@Repository
 public class InMemoryProductRepository implements IProductRepository {
     // In-memory storage for products
-    private Map<UUID, Product> productStorage ;
-    private List<UserRate> userRates ;
-    private List<UserReview> userReviews ;
+    private final Map<UUID, Product> productStorage = new ConcurrentHashMap<>();
+    private final List<UserRate> userRates = new ArrayList<>();
+    private final List<UserReview> userReviews = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
-    private static InMemoryProductRepository instance = new InMemoryProductRepository();
 
-    // Private constructor
-    private InMemoryProductRepository() {
-        
-        this.productStorage = new ConcurrentHashMap<>();
-        this.userRates = new ArrayList<>();
-        this.userReviews = new ArrayList<>();
-        
+    public InMemoryProductRepository() {
         logger.info("InMemoryProductRepository initialized");
     }
-
-    // Synchronized getInstance method
-    public synchronized static IProductRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryProductRepository();
-        }
-        return instance;
-    }
-
-    // Optional: Reset method for testing
-    public static synchronized void reset() {
-        instance = null;
-    }
-
 
     @Override
     public Optional<Product> findById(UUID id) {
@@ -138,7 +117,7 @@ public class InMemoryProductRepository implements IProductRepository {
     @Override
     public void addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
         synchronized (productStorage) {
-            Product product = new Product( name, storeId, category, description, price, isAvailable);
+            Product product = new Product(name, storeId, description, category, price, isAvailable);
             logger.debug("Adding new product with ID: {}", product.getProductId());
 
             // Check if a product with the same name already exists
@@ -153,7 +132,6 @@ public class InMemoryProductRepository implements IProductRepository {
             logger.info("Product successfully added: {}", product.getProductId());
         }
     }
-
 
     @Override
     public void updateProduct(ProductRequest product) {
@@ -170,7 +148,7 @@ public class InMemoryProductRepository implements IProductRepository {
             Product existingProduct = existingProduct_.get();
             existingProduct.updateProduct(product);
             logger.debug("Updating product with ID: {}", product.getProductId());
-            productStorage.put(existingProduct.getProductId(),existingProduct);
+            productStorage.put(existingProduct.getProductId(), existingProduct);
             logger.info("Product successfully updated: {}", product.getProductId());
         }
     }
@@ -194,12 +172,7 @@ public class InMemoryProductRepository implements IProductRepository {
         }
     }
 
-    /**
-     * Retrieves products corresponding to the provided set of UUIDs.
-     *
-     * @param intersectionIds Set of product UUIDs to retrieve
-     * @return List of Optional<Product> objects corresponding to the provided IDs
-     */
+    @Override
     public List<Optional<Product>> getProductsByIds(Set<UUID> intersectionIds) {
         logger.debug("Retrieving {} products by their IDs", intersectionIds.size());
 
@@ -213,17 +186,7 @@ public class InMemoryProductRepository implements IProductRepository {
         return result;
     }
 
-
-    // Method to handle user rating of a product
-    /**
-     * Handles the user rating for a product.
-     *
-     * @param userId    UUID of the user
-     * @param productId UUID of the product
-     * @param rate      Rating value
-     */
-    // if the user already rated the product, update the rating
-    // if the user didn't rate the product, add a new rating
+    @Override
     public Optional<UserRate> handleUserRate(UUID userId, UUID productId, int rate) {
         synchronized (userRates) {
             logger.debug("Handling user rate: User ID={}, Product ID={}, Rate={}", userId, productId, rate);
@@ -264,14 +227,7 @@ public class InMemoryProductRepository implements IProductRepository {
         }
     }
 
-    // Method to handle user review of a product
-    /**
-     * Handles the user review for a product.
-     *
-     * @param userId    UUID of the user
-     * @param productId UUID of the product
-     * @param reviewText Review text
-     */
+    @Override
     public void handleUserReview(UUID userId, UUID productId, String reviewText) {
         synchronized (productStorage) {
             logger.debug("Handling user review: User ID={}, Product ID={}, Review={}", userId, productId, reviewText);
@@ -288,6 +244,7 @@ public class InMemoryProductRepository implements IProductRepository {
         }
     }
 
+    @Override
     public List<Optional<Product>> searchProduct(ProductSearchRequest request) {
         logger.debug("Searching for products with parameters: {}", request);
         // Get products by parameters
@@ -301,6 +258,7 @@ public class InMemoryProductRepository implements IProductRepository {
 
         return results;
     }
+
     // helper method to search products by parameters
     private List<Optional<Product>> getProductsByParameters(ProductSearchRequest request) {
         // Initialize the result as all products
@@ -359,6 +317,8 @@ public class InMemoryProductRepository implements IProductRepository {
         // Get the final list of products from the filtered IDs
         return getProductsByIds(resultIds);
     }
+
+    @Override
     public List<Optional<Product>> findByStoreId(UUID storeId){
         synchronized (productStorage) {
             logger.debug("Searching for products by store ID: {}", storeId);
@@ -376,8 +336,9 @@ public class InMemoryProductRepository implements IProductRepository {
         }
     }
 
+    @Override
     public List<Optional<Product>> filterByStoreWithRequest(UUID storeId, ProductSearchRequest request) {
-        logger.debug("Searching for products by store ID: {}", storeId);
+        logger.debug("Searching for products by store ID: {} with request", storeId);
         // First get all products by the search parameters
         List<Optional<Product>> allResults = getProductsByParameters(request);
 
@@ -394,13 +355,13 @@ public class InMemoryProductRepository implements IProductRepository {
         return filteredResults;
     }
 
+    @Override
     public void clear(){
         synchronized (productStorage) {
             productStorage.clear();
             userRates.clear();
             userReviews.clear();
-            logger.info("InMemoryProductRepository cleared");
+            logger.info("Product repository cleared");
         }
     }
-
 }

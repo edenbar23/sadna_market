@@ -3,7 +3,6 @@ package com.sadna_market.market.UnitTests;
 import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.Store;
 import com.sadna_market.market.DomainLayer.StoreFounder;
-import com.sadna_market.market.InfrastructureLayer.InMemoryStoreRepository;
 import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;

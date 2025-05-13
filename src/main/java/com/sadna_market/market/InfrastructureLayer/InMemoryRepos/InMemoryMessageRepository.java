@@ -1,13 +1,11 @@
-package com.sadna_market.market.InfrastructureLayer;
+package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
-import org.springframework.stereotype.Repository;
 import com.sadna_market.market.DomainLayer.IMessageRepository;
 import com.sadna_market.market.DomainLayer.Message;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
 
-
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -18,29 +16,11 @@ public class InMemoryMessageRepository implements IMessageRepository {
     private static final Logger logger = LogManager.getLogger(InMemoryMessageRepository.class);
 
     // Thread-safe map to store messages by ID
-    private final Map<UUID, Message> messages ;
+    private final Map<UUID, Message> messages = new ConcurrentHashMap<>();
 
-    private static InMemoryMessageRepository instance = new InMemoryMessageRepository();
-
-    // Private constructor
-    private InMemoryMessageRepository() {
+    public InMemoryMessageRepository() {
         logger.info("InMemoryMessageRepository initialized");
-        this.messages = new ConcurrentHashMap<>();
     }
-
-    // Synchronized getInstance method
-    public synchronized static IMessageRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryMessageRepository();
-        }
-        return instance;
-    }
-
-    // Optional: Reset method for testing
-    public static synchronized void reset() {
-        instance = null;
-    }
-
 
     @Override
     public Message save(Message message) {
@@ -214,7 +194,9 @@ public class InMemoryMessageRepository implements IMessageRepository {
                 .collect(Collectors.toList());
     }
 
-    public void clear(){
+    @Override
+    public void clear() {
         messages.clear();
+        logger.info("Message repository cleared");
     }
 }

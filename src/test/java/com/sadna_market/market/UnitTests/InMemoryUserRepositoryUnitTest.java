@@ -3,7 +3,6 @@ package com.sadna_market.market.UnitTests;
 import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.RoleType;
 import com.sadna_market.market.DomainLayer.User;
-import com.sadna_market.market.InfrastructureLayer.InMemoryUserRepository;
 import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;

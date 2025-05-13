@@ -13,10 +13,10 @@ import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 //import com.sadna_market.market.DomainLayer.DomainServices
@@ -26,29 +26,19 @@ import java.util.UUID;
 
 @Service
 public class UserService {
-
-    private static UserService instance;
-    // here we will implement the user service logic
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private AuthenticationBridge authentication = new AuthenticationBridge();
 
-    //private final IUserRepository userRepository;
-    private UserAccessService userAccessService;
+    private final AuthenticationBridge authentication;
+    private final UserAccessService userAccessService;
     private final ObjectMapper objectMapper;
 
-    private RepositoryConfiguration RC;
-   
-    private UserService(RepositoryConfiguration RC) {
-        this.RC = RC;
-        this.objectMapper = new ObjectMapper();
-        this.userAccessService = userAccessService.getInstance(RC);
-    }
-
-    public static synchronized UserService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new UserService(RC);
-        }
-        return instance;
+    @Autowired
+    public UserService(AuthenticationBridge authentication,
+                       UserAccessService userAccessService,
+                       ObjectMapper objectMapper) {
+        this.authentication = authentication;
+        this.userAccessService = userAccessService;
+        this.objectMapper = objectMapper;
     }
 
     //Guest functions here:

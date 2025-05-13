@@ -3,11 +3,11 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
-import com.sadna_market.market.InfrastructureLayer.StoreRepository;
-import com.sadna_market.market.InfrastructureLayer.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -17,10 +17,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * UserAccessService is responsible for managing user access and permissions in the system.
  * It handles user registration, authentication, authorization, and other user-related operations.
  */
+@Service
 public class UserAccessService {
-
-    private static UserAccessService instance;
-
     private final IUserRepository userRepository;
     private final IStoreRepository storeRepository;
     private final IReportRepository reportRepository;
@@ -28,24 +26,18 @@ public class UserAccessService {
     private final String realAdmin;
     private final Queue<LocalDateTime> transactionTimestamps;
     private final Queue<LocalDateTime> subscriptionTimestamps;
-    private final RepositoryConfiguration RC;
 
-
-    private UserAccessService(RepositoryConfiguration RC) {
-        this.RC = RC;
-        this.userRepository = RC.userRepository();
-        this.storeRepository = RC.storeRepository();
-        this.reportRepository = RC.reportRepository();
-        this.realAdmin = RC.getAdminUsername();
+    @Autowired
+    public UserAccessService(IUserRepository userRepository,
+                             IStoreRepository storeRepository,
+                             IReportRepository reportRepository,
+                             @Value("${market.admin.username:admin}") String adminUsername) {
+        this.userRepository = userRepository;
+        this.storeRepository = storeRepository;
+        this.reportRepository = reportRepository;
+        this.realAdmin = adminUsername;
         this.transactionTimestamps = new ConcurrentLinkedQueue<>();
         this.subscriptionTimestamps = new ConcurrentLinkedQueue<>();
-    }
-
-    public static UserAccessService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new UserAccessService(RC);
-        }
-        return instance;
     }
 
 

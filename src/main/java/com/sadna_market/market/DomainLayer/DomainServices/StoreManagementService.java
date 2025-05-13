@@ -2,34 +2,25 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import java.util.*;
 
 
+@Service
 public class StoreManagementService {
-
-    private static StoreManagementService instance;
-
     private static final Logger logger = LoggerFactory.getLogger(StoreManagementService.class);
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
-    private final RepositoryConfiguration RC;
 
-    private StoreManagementService(RepositoryConfiguration RC) {
-        this.RC = RC;
-        this.storeRepository = RC.storeRepository();
-        this.userRepository = RC.userRepository();
-
-    }
-
-    public static StoreManagementService getInstance(RepositoryConfiguration RC) {
-        if (instance == null) {
-            instance = new StoreManagementService(RC);
-        }
-        return instance;
+    @Autowired
+    public StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
+        this.storeRepository = storeRepository;
+        this.userRepository = userRepository;
     }
 
     /**
