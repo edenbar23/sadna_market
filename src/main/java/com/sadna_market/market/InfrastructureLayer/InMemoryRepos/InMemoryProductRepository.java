@@ -3,10 +3,9 @@ package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.DomainLayer.ProductRating;
-import com.sadna_market.market.DomainLayer.IRatingRepository;
+import com.sadna_market.market.DomainLayer.StoreRating;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -18,12 +17,11 @@ public class InMemoryProductRepository implements IProductRepository {
     private final Map<UUID, Product> productStorage = new ConcurrentHashMap<>();
     private final List<String> productReviews = new ArrayList<>(); // Simple storage for reviews
     private static final Logger logger = LoggerFactory.getLogger(IProductRepository.class);
+    private final Map<UUID, ProductRating> productRatings = new ConcurrentHashMap<>();
+    private final Map<UUID, StoreRating> storeRatings = new ConcurrentHashMap<>();
 
-    private final IRatingRepository ratingRepository;
 
-    @Autowired
-    public InMemoryProductRepository(IRatingRepository ratingRepository) {
-        this.ratingRepository = ratingRepository;
+    public InMemoryProductRepository() {
         logger.info("InMemoryProductRepository initialized");
     }
 
@@ -111,23 +109,6 @@ public class InMemoryProductRepository implements IProductRepository {
         logger.info("Product successfully updated: {}", productId);
     }
 
-    @Override
-    public void deleteProduct(UUID productId) {
-        logger.debug("Deleting product with ID: {}", productId);
-
-        if (productId == null) {
-            logger.error("Product ID should not be null");
-            throw new IllegalArgumentException("Product ID should not be null");
-        }
-
-        if (!productStorage.containsKey(productId)) {
-            logger.error("Product not found");
-            throw new IllegalArgumentException("Product not found");
-        }
-
-        productStorage.remove(productId);
-        logger.info("Product successfully deleted: {}", productId);
-    }
 
     @Override
     public List<Optional<Product>> getProductsByIds(Set<UUID> productIds) {
@@ -187,6 +168,7 @@ public class InMemoryProductRepository implements IProductRepository {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public void addProductRating(UUID productId, String username, int ratingValue) {
         logger.debug("Adding rating for product {} by user {}: {}", productId, username, ratingValue);
@@ -198,31 +180,25 @@ public class InMemoryProductRepository implements IProductRepository {
         }
 
         Product product = productOpt.get();
+        product.addRank(ratingValue);
+        productStorage.put(product.getProductId(), product);
+        logger.info("Product rating updated directly");
+    }
 
-        // Check if user already rated this product using the ratingRepository
-        Optional<ProductRating> existingRating = ratingRepository.findProductRatingByUserAndProduct(username, productId);
+    @Override
+    public void updateProductRating(UUID productId, int oldRating, int newRating) {
+        logger.debug("Updating rating for product {}: {} -> {}", productId, oldRating, newRating);
 
-        if (existingRating.isPresent()) {
-            // Update existing rating
-            ProductRating rating = existingRating.get();
-            int oldRatingValue = rating.getRatingValue();
-            rating.updateRating(ratingValue);
-            ratingRepository.saveProductRating(rating);
-
-            // Update product's overall rating
-            product.updateRank(oldRatingValue, ratingValue);
-        } else {
-            // Create new rating
-            ProductRating rating = new ProductRating(username, productId, ratingValue);
-            ratingRepository.saveProductRating(rating);
-
-            // Update product's overall rating
-            product.addRank(ratingValue);
+        Optional<Product> productOpt = findById(productId);
+        if (productOpt.isEmpty()) {
+            logger.error("Product not found: {}", productId);
+            throw new IllegalArgumentException("Product not found: " + productId);
         }
 
-        // Update the product in storage
+        Product product = productOpt.get();
+        product.updateRank(oldRating, newRating);
         productStorage.put(product.getProductId(), product);
-        logger.info("Rating added/updated successfully");
+        logger.info("Product rating updated directly");
     }
 
     @Override
@@ -286,6 +262,31 @@ public class InMemoryProductRepository implements IProductRepository {
         }
 
         return getProductsByIds(resultIds);
+    }
+
+    /**
+     * Deletes a product rating by its ID
+     *
+     * @param ratingId The ID of the rating to delete
+     * @return true if the rating was deleted, false if it didn't exist
+     */
+    @Override
+    public boolean deleteProductRating(UUID ratingId) {
+        if (ratingId == null) {
+            logger.warn("Attempt to delete product rating with null ID");
+            return false;
+        }
+
+        logger.debug("Deleting product rating by ID: {}", ratingId);
+        ProductRating removed = productRatings.remove(ratingId);
+
+        if (removed != null) {
+            logger.info("Successfully deleted product rating: {}", ratingId);
+            return true;
+        } else {
+            logger.warn("Product rating not found for deletion: {}", ratingId);
+            return false;
+        }
     }
 
     @Override

@@ -20,6 +20,7 @@ public class Bridge {
     private final UserService userService;
     private final ProductService productService;
     private final StoreService storeService;
+    
     private final MessageApplicationService messageService;
 
 
@@ -28,14 +29,15 @@ public class Bridge {
         this.objectMapper = new ObjectMapper();
 
         // Create the repositories
+        IRatingRepository ratingRepository = new InMemoryRatingRepository();
         IUserRepository userRepository = new InMemoryUserRepository();
         IStoreRepository storeRepository = new InMemoryStoreRepository();
+        // Note: No longer passing ratingRepository to the product repository constructor
         IProductRepository productRepository = new InMemoryProductRepository();
         IOrderRepository orderRepository = new InMemoryOrderRepository();
         IMessageRepository messageRepository = new InMemoryMessageRepository();
         IReportRepository reportRepository = new InMemoryReportRepository();
         IAuthRepository authRepository = new InMemoryAuthRepository();
-        IRatingRepository ratingRepository = new InMemoryRatingRepository();
 
         TokenService tokenService = new TokenService();
 

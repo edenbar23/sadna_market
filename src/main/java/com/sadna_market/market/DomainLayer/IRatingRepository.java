@@ -23,5 +23,7 @@ public interface IRatingRepository {
     double getAverageStoreRating(UUID storeId);
     int getStoreRatingCount(UUID storeId);
 
+    boolean deleteProductRating(UUID ratingId);
+
     void clear();
 }

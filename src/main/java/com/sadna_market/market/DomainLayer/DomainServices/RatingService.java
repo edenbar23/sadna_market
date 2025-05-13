@@ -37,59 +37,68 @@ public class RatingService {
             throw new IllegalArgumentException("Product not found: " + productId);
         }
 
-        if (ratingValue < 1 || ratingValue > 5) {
-            logger.error("Rating value must be between 1 and 5");
-            throw new IllegalArgumentException("Rating value must be between 1 and 5");
+        Product product = productOpt.get();
+
+        // Standardized validation for rating range
+        validateRatingValue(ratingValue);
+
+        try {
+            // Check if user has already rated this product
+            Optional<ProductRating> existingRatingOpt =
+                    ratingRepository.findProductRatingByUserAndProduct(username, productId);
+
+            ProductRating rating;
+            if (existingRatingOpt.isPresent()) {
+                // Update existing rating - transactional approach
+                ProductRating existingRating = existingRatingOpt.get();
+                int oldRatingValue = existingRating.getRatingValue();
+                existingRating.updateRating(ratingValue);
+
+                rating = ratingRepository.saveProductRating(existingRating);
+
+                try {
+                    // Update product's overall rating
+                    productRepository.updateProductRating(productId, oldRatingValue, ratingValue);
+                } catch (Exception e) {
+                    logger.error("Failed to update product rating, attempting rollback", e);
+                    // Try to rollback rating change - best effort
+                    existingRating.updateRating(oldRatingValue);
+                    ratingRepository.saveProductRating(existingRating);
+                    throw new RuntimeException("Failed to update product rating: " + e.getMessage(), e);
+                }
+
+                logger.info("Updated product rating: {}", rating.getRatingId());
+            } else {
+                // Create new rating - transactional approach
+                rating = new ProductRating(username, productId, ratingValue);
+
+                rating = ratingRepository.saveProductRating(rating);
+
+                try {
+                    // Update product's overall rating
+                    productRepository.addProductRating(productId, username, ratingValue);
+                } catch (Exception e) {
+                    logger.error("Failed to update product rating, attempting rollback", e);
+                    // Try to delete the newly created rating - best effort rollback
+                    try {
+                        // This method would need to be added to the repository
+                        deleteProductRating(rating.getRatingId());
+                    } catch (Exception ex) {
+                        logger.error("Rollback failed", ex);
+                    }
+                    throw new RuntimeException("Failed to update product rating: " + e.getMessage(), e);
+                }
+
+                logger.info("Created new product rating: {}", rating.getRatingId());
+            }
+
+            return rating;
+        } catch (Exception e) {
+            if (!(e instanceof RuntimeException && e.getCause() != null)) {
+                logger.error("Error during rating operation", e);
+            }
+            throw e;
         }
-
-        // Check if user has already rated this product
-        Optional<ProductRating> existingRatingOpt =
-                ratingRepository.findProductRatingByUserAndProduct(username, productId);
-
-        ProductRating rating;
-        if (existingRatingOpt.isPresent()) {
-            // Update existing rating
-            ProductRating existingRating = existingRatingOpt.get();
-            int oldRatingValue = existingRating.getRatingValue();
-            existingRating.updateRating(ratingValue);
-            rating = ratingRepository.saveProductRating(existingRating);
-
-            // Update product's overall rating
-            Product product = productOpt.get();
-            product.updateRank(oldRatingValue, ratingValue);
-
-            // Update product in repository (in a real system, you'd use a transaction)
-            productRepository.updateProduct(
-                    product.getProductId(),
-                    product.getName(),
-                    product.getCategory(),
-                    product.getDescription(),
-                    product.getPrice()
-            );
-
-            logger.info("Updated product rating: {}", rating.getRatingId());
-        } else {
-            // Create new rating
-            rating = new ProductRating(username, productId, ratingValue);
-            rating = ratingRepository.saveProductRating(rating);
-
-            // Update product's overall rating
-            Product product = productOpt.get();
-            product.addRank(ratingValue);
-
-            // Update product in repository
-            productRepository.updateProduct(
-                    product.getProductId(),
-                    product.getName(),
-                    product.getCategory(),
-                    product.getDescription(),
-                    product.getPrice()
-            );
-
-            logger.info("Created new product rating: {}", rating.getRatingId());
-        }
-
-        return rating;
     }
 
     /**
@@ -171,5 +180,37 @@ public class RatingService {
      */
     public int getStoreRatingCount(UUID storeId) {
         return ratingRepository.getStoreRatingCount(storeId);
+    }
+
+    private void validateRatingValue(int ratingValue) {
+        if (ratingValue < 1 || ratingValue > 5) {
+            logger.error("Rating value must be between 1 and 5: {}", ratingValue);
+            throw new IllegalArgumentException("Rating value must be between 1 and 5");
+        }
+    }
+
+    /**
+     * Helper method to delete a product rating - used for transaction rollback
+     *
+     * @param ratingId ID of the rating to delete
+     * @return true if successfully deleted, false otherwise
+     */
+    private boolean deleteProductRating(UUID ratingId) {
+        logger.debug("Attempting to delete product rating: {}", ratingId);
+
+        try {
+            boolean result = ratingRepository.deleteProductRating(ratingId);
+
+            if (result) {
+                logger.info("Successfully deleted product rating: {}", ratingId);
+            } else {
+                logger.warn("Failed to delete product rating, not found: {}", ratingId);
+            }
+
+            return result;
+        } catch (Exception e) {
+            logger.error("Error deleting product rating: {}", ratingId, e);
+            return false;
+        }
     }
 }

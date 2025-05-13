@@ -12,29 +12,25 @@ public interface IProductRepository {
     List<Optional<Product>> filterByPriceRange(double minPrice, double maxPrice);
     List<Optional<Product>> filterByRate(double minRate, double maxRate);
 
-
     UUID addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable);
-
 
     void updateProduct(UUID productId, String name, String category, String description, double price);
 
-
-    void deleteProduct(UUID productId);
+    boolean deleteProductRating(UUID ratingId);
 
     List<Optional<Product>> getProductsByIds(Set<UUID> productIds);
     List<Optional<Product>> findByStoreId(UUID storeId);
-
 
     List<Optional<Product>> filterByStoreWithCriteria(UUID storeId, String name, String category,
                                                       Double minPrice, Double maxPrice,
                                                       Double minRate, Double maxRate);
 
-
     void addProductRating(UUID productId, String username, int ratingValue);
 
 
-    void addProductReview(UUID productId, String username, String reviewText);
+    void updateProductRating(UUID productId, int oldRating, int newRating);
 
+    void addProductReview(UUID productId, String username, String reviewText);
 
     List<Optional<Product>> searchProduct(String name, String category,
                                           Double minPrice, Double maxPrice,
