@@ -1,4 +1,4 @@
-package com.sadna_market.market.DomainLayer.Product;
+package com.sadna_market.market.DomainLayer;
 
 import java.util.Date;
 import java.util.UUID;

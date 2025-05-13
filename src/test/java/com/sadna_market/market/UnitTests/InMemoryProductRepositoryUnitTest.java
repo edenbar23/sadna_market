@@ -5,8 +5,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.ProductSearchRequest;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 //import com.sadna_market.market.ApplicationLayer.ProductRequest;
 //import com.sadna_market.market.ApplicationLayer.ProductSearchRequest;
-import com.sadna_market.market.DomainLayer.Product.Product;
-import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
 
 import org.junit.jupiter.api.BeforeEach;

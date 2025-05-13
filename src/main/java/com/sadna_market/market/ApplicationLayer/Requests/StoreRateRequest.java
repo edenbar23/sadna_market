@@ -48,30 +48,6 @@ public class StoreRateRequest {
     public boolean isValidRating() {
         return rate >= 1 && rate <= 5;
     }
-    public UUID getStoreId() {
-        return storeId;
-    }
-    public String getUsername() {
-        return username;
-    }
-    public int getRate() {
-        return rate;
-    }
-    public String getComment() {
-        return comment;
-    }
-    public void setStoreId(UUID storeId) {
-        this.storeId = storeId;
-    }
-    public void setUsername(String username) {
-        this.username = username;
-    }       
-    public void setRate(int rate) {
-        this.rate = rate;
-    }
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
 
-   
+
 }

@@ -3,10 +3,7 @@ package com.sadna_market.market.ApplicationLayer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
-import com.sadna_market.market.DomainLayer.DomainServices.MessageService;
-import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
-import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.DomainLayer.DomainServices.*;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.Authentication.IAuthRepository;
 import com.sadna_market.market.InfrastructureLayer.Authentication.InMemoryAuthRepository;
@@ -23,6 +20,7 @@ public class Bridge {
     private final UserService userService;
     private final ProductService productService;
     private final StoreService storeService;
+    
     private final MessageApplicationService messageService;
 
 
@@ -31,8 +29,10 @@ public class Bridge {
         this.objectMapper = new ObjectMapper();
 
         // Create the repositories
+        IRatingRepository ratingRepository = new InMemoryRatingRepository();
         IUserRepository userRepository = new InMemoryUserRepository();
         IStoreRepository storeRepository = new InMemoryStoreRepository();
+        // Note: No longer passing ratingRepository to the product repository constructor
         IProductRepository productRepository = new InMemoryProductRepository();
         IOrderRepository orderRepository = new InMemoryOrderRepository();
         IMessageRepository messageRepository = new InMemoryMessageRepository();
@@ -49,11 +49,12 @@ public class Bridge {
         StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository);
         InventoryManagementService inventoryManagementService = new InventoryManagementService(storeRepository, productRepository, userRepository);
         MessageService messageService = new MessageService(messageRepository, storeRepository, userRepository);
+        RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);
 
         // Create application services
         this.userService = new UserService(authentication, userAccessService, objectMapper);
-        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, objectMapper);
-        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, objectMapper);
+        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService, objectMapper);
+        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService, objectMapper);
         this.messageService = new MessageApplicationService(authentication, messageService, objectMapper);
     }
 
