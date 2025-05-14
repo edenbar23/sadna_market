@@ -1,7 +1,7 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
 import org.slf4j.Logger;

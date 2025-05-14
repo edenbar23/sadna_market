@@ -2,7 +2,7 @@ package com.sadna_market.market.ApplicationLayer.DTOs;
 
 import lombok.Getter;
 
-import com.sadna_market.market.DomainLayer.Product.Product;
+import com.sadna_market.market.DomainLayer.Product;
 import java.util.UUID;
 
 public class ProductDTO {

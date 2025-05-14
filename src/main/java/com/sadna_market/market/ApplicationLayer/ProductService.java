@@ -1,62 +1,60 @@
 package com.sadna_market.market.ApplicationLayer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
+import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.IProductRepository;
-import com.sadna_market.market.DomainLayer.Product.Product;
-import com.sadna_market.market.DomainLayer.Product.ProductDTO;
-import com.sadna_market.market.DomainLayer.Product.UserRate;
+import com.sadna_market.market.DomainLayer.Product;
+import com.sadna_market.market.DomainLayer.ProductRating;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProductService {
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
     private final AuthenticationBridge authentication;
     private final IProductRepository productRepository;
     private final InventoryManagementService inventoryManagementService;
+    private final RatingService ratingService;
     private final ObjectMapper objectMapper;
-
-    @Autowired
-    public ProductService(AuthenticationBridge authentication,
-                          IProductRepository productRepository,
-                          InventoryManagementService inventoryManagementService,
-                          ObjectMapper objectMapper) {
-        this.authentication = authentication;
-        this.productRepository = productRepository;
-        this.inventoryManagementService = inventoryManagementService;
-        this.objectMapper = objectMapper;
-    }
 
     //req 2.1 (a)
     public ProductDTO getProductInfo(UUID productId) {
         logger.info("Getting product info for product ID: {}", productId);
         Optional<Product> product_ = productRepository.findById(productId);
         if(product_.isPresent()){
-            Product product = (Product) product_.get();
+            Product product = product_.get();
             return new ProductDTO(product);
         } else {
-            logger.error("User not found");
+            logger.error("Product not found");
             return null;
         }
     }
 
     //req 2.2
     public Response searchProduct(ProductSearchRequest request) {
-        logger.info("Computing intersection of filtered products with criteria - name: {}, category: {}, price: {} to {}, rate: {} to {}",
-                request.getName(), request.getCategory(), request.getMinPrice(), request.getMaxPrice(),
-                request.getMinRank(), request.getMaxRank());
-        // convert to Response
+        logger.info("Searching for products with criteria");
         try {
-            List<Optional<Product>> result = productRepository.searchProduct(request);
+            // Convert application request to domain parameters
+            List<Optional<Product>> result = productRepository.searchProduct(
+                    request.getName(),
+                    request.getCategory(),
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    request.getMinRank(),
+                    request.getMaxRank()
+            );
 
             // Filter out empty Optionals and extract the products
             List<Product> products = result.stream()
@@ -64,8 +62,13 @@ public class ProductService {
                     .map(Optional::get)
                     .collect(Collectors.toList());
 
+            // Convert to DTOs for the application layer
+            List<ProductDTO> productDTOs = products.stream()
+                    .map(ProductDTO::new)
+                    .collect(Collectors.toList());
+
             // Convert products list to JSON string
-            String json = objectMapper.writeValueAsString(products);
+            String json = objectMapper.writeValueAsString(productDTOs);
 
             // Return success response with JSON
             return Response.success(json);
@@ -75,18 +78,20 @@ public class ProductService {
         }
     }
 
-
     //req 3.3
-    public Response addProductReview(String token,ProductReviewRequest review) {
-        logger.info("Validating token for user with username: {}", review.getUsername());
-        authentication.validateToken(review.getUsername(),token);
-        UUID productId = review.getProductId();
-        UUID userId = review.getUserId();
-        String reviewText = review.getReviewText();
-        logger.info("User {} added review for product {}: {}", review.getUserId(), review.getProductId(), review.getReviewText());
+    public Response addProductReview(String token, ProductReviewRequest review) {
+        logger.info("Adding review for product ID: {}", review.getProductId());
         try {
-            productRepository.handleUserReview(userId, productId, reviewText);
-            //should add review to user also
+            logger.info("Validating token for user with username: {}", review.getUsername());
+            authentication.validateToken(review.getUsername(), token);
+
+            // Convert application request to domain parameters
+            productRepository.addProductReview(
+                    review.getProductId(),
+                    review.getUsername(),
+                    review.getComment()
+            );
+
             return Response.success("Review added successfully");
         } catch (Exception e) {
             logger.error("Error adding review: {}", e.getMessage(), e);
@@ -95,41 +100,49 @@ public class ProductService {
     }
 
     //req 3.4 (a)
-    public Response rateProduct(String token, ProductRateRequest rate){
-        logger.info("Validating token for user with username: {}", rate.getUsername());
-        authentication.validateToken(rate.getUsername(),token);
-        UUID productId = rate.getProductId();
-        UUID userId = rate.getUserId();
-        int rateValue = rate.getRating();
-        logger.info("User {} rated product {} with value {}", userId, productId, rateValue);
+    public Response rateProduct(String token, ProductRateRequest rate) {
         try {
-            Optional<UserRate> userRateOptional = productRepository.handleUserRate(userId, productId, rateValue);
+            logger.info("Validating token for user with username: {}", rate.getUsername());
+            authentication.validateToken(rate.getUsername(), token);
 
-            if (userRateOptional.isPresent()) {
-                UserRate userRate = userRateOptional.get();
-                // Convert the UserRate to JSON or any format you're using for response
-                // This part depends on how you want to serialize your objects
-                // You might be using Jackson, Gson, or a custom serializer
-                String json = objectMapper.writeValueAsString(userRate);
+            logger.info("User {} rating product {} with value {}",
+                    rate.getUsername(), rate.getProductId(), rate.getRating());
 
-                return Response.success(json);
-            } else {
-                // If the Optional is empty, it likely means the product or user wasn't found
-                return Response.error("Failed to rate product: Product or user not found");
-            }
+            // Convert application request to domain parameters
+            ProductRating productRating = ratingService.rateProduct(
+                    rate.getUsername(),
+                    rate.getProductId(),
+                    rate.getRating());
+
+            // Convert domain object to DTO for response
+            ProductRatingDTO ratingDTO = new ProductRatingDTO(productRating);
+            String json = objectMapper.writeValueAsString(ratingDTO);
+
+            return Response.success(json);
         } catch (Exception e) {
             logger.error("Error rating product: {}", e.getMessage(), e);
             return Response.error("Error rating product: " + e.getMessage());
-        }    }
+        }
+    }
 
     public Response addProduct(String username, String token, ProductRequest product, UUID storeId, int quantity) {
-        logger.info("Validating token for user with username: {}", username);
-        authentication.validateToken(username, token);
+        logger.info("Adding new product to store: {}", storeId);
         try {
-            logger.info("Adding new product: {}", product);
-            inventoryManagementService.addProductToStore(username,storeId,product,quantity);
-            productRepository.addProduct(storeId, product.getName(), product.getCategory(), product.getDescription(),  product.getPrice(), true);
-            return Response.success("Product added successfully");
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            // Convert application request to domain parameters
+            UUID productId = inventoryManagementService.addProductToStore(
+                    username,
+                    storeId,
+                    product.getName(),
+                    product.getCategory(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    quantity
+            );
+
+            return Response.success(productId.toString());
         } catch (Exception e) {
             logger.error("Error adding product: {}", e.getMessage(), e);
             return Response.error("Error adding product: " + e.getMessage());
@@ -137,32 +150,49 @@ public class ProductService {
     }
 
     //req 4.1 (c)
-    // if quantity == -1 it means that we don't want to change it
     public Response updateProduct(String username, String token, UUID storeId, ProductRequest product, int quantity) {
-        logger.info("Updating product: {}", product);
-        authentication.validateToken(username, token);
+        logger.info("Updating product: {}", product.getProductId());
         try {
-            inventoryManagementService.updateProductInStore(username, storeId, product, quantity);
-            productRepository.updateProduct(product);
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            // Convert application request to domain parameters
+            inventoryManagementService.updateProductInStore(
+                    username,
+                    storeId,
+                    product.getProductId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getCategory(),
+                    product.getPrice(),
+                    quantity
+            );
+
             return Response.success("Product updated successfully");
         } catch (Exception e){
             logger.error("Error updating product: {}", e.getMessage(), e);
             return Response.error("Error updating product: " + e.getMessage());
-            }
-    }
-    public Response deleteProduct(String username, String token, ProductRequest product, UUID storeId) {
-        logger.info("Deleting product: {}", product);
-        authentication.validateToken(username, token);
-        logger.info("Validating token for user with username: {}", username);
-        UUID productId = product.getProductId();
-
-        if (product.getProductId() == null){
-            logger.error("Product ID should not be null for existing products");
-            return Response.error("Product ID should not be null for existing products");
         }
+    }
+
+    public Response deleteProduct(String username, String token, ProductRequest product, UUID storeId) {
+        logger.info("Deleting product: {}", product.getProductId());
         try {
-            inventoryManagementService.removeProductFromStore(username, storeId, product.getProductId());
-            productRepository.deleteProduct(product);
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            if (product.getProductId() == null){
+                logger.error("Product ID should not be null for existing products");
+                return Response.error("Product ID should not be null for existing products");
+            }
+
+            // Convert application request to domain parameters
+            inventoryManagementService.removeProductFromStore(
+                    username,
+                    storeId,
+                    product.getProductId()
+            );
+
             return Response.success("Product deleted successfully");
         } catch (Exception e){
             logger.error("Error deleting product: {}", e.getMessage(), e);
@@ -170,39 +200,56 @@ public class ProductService {
         }
     }
 
-
-
-
     // returns all products for a specific store
     public Response getStoreProducts(UUID storeId) {
         logger.info("Getting products for store ID: {}", storeId);
         try {
             List<Optional<Product>> products = productRepository.findByStoreId(storeId);
+
+            // Convert to DTOs
+            List<ProductDTO> productDTOs = products.stream()
+                    .filter(Optional::isPresent)
+                    .map(p -> new ProductDTO(p.get()))
+                    .collect(Collectors.toList());
+
             // Convert products list to JSON string
-            String json = objectMapper.writeValueAsString(products);
+            String json = objectMapper.writeValueAsString(productDTOs);
             return Response.success(json);
         } catch (Exception e) {
             logger.error("Error while getting store products: {}", e.getMessage(), e);
             return Response.error("Failed to get store products: " + e.getMessage());
         }
     }
-    // returns all products for a specific store with a specific request (parameters and values)
+
+    // returns all products for a specific store with search criteria
     public Response getStoreProductsWithRequest(UUID storeId, ProductSearchRequest request) {
-        logger.info("Getting products for store ID: {} with request: {}", storeId, request);
+        logger.info("Getting products for store ID: {} with request", storeId);
         try {
-            List<Optional<Product>> products = productRepository.filterByStoreWithRequest(storeId, request);
-            // Convert products list to JSON string
-            String json = objectMapper.writeValueAsString(products);
+            // Convert application request to domain parameters
+            List<Optional<Product>> products = productRepository.filterByStoreWithCriteria(
+                    storeId,
+                    request.getName(),
+                    request.getCategory(),
+                    request.getMinPrice(),
+                    request.getMaxPrice(),
+                    request.getMinRank(),
+                    request.getMaxRank()
+            );
+
+            // Convert to DTOs
+            List<ProductDTO> productDTOs = products.stream()
+                    .filter(Optional::isPresent)
+                    .map(p -> new ProductDTO(p.get()))
+                    .collect(Collectors.toList());
+
+            // Convert to JSON string
+            String json = objectMapper.writeValueAsString(productDTOs);
             return Response.success(json);
         } catch (Exception e) {
             logger.error("Error while getting store products with request: {}", e.getMessage(), e);
             return Response.error("Failed to get store products with request: " + e.getMessage());
         }
     }
-
-//    public void addRate(RateRequest rate) {
-//    }
-
 
     public void clear() {
         productRepository.clear();

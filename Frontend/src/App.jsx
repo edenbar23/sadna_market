@@ -7,6 +7,7 @@ import OrdersPage from "./pages/OrdersPage";
 import MessagesPage from "./pages/MessagesPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
 import HeaderBar from "./components/HeaderBar";
+import ProductPage from "./pages/ProductPage";
 
 function App() {
   const [user, setUser] = useState(null); // null = guest
@@ -24,6 +25,7 @@ function App() {
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
+        <Route path="/product/:productId" element={<ProductPage />} />
       </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
     </Router>
