@@ -46,7 +46,7 @@ public class Bridge {
 
         // Create domain services
         UserAccessService userAccessService = new UserAccessService(userRepository, storeRepository, reportRepository, "admin");
-        StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository);
+        StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository, messageRepository);
         InventoryManagementService inventoryManagementService = new InventoryManagementService(storeRepository, productRepository, userRepository);
         MessageService messageService = new MessageService(messageRepository, storeRepository, userRepository);
         RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);

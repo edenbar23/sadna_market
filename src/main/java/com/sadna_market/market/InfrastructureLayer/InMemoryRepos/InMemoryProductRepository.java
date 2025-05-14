@@ -89,6 +89,23 @@ public class InMemoryProductRepository implements IProductRepository {
     }
 
     @Override
+    public void deleteProduct(UUID productId) {
+        logger.debug("Deleting product with ID: {}", productId);
+
+        if (productId == null) {
+            logger.error("Cannot delete product with null ID");
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+
+        Product removedProduct = productStorage.remove(productId);
+        if (removedProduct != null) {
+            logger.info("Product successfully deleted: {}", productId);
+        } else {
+            logger.warn("Attempted to delete non-existent product: {}", productId);
+        }
+    }
+
+    @Override
     public void updateProduct(UUID productId, String name, String category, String description, double price) {
         logger.debug("Updating product with ID: {}", productId);
 

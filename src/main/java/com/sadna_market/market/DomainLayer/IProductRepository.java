@@ -25,7 +25,7 @@ public interface IProductRepository {
                                                       Double minPrice, Double maxPrice,
                                                       Double minRate, Double maxRate);
 
-
+    void deleteProduct(UUID productId);
 
     void addProductRating(UUID productId, String username, int ratingValue);
 
