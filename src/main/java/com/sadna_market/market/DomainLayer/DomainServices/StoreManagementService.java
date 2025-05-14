@@ -1,14 +1,15 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.*;
-
 
 @Service
 public class StoreManagementService {
@@ -16,11 +17,77 @@ public class StoreManagementService {
 
     private final IStoreRepository storeRepository;
     private final IUserRepository userRepository;
+    private final IMessageRepository messageRepository;
 
     @Autowired
-    public StoreManagementService(IStoreRepository storeRepository, IUserRepository userRepository) {
+    public StoreManagementService(IStoreRepository storeRepository,
+                                  IUserRepository userRepository,
+                                  IMessageRepository messageRepository) {
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
+        this.messageRepository = messageRepository;
+
+        logger.info("StoreManagementService initialized");
+    }
+
+    @PostConstruct
+    public void subscribeToEvents() {
+        // Subscribe to store-related events
+        DomainEventPublisher.subscribe(StoreCreatedEvent.class, this::handleStoreCreated);
+        DomainEventPublisher.subscribe(StoreClosedEvent.class, this::handleStoreClosed);
+        DomainEventPublisher.subscribe(StoreReopenedEvent.class, this::handleStoreReopened);
+
+        logger.info("StoreManagementService subscribed to events");
+    }
+
+    /**
+     * Event handler for StoreCreatedEvent
+     */
+    private void handleStoreCreated(StoreCreatedEvent event) {
+        logger.info("Handling store creation event for store: {}", event.getStoreName());
+
+        try {
+            createStore(
+                    event.getFounderUsername(),
+                    event.getStoreName(),
+                    event.getDescription(),
+                    event.getAddress(),
+                    event.getEmail(),
+                    event.getPhone()
+            );
+
+            logger.info("Store created successfully through event handler");
+        } catch (Exception e) {
+            logger.error("Error handling store creation event: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Event handler for StoreClosedEvent
+     */
+    private void handleStoreClosed(StoreClosedEvent event) {
+        logger.info("Handling store closed event for store: {}", event.getStoreId());
+
+        try {
+            closeStore(event.getUsername(), event.getStoreId());
+            logger.info("Store closed successfully through event handler");
+        } catch (Exception e) {
+            logger.error("Error handling store closed event: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Event handler for StoreReopenedEvent
+     */
+    private void handleStoreReopened(StoreReopenedEvent event) {
+        logger.info("Handling store reopened event for store: {}", event.getStoreId());
+
+        try {
+            reopenStore(event.getUsername(), event.getStoreId());
+            logger.info("Store reopened successfully through event handler");
+        } catch (Exception e) {
+            logger.error("Error handling store reopened event: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -30,7 +97,6 @@ public class StoreManagementService {
      * 2.Founder must be a registered user.
      * 3.Store name and email and phone must be valid
      */
-
     public Store createStore (String founderUserName, String storeName, String description,
                               String address, String email, String phone){
         logger.debug("Creating store '{}' for founder '{}'", storeName, founderUserName);
@@ -57,7 +123,6 @@ public class StoreManagementService {
         logger.info("Store '{}' has been created", storeName);
         logger.info("Store id is '{}'", storeId);
         return store;
-
     }
 
     /**
@@ -66,7 +131,6 @@ public class StoreManagementService {
      * 1.Only the store founder can close the store.
      * 2.The store must be open.
      */
-
     public void closeStore(String founderUserName, UUID storeId) {
         logger.debug("User '{}' attempting to close store '{}'", storeId, founderUserName);
 
@@ -94,7 +158,6 @@ public class StoreManagementService {
      * 1.Only the store founder can reopen the store.
      * 2.The store must be closed.
      */
-
     public void reopenStore(String founderUserName, UUID storeId) {
         logger.debug("User'{}' attempting to reopen store '{}'", founderUserName, storeId);
         Store store = storeRepository.findById(storeId)
@@ -113,7 +176,6 @@ public class StoreManagementService {
         store.reopenStore();
         storeRepository.save(store);
         logger.info("Store '{}' has been reopened by '{}'", store.getName(), founderUserName);
-
     }
 
     /**
@@ -123,7 +185,6 @@ public class StoreManagementService {
      * - New owner must be a registered user
      * - Store must be active
      */
-
     public void appointStoreOwner(String appointerUsername, UUID storeId, String newOwnerUsername) {
         logger.debug("User '{}' attempting to appoint new owner '{}' for store '{}'", appointerUsername, newOwnerUsername, storeId);
 
@@ -144,7 +205,6 @@ public class StoreManagementService {
             throw new IllegalArgumentException("User {} has no permit to appoint store owner!");
         }
 
-
         StoreOwner newOwnerRole = new StoreOwner(newOwnerUsername, storeId, appointerUsername);
         newOwner.addStoreRole(newOwnerRole);
 
@@ -163,7 +223,6 @@ public class StoreManagementService {
      * - Store must be active
      * - Cascading removal of all appointees
      */
-
     public void removeStoreOwner(String removerUsername, UUID storeId, String ownerToRemoveUsername) {
         logger.debug("User '{}' attempting to remove owner '{}' from store '{}'", removerUsername, ownerToRemoveUsername, storeId);
 
@@ -184,7 +243,6 @@ public class StoreManagementService {
             throw new InsufficientPermissionsException("Only store owners can remove other owners");
         }
 
-
         User ownerUser = userRepository.findByUsername(ownerToRemoveUsername)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + ownerToRemoveUsername));
 
@@ -203,7 +261,6 @@ public class StoreManagementService {
         storeRepository.save(store);
 
         logger.info("User '{}' has been removed as owner of store '{}'", ownerToRemoveUsername, store.getName());
-
     }
 
     /**
@@ -213,7 +270,6 @@ public class StoreManagementService {
      * - New manager must be a registered user
      * - Store must be active
      */
-
     public void appointStoreManager(String appointerUsername, UUID storeId, String newManagerUsername, Set<Permission> permissions) {
         logger.debug("User '{}' attempting to appoint new manager '{}' for store '{}'", appointerUsername, newManagerUsername, storeId);
 
@@ -224,7 +280,6 @@ public class StoreManagementService {
             logger.error("Store '{}' is not active", store.getName());
             throw new StoreNotActiveException("Store is not active");
         }
-
 
         User appointer = userRepository.findByUsername(appointerUsername)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + appointerUsername));
@@ -248,7 +303,6 @@ public class StoreManagementService {
         userRepository.update(newManager);
 
         logger.info("User '{}' has been appointed as manager of store '{}'", newManagerUsername, store.getName());
-
     }
 
     /**
@@ -258,7 +312,6 @@ public class StoreManagementService {
      * - Store must be active
      * - Cannot remove the founder
      */
-
     public void removeStoreManager(String removerUsername, UUID storeId, String managerToRemoveUsername) {
         logger.debug("User '{}' attempting to remove manager '{}' from store '{}'", removerUsername, managerToRemoveUsername, storeId);
 
@@ -349,7 +402,6 @@ public class StoreManagementService {
         }
     }
 
-
     private UserStoreRoles findUserStoreRole(User user, UUID storeId, RoleType roleType) {
         return user.getUserStoreRoles().stream()
                 .filter(role -> role.getStoreId().equals(storeId) && role.getRoleType() == roleType)
@@ -409,22 +461,27 @@ public class StoreManagementService {
 
     public List<Message> getStoreMessages(String username, UUID storeId) {
         logger.debug("User '{}' requesting messages for store '{}'", username, storeId);
+
+        // Verify store exists and user has permission
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
 
-        if (!store.isStoreOwner(username)) {
-            logger.error("User '{}' is not a store owner", username);
-            throw new InsufficientPermissionsException("Only store owners can view messages");
+        if (!store.isStoreOwner(username) && !store.isStoreManager(username)) {
+            logger.error("User '{}' is not authorized to view messages for store '{}'", username, storeId);
+            throw new InsufficientPermissionsException("Only store owners and managers can view store messages");
         }
-        MessageService ms = MessageService.getInstance(RC);
-        List<Message> messages = ms.getStoreMessages(username, storeId);
+
+        // Publish an event that message service could listen to (for auditing or other purposes)
+        DomainEventPublisher.publish(new StoreMessagesRequestedEvent(username, storeId));
+
+        // Directly use the repository to get the messages
+        List<Message> messages = messageRepository.findByStore(storeId);
         logger.info("User '{}' retrieved {} messages for store '{}'", username, messages.size(), store.getName());
+
         return messages;
     }
 
-
     public Set<Permission> getStoreManagerPermissions(String username, UUID storeId) {
-
         logger.debug("Getting permissions for manager '{}' in store '{}'", username, storeId);
 
         // Validate store exists
@@ -452,6 +509,5 @@ public class StoreManagementService {
                 permissions.size(), username, storeId);
 
         return permissions;
-        
     }
 }

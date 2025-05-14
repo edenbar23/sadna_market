@@ -1,7 +1,7 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.Product;
+import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
 import org.slf4j.Logger;
@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -33,7 +34,50 @@ public class OrderProcessingService {
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.paymentService = new PaymentService(); // This would ideally be injected too
+
         logger.info("OrderProcessingService initialized");
+    }
+
+    @PostConstruct
+    public void subscribeToEvents() {
+        // Subscribe to checkout events
+        DomainEventPublisher.subscribe(CheckoutInitiatedEvent.class, this::handleCheckoutInitiated);
+        logger.info("OrderProcessingService subscribed to events");
+    }
+
+    /**
+     * Event handler for CheckoutInitiatedEvent
+     */
+    private void handleCheckoutInitiated(CheckoutInitiatedEvent event) {
+        logger.info("Handling checkout event for {}", event.isGuest() ? "guest" : event.getUsername());
+
+        try {
+            List<Order> orders;
+            if (event.isGuest()) {
+                orders = processGuestPurchase(event.getCart(), event.getPaymentMethod());
+            } else {
+                orders = processPurchase(event.getUsername(), event.getCart(), event.getPaymentMethod());
+
+                // Clear the user's cart if registered user
+                User user = userRepository.findByUsername(event.getUsername())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                clearUserCart(user);
+            }
+
+            // Publish event for each processed order
+            for (Order order : orders) {
+                DomainEventPublisher.publish(
+                        new OrderProcessedEvent(
+                                order.getUserName(),
+                                order.getOrderId(),
+                                order.getStoreId()
+                        )
+                );
+            }
+        } catch (Exception e) {
+            logger.error("Error processing checkout: {}", e.getMessage(), e);
+            // Could publish a CheckoutFailedEvent here
+        }
     }
 
     public List<Order> processPurchase(String username, Cart cart, PaymentMethod paymentMethod) {
@@ -70,9 +114,6 @@ public class OrderProcessingService {
                 throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
             }
         }
-
-        // Clear the user's cart after successful purchase
-        clearUserCart(user);
 
         logger.info("Successfully processed {} orders for user {}", orders.size(), username);
         return orders;
@@ -339,7 +380,7 @@ public class OrderProcessingService {
         }
     }
 
-    private void clearUserCart(User user) {
+    void clearUserCart(User user) {
         // Clear the user's cart after successful purchase
         logger.info("Clearing cart for user: {}", user.getUserName());
         user.clearCart();
