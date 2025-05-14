@@ -25,5 +25,7 @@ public interface IRatingRepository {
 
     boolean deleteProductRating(UUID ratingId);
 
+    boolean deleteStoreRating(UUID ratingId);
+
     void clear();
 }
