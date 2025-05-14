@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InMemoryAuthRepository implements IAuthRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(InMemoryAuthRepository.class);
-    private final HashMap<String, String> username2Password = new ConcurrentHashMap<>();
+    private final Map<String, String> username2Password = new ConcurrentHashMap<>();
 
     public InMemoryAuthRepository() {
         logger.info("InMemoryAuthRepository initialized");

@@ -204,10 +204,62 @@ public class InMemoryRatingRepository implements IRatingRepository {
         return findStoreRatingsByStore(storeId).size();
     }
 
+    /**
+     * Deletes a product rating by its ID
+     *
+     * @param ratingId The ID of the rating to delete
+     * @return true if the rating was deleted, false if it didn't exist
+     */
+    @Override
+    public boolean deleteProductRating(UUID ratingId) {
+        if (ratingId == null) {
+            logger.warn("Attempt to delete product rating with null ID");
+            return false;
+        }
+
+        logger.debug("Deleting product rating by ID: {}", ratingId);
+        ProductRating removed = productRatings.remove(ratingId);
+
+        if (removed != null) {
+            logger.info("Successfully deleted product rating: {}", ratingId);
+            return true;
+        } else {
+            logger.warn("Product rating not found for deletion: {}", ratingId);
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a store rating by its ID
+     *
+     * @param ratingId The ID of the rating to delete
+     * @return true if the rating was deleted, false if it didn't exist
+     */
+    @Override
+    public boolean deleteStoreRating(UUID ratingId) {
+        if (ratingId == null) {
+            logger.warn("Attempt to delete store rating with null ID");
+            return false;
+        }
+
+        logger.debug("Deleting store rating by ID: {}", ratingId);
+        StoreRating removed = storeRatings.remove(ratingId);
+
+        if (removed != null) {
+            logger.info("Successfully deleted store rating: {}", ratingId);
+            return true;
+        } else {
+            logger.warn("Store rating not found for deletion: {}", ratingId);
+            return false;
+        }
+    }
+
     @Override
     public void clear() {
         productRatings.clear();
         storeRatings.clear();
         logger.info("Rating repository cleared");
     }
+
+
 }
