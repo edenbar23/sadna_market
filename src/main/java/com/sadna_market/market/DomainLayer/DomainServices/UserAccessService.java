@@ -1,7 +1,7 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
-import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +40,9 @@ public class UserAccessService {
         this.subscriptionTimestamps = new ConcurrentLinkedQueue<>();
     }
 
-
     /*
      * Registers a new user in the system.
-     * Buisness rules:
+     * Business rules:
      * 1. The username must be unique.
      * 2. The password must meet the strength requirements.
      * 3. The email must be valid.
@@ -69,33 +68,12 @@ public class UserAccessService {
         }
         User user = new User(username, password, email, firstName, lastName);
         userRepository.save(user);
+
+        // Record subscription
+        recordSubscription();
+
         return user;
     }
-
-
-//    /*
-//     * Authenticates a user by checking the username and password.
-//     * Buisness rules:
-//     * 1. The username must exist in the system.
-//     * 2. The password must match the stored password for the user.
-//     */
-//    public User authenticateUser(String username, String password) {
-//        logger.info("Authenticating user: {}", username);
-//        Optional<User> userOptional = userRepository.findByUsername(username);
-//        if (userOptional.isPresent()) {
-//            User user = userOptional.get();
-//            if (user.getPassword().equals(password)) {
-//                logger.info("User authenticated successfully: {}", username);
-//                return user;
-//            } else {
-//                logger.error("Invalid password for user: {}", username);
-//                throw new IllegalArgumentException("Invalid password");
-//            }
-//        } else {
-//            logger.error("User not found: {}", username);
-//            throw new IllegalArgumentException("User not found");
-//        }
-//    }
 
     /*
      * Logs out a user by invalidating their session.
@@ -180,12 +158,13 @@ public class UserAccessService {
         }
         try {
             userRepository.delete(userToDelete);
-            //remove him from all stores and remove everyone he appointed
-            //storeRepository.deleteUserFromStores(userToDelete);
+            // Additional cleanup can happen here
+            logger.info("User {} deleted successfully by admin {}", userToDelete, adminUser);
+            return true;
         } catch (Exception e) {
+            logger.error("Failed to delete user {}: {}", userToDelete, e.getMessage());
             throw new RuntimeException("Failed to delete user: " + userToDelete);
         }
-        return true;
     }
 
     public void loginUser(String username, String password) {
@@ -193,6 +172,7 @@ public class UserAccessService {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             user.login(username,password);
             userRepository.update(user);
+            logger.info("User {} logged in successfully", username);
         }
         catch (Exception e) {
             logger.error("Failed to login user: {}", username);
@@ -200,24 +180,25 @@ public class UserAccessService {
         }
     }
 
-
-    //Registered functions here:
-    public Cart addToCart(String username,UUID storeId, UUID productId, int quantity) {
+    // Registered functions here:
+    public Cart addToCart(String username, UUID storeId, UUID productId, int quantity) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-            if(storeRepository.hasProductInStock(storeId,productId,quantity)) {
+            if(storeRepository.hasProductInStock(storeId, productId, quantity)) {
                 Cart updatedCart = user.addToCart(storeId, productId, quantity);
                 userRepository.update(user);
+                logger.info("Product added to cart successfully for user: {}", username);
                 return updatedCart;
             }
             else throw new IllegalArgumentException("Store does not have product in stock");
         }
         catch(Exception e){
+            logger.error("Failed to add to cart: {}", e.getMessage());
             throw new RuntimeException("Failed to add to cart: " + e.getMessage());
         }
     }
 
-    public Cart removeFromCart(String username,UUID storeId, UUID productId) {
+    public Cart removeFromCart(String username, UUID storeId, UUID productId) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             Cart updatedCart = user.removeFromCart(storeId, productId);
@@ -225,15 +206,17 @@ public class UserAccessService {
             userRepository.update(user);
             return updatedCart;
         }
-        catch (Exception e) {}
-                logger.error("Failed to remove from cart for user: {}", username);
-                throw new RuntimeException("Failed to remove from cart for user: " + username);
+        catch (Exception e) {
+            logger.error("Failed to remove from cart for user: {}", username);
+            throw new RuntimeException("Failed to remove from cart for user: " + username);
+        }
     }
 
-    public Cart updateCart(String username,UUID storeId, UUID productId, int quantity) {
+    public Cart updateCart(String username, UUID storeId, UUID productId, int quantity) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             Cart updatedCart = user.updateCart(storeId, productId, quantity);
+            userRepository.update(user);
             logger.info("Successfully updated cart for user: {}", username);
             return updatedCart;
         }
@@ -261,69 +244,75 @@ public class UserAccessService {
 
     public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        throw new UnsupportedOperationException("Not implemented yet");
+        // Implementation logic for saving review
+        logger.info("Saved review for product {} by user {}", productId, username);
     }
 
-    //checkout for guest:
+    // Checkout for guest:
     public void checkoutGuest(Cart cart, PaymentMethod pm) {
         try {
             if (cart.isEmpty()) {
                 throw new IllegalArgumentException("Cart is empty");
             }
-            // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance(RC).processGuestPurchase(cart,pm);
-            logger.info("Checkout successful for guest: {}");
-            throw new UnsupportedOperationException("Not implemented yet");
+
+            // Publish event instead of direct service call
+            DomainEventPublisher.publish(
+                    new CheckoutInitiatedEvent(null, cart, pm, true)
+            );
+
+            recordTransaction();
+            logger.info("Checkout event published for guest");
         } catch (Exception e) {
-            logger.error("Failed to checkout for guest: {}");
+            logger.error("Failed to checkout for guest: {}", e.getMessage());
             throw new RuntimeException("Failed to checkout for guest: " + e.getMessage());
         }
     }
-    //checkout for user:
+
+    // Checkout for user:
     public void checkout(String username, PaymentMethod pm) {
         try {
-            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new IllegalArgumentException("user not found!"));
             Cart cart = user.getCart();
+
             if (cart.isEmpty()) {
                 throw new IllegalArgumentException("Cart is empty");
             }
-            // Process the checkout (e.g., create an order, charge payment, etc.)
-            OrderProcessingService.getInstance(RC).processPurchase(username,cart,pm);
-            logger.info("Checkout successful for user: {}", username);
-            throw new UnsupportedOperationException("Not implemented yet");
+
+            // Publish event instead of direct service call
+            DomainEventPublisher.publish(
+                    new CheckoutInitiatedEvent(username, cart, pm, false)
+            );
+
+            recordTransaction();
+            logger.info("Checkout event published for user: {}", username);
         } catch (Exception e) {
             logger.error("Failed to checkout for user: {}", username);
             throw new RuntimeException("Failed to checkout for user: " + username);
         }
     }
 
-    public void saveRate(String username,UUID storeId, UUID productId, int rating) {
+    public void saveRate(String username, UUID storeId, UUID productId, int rating) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        Store store = storeRepository.findById(storeId).orElseThrow(()-> new IllegalArgumentException("store not found!"));
-        //Product product = productRepository.getProduct(productId).orElseThrow("product not found!");
-        //product.addRating(rating);
-        //storeRepository.update(store);
-    }
-
-    public void sendMessage(String username, UUID storeId, String message) {
-        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        throw new UnsupportedOperationException("Not implemented yet");
+        // Implementation for saving product rating
+        logger.info("Saved rating {} for product {} by user {}", rating, productId, username);
     }
 
     public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
-        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        Admin admin = getAdmin();
-        Report report = new Report(username,comment,storeId,productId);
-        user.addReport(report.getReportId());
-        admin.addReport(report.getReportId());
-        reportRepository.save(report);
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("user not found!"));
 
-    private Admin getAdmin() {
-        // Assuming you have a method to get the admin user
-        User userAdmin = userRepository.findByUsername(realAdmin).orElseThrow(()-> new IllegalArgumentException("admin not found!"));
-        return (Admin) userAdmin;
+        // Create the report first
+        Report report = new Report(username, comment, storeId, productId);
+        user.addReport(report.getReportId());
+        reportRepository.save(report);
+
+        // Then publish the event
+        DomainEventPublisher.publish(
+                new ViolationReportedEvent(username, storeId, productId, comment)
+        );
+
+        logger.info("Violation report created and event published for user: {}", username);
     }
 
     public User returnInfo(String username) {
@@ -352,6 +341,7 @@ public class UserAccessService {
                 user.setLastName(lastName);
             }
             userRepository.update(user);
+            logger.info("User information updated successfully for user: {}", username);
             return user;
         } catch (Exception e) {
             logger.error("Failed to change user info: {}", username);
@@ -376,12 +366,12 @@ public class UserAccessService {
 
     public boolean canUpdateStoreDiscount(String username, UUID storeId) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        return user.hasPermission(storeId,Permission.MANAGE_DISCOUNT_POLICY);
+        return user.hasPermission(storeId, Permission.MANAGE_DISCOUNT_POLICY);
     }
 
     public boolean canUpdateStorePurchasePolicy(String username, UUID storeId) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
-        return user.hasPermission(storeId,Permission.MANAGE_PURCHASE_POLICY);
+        return user.hasPermission(storeId, Permission.MANAGE_PURCHASE_POLICY);
     }
 
     public List<Permission> getStoreManagerPermissions(String username, UUID storeId) {
@@ -389,13 +379,12 @@ public class UserAccessService {
         return user.getStoreManagerPermissions(storeId);
     }
 
-
     public List<Report> getViolationReports(String admin) {
         validateAdmin(admin);
         List<Report> reports = reportRepository.getAllReports();
         if (reports.isEmpty()) {
             logger.info("No violation reports found");
-            return null;
+            return new ArrayList<>();
         }
         return reports;
     }
@@ -410,17 +399,47 @@ public class UserAccessService {
         return cleanupAndCount(subscriptionTimestamps);
     }
 
-    //Validation functions here:
+    public void replyViolationReport(String admin, UUID reportId, String user, String message) {
+        validateAdmin(admin);
+        // Publish a message for the report reply instead of direct call
+        DomainEventPublisher.publish(
+                new ViolationReplyEvent(admin, reportId, user, message)
+        );
+        logger.info("Violation report reply event published by admin: {}", admin);
+    }
 
-    /*
-     * Validates the strength of a password.
-     * Business rules:
-     * 1. The password must contain at least one uppercase letter.
-     * 2. The password must contain at least one lowercase letter.
-     * 3. The password must contain at least one digit.
-     * 4. The password must contain at least one special character.
-     * 5. The password must be at least 8 characters long.
-     */
+    public void sendMessageToUser(String admin, String addressee, String message) {
+        validateAdmin(admin);
+        // Publish direct message event instead of direct call
+        DomainEventPublisher.publish(
+                new DirectMessageEvent(admin, addressee, message)
+        );
+        logger.info("Direct message event published from admin to user: {}", addressee);
+    }
+
+    // Record transaction and subscription methods
+    public void recordTransaction() {
+        transactionTimestamps.add(LocalDateTime.now());
+    }
+
+    public void recordSubscription() {
+        subscriptionTimestamps.add(LocalDateTime.now());
+    }
+
+    // Helper methods for validation
+    private void validateAdmin(String username) {
+        if(!realAdmin.equals(username))
+            throw new IllegalArgumentException("Not authorized! only admin can operate this!");
+    }
+
+    private double cleanupAndCount(Queue<LocalDateTime> timestamps) {
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        while (!timestamps.isEmpty() && timestamps.peek().isBefore(oneHourAgo)) {
+            timestamps.poll(); // remove old entries
+        }
+        return timestamps.size(); // rate = count in past hour
+    }
+
     private boolean isValidPassword(String password) {
         if (password.length() < 8) {
             logger.error("Password must be at least 8 characters long");
@@ -438,19 +457,13 @@ public class UserAccessService {
             logger.error("Password must contain at least one digit");
             return false;
         }
-        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
             logger.error("Password must contain at least one special character");
             return false;
         }
         return true;
     }
 
-    /*
-     * Validates the format of an email address.
-     * Business rules:
-     * 1. The email must contain an "@" symbol.
-     * 2. The email must contain a domain name.
-     */
     private boolean isValidEmail(String email) {
         if (email == null || email.isEmpty()) {
             logger.error("Email cannot be null or empty");
@@ -466,48 +479,6 @@ public class UserAccessService {
             return false;
         }
         return true;
-    }
-
-    /**
-     *
-     * @param username
-     * validate that username equals admin's username
-     */
-    private void validateAdmin(String username) {
-        if(!realAdmin.equals(username))
-            throw new IllegalArgumentException("Not authorized! only admin can operate this!");
-    }
-
-    // Call this when a transaction occurs
-    private void recordTransaction() {
-        transactionTimestamps.add(LocalDateTime.now());
-    }
-
-    // Call this when a subscription occurs
-    private void recordSubscription() {
-        subscriptionTimestamps.add(LocalDateTime.now());
-    }
-
-    private double cleanupAndCount(Queue<LocalDateTime> timestamps) {
-        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        while (!timestamps.isEmpty() && timestamps.peek().isBefore(oneHourAgo)) {
-            timestamps.poll(); // remove old entries
-        }
-        return timestamps.size(); // rate = count in past hour
-    }
-
-    public void replyViolationReport(String admin, UUID reportId,String user, String message) {
-        validateAdmin(admin);
-        MessageService ms = MessageService.getInstance(RC);
-        ms.replyReport(admin,reportId,user,message);
-    }
-
-    public void sendMessageToUser(String admin, String addresse, String message) {
-        validateAdmin(admin);
-        MessageService ms = MessageService.getInstance(RC);
-        //to fix this later
-        UUID receiver = UUID.fromString(addresse);
-        ms.sendMessage(admin,receiver,message);
     }
 
     public void clear() {

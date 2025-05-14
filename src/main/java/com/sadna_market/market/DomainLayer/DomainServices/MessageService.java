@@ -1,13 +1,16 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.DomainLayer.Events.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -25,6 +28,110 @@ public class MessageService {
         this.messageRepository = messageRepository;
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
+
+        logger.info("MessageService initialized");
+    }
+
+    @PostConstruct
+    public void subscribeToEvents() {
+        // Subscribe to message-related events
+        DomainEventPublisher.subscribe(MessageSentEvent.class, this::handleMessageSent);
+        DomainEventPublisher.subscribe(ViolationReportedEvent.class, this::handleViolationReported);
+        DomainEventPublisher.subscribe(ViolationReplyEvent.class, this::handleViolationReply);
+        DomainEventPublisher.subscribe(DirectMessageEvent.class, this::handleDirectMessage);
+
+        logger.info("MessageService subscribed to events");
+    }
+
+    /**
+     * Event handler for MessageSentEvent
+     */
+    private void handleMessageSent(MessageSentEvent event) {
+        logger.info("Handling message sent event from user {} to store {}",
+                event.getSenderUsername(), event.getStoreId());
+
+        try {
+            // Use the existing method to handle the message
+            Message message = sendMessage(
+                    event.getSenderUsername(),
+                    event.getStoreId(),
+                    event.getContent()
+            );
+
+            logger.info("Message created successfully: {}", message.getMessageId());
+        } catch (Exception e) {
+            logger.error("Error handling message sent event: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Event handler for ViolationReportedEvent
+     */
+    private void handleViolationReported(ViolationReportedEvent event) {
+        logger.info("Handling violation report from user {} for store {} product {}",
+                event.getUsername(), event.getStoreId(), event.getProductId());
+
+        try {
+            // Notify admin about the violation report
+            Admin admin = findAdmin();
+            if (admin != null) {
+                Message notificationMessage = new Message(
+                        "System",
+                        UUID.randomUUID(), // Admin's inbox ID
+                        String.format("Violation report received from %s regarding store %s product %s: %s",
+                                event.getUsername(), event.getStoreId(), event.getProductId(), event.getComment())
+                );
+
+                messageRepository.save(notificationMessage);
+                logger.info("Admin notification created for violation report");
+            }
+        } catch (Exception e) {
+            logger.error("Error handling violation report event: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Event handler for ViolationReplyEvent
+     */
+    private void handleViolationReply(ViolationReplyEvent event) {
+        logger.info("Handling violation reply from admin {} to user {}",
+                event.getAdmin(), event.getUser());
+
+        try {
+            Message replyMessage = new Message(
+                    event.getAdmin(),
+                    UUID.randomUUID(), // Target user's inbox
+                    String.format("Admin response regarding your report #%s: %s",
+                            event.getReportId(), event.getMessage())
+            );
+
+            messageRepository.save(replyMessage);
+            logger.info("Admin reply message created for violation report");
+        } catch (Exception e) {
+            logger.error("Error handling violation reply event: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Event handler for DirectMessageEvent
+     */
+    private void handleDirectMessage(DirectMessageEvent event) {
+        logger.info("Handling direct message from {} to {}",
+                event.getSender(), event.getRecipient());
+
+        try {
+            Message directMessage = new Message(
+                    event.getSender(),
+                    UUID.randomUUID(), // Target user's inbox
+                    event.getContent()
+            );
+
+            messageRepository.save(directMessage);
+            logger.info("Direct message created from {} to {}",
+                    event.getSender(), event.getRecipient());
+        } catch (Exception e) {
+            logger.error("Error handling direct message event: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -357,13 +464,13 @@ public class MessageService {
         return count;
     }
 
-    public Message replyReport(String admin,UUID reportId,String user,String content) {
-        logger.info("admin {} replying to report of user {}", admin, user);
+    public Message replyReport(String admin, UUID reportId, String user, String content) {
+        logger.info("Admin {} replying to report of user {}", admin, user);
 
         // Verify user exists
         if (!userRepository.contains(admin)) {
-            logger.error("User {} not found", admin);
-            throw new IllegalArgumentException("User not found: " + admin);
+            logger.error("Admin {} not found", admin);
+            throw new IllegalArgumentException("Admin not found: " + admin);
         }
 
         if (!userRepository.contains(user)) {
@@ -377,6 +484,15 @@ public class MessageService {
 
         logger.info("Message sent successfully: {}", message.getMessageId());
         return message;
+    }
+
+    private Admin findAdmin() {
+        // Find the admin user - implementation depends on how admins are stored
+        Optional<User> adminUser = userRepository.findByUsername("admin");
+        if (adminUser.isPresent() && adminUser.get() instanceof Admin) {
+            return (Admin) adminUser.get();
+        }
+        return null;
     }
 
     public void clear() {
