@@ -100,15 +100,25 @@ public class UserTests {
         );
         Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
 
-        // Extract store ID from response
+//        // Extract store ID from response
+//        try {
+//            storeId = UUID.fromString(createStoreResponse.getJson());
+//
+//        } catch (Exception e) {
+//            // If parsing fails, use a random UUID for testing
+//            storeId = UUID.randomUUID();
+//        }
+
         try {
-            storeId = UUID.fromString(createStoreResponse.getJson());
-
+            JsonNode rootNode = objectMapper.readTree(createStoreResponse.getJson());
+            String storeIdStr = rootNode.get("storeId").asText();
+            storeId = UUID.fromString(storeIdStr);
+            logger.info("Store ID extracted from response: " + storeId);
         } catch (Exception e) {
-            // If parsing fails, use a random UUID for testing
-            storeId = UUID.randomUUID();
+            logger.info("Failed to extract store ID: " + e.getMessage());
+            logger.info("Response was: " + createStoreResponse.getJson());
+            throw new AssertionError("Store ID extraction failed", e);
         }
-
         // Create a ProductRequest object for adding a product
         ProductRequest productRequest = new ProductRequest(
                 UUID.randomUUID(),  // Generate a random UUID for the new product
@@ -622,8 +632,9 @@ public class UserTests {
         // Create a rating request
         int rating = 4; // 4 out of 5 stars
         ProductRateRequest rateRequest = new ProductRateRequest(
-                UUID.fromString(testUsername), // Using username as UUID for simplicity; adapt if your implementation is different
                 productId,
+                testUsername,
+                storeId,
                 rating
         );
 
@@ -646,8 +657,9 @@ public class UserTests {
         // Create a rating request for a non-existent product
         int rating = 5;
         ProductRateRequest rateRequest = new ProductRateRequest(
-                UUID.fromString(testUsername), // Using username as UUID for simplicity; adapt if needed
-                nonExistentProductId,
+                productId,
+                testUsername,
+                storeId,
                 rating
         );
 
@@ -671,8 +683,9 @@ public class UserTests {
         // Create a rating request
         int rating = 3;
         ProductRateRequest rateRequest = new ProductRateRequest(
-                UUID.fromString(testUsername), // Using username as UUID for simplicity; adapt if needed
                 productId,
+                testUsername,
+                storeId,
                 rating
         );
 
@@ -692,8 +705,9 @@ public class UserTests {
         // Create a rating request with an invalid rating value (outside 1-5 range)
         int invalidRating = 10; // Assuming valid ratings are 1-5
         ProductRateRequest rateRequest = new ProductRateRequest(
-                UUID.fromString(testUsername), // Using username as UUID for simplicity; adapt if needed
                 productId,
+                testUsername,
+                storeId,
                 invalidRating
         );
 

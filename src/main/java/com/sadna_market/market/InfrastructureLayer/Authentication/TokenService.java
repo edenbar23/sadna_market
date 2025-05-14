@@ -21,7 +21,7 @@ public class TokenService {
 
     // This could be loaded from a configuration file or environment variable
     @Value("${market.jwt.expiration:86400000}") // Default to 24 hours
-    private long sessionExpirationTime;
+    private long sessionExpirationTime = 86400000; // 24 hours in milliseconds
 
     // Getter for the key (for testing)
     // Generate a secure key for signing JWT tokens
@@ -34,18 +34,22 @@ public class TokenService {
 
     public String generateToken(String username) {
         logger.info("Generating token for user: {}", username);
-
-        return Jwts.builder()
+        logger.info("(generating token) encoding key: {}", key);
+        String output = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + sessionExpirationTime))
                 .signWith(key)
                 .compact();
+        logger.info("Generated token: {}", output);
+        return output;
     }
 
     public boolean validateToken(String token) {
-        logger.info("Validating token");
+        logger.info("Token expiration time set to: {} ms", sessionExpirationTime);
 
+        logger.info("Validating token: {}", token);
+        logger.info("(validating token) encoding key: {}", key);
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)

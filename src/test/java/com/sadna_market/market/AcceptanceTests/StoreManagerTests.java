@@ -1,5 +1,6 @@
 package com.sadna_market.market.AcceptanceTests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
@@ -118,10 +119,10 @@ public class StoreManagerTests {
 
         // Extract the store ID from the response
         try {
-            storeId = UUID.fromString(createStoreResponse.getJson());
+            JsonNode jsonNode = objectMapper.readTree(createStoreResponse.getJson());
+            storeId = UUID.fromString(jsonNode.get("storeId").asText());
         } catch (Exception e) {
-            storeId = UUID.randomUUID();
-            System.out.println("Using generated store ID for testing: " + storeId);
+            throw new AssertionError("Store ID extraction failed", e);
         }
     }
 

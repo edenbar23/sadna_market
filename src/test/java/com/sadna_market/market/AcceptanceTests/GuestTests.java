@@ -1,5 +1,6 @@
 package com.sadna_market.market.AcceptanceTests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
@@ -70,14 +71,27 @@ public class GuestTests {
         );
         Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
 
-        // Extract store ID from response or use a random UUID if not available
-        try {
-            storeId = UUID.fromString(createStoreResponse.getJson());
-        } catch (Exception e) {
-            logger.info("Store ID not found in response, generating a new one.");
-            storeId = UUID.randomUUID();
-        }
+//        // Extract store ID from response or use a random UUID if not available
+//        try {
+//            logger.info("storeId: " + createStoreResponse.getJson());
+//            storeId = UUID.fromString(createStoreResponse.getJson());
+//            logger.info("Store ID extracted from response: " + storeId);
+//        } catch (Exception e) {
+//            logger.info("Store ID not found in response, generating a new one.");
+//            storeId = UUID.randomUUID();
+//        }
 
+        // Extract store ID from response
+        try {
+            // Parse the JSON string into a JSON object and extract the storeId field
+            JsonNode jsonNode = objectMapper.readTree(createStoreResponse.getJson());
+            storeId = UUID.fromString(jsonNode.get("storeId").asText());
+            logger.info("Store ID extracted from response: " + storeId);
+        } catch (Exception e) {
+            logger.error("Failed to extract store ID from response: " + e.getMessage());
+            logger.info("Response was: " + createStoreResponse.getJson());
+            throw new AssertionError("Store ID extraction failed", e);
+        }
         logger.info("Store ID: " + storeId);
         // Add a product to the store
         ProductRequest productRequest = new ProductRequest(

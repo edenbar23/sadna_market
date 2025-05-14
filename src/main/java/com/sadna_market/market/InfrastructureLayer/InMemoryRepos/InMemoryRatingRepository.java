@@ -254,6 +254,7 @@ public class InMemoryRatingRepository implements IRatingRepository {
         }
     }
 
+
     @Override
     public void clear() {
         productRatings.clear();

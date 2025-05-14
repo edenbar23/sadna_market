@@ -15,4 +15,11 @@ import java.util.UUID;
 public class MessageRequest {
     private UUID storeId;
     private String content;
+
+    public UUID getStoreId() {
+        return storeId;
+    }
+    public String getContent() {
+        return content;
+    }
 }
