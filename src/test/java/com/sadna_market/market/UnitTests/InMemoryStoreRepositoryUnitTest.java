@@ -1,370 +1,655 @@
 package com.sadna_market.market.UnitTests;
 
-import com.sadna_market.market.DomainLayer.IStoreRepository;
 import com.sadna_market.market.DomainLayer.Store;
 import com.sadna_market.market.DomainLayer.StoreFounder;
-import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
+import com.sadna_market.market.InfrastructureLayer.InMemoryRepos.InMemoryStoreRepository;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-class InMemoryStoreRepositoryUnitTest {
+public class InMemoryStoreRepositoryUnitTest {
 
-    private IStoreRepository repository;
-    private UUID storeId;
-    private String storeName;
-    private String founderUsername;
-     private RepositoryConfiguration RC = new RepositoryConfiguration();
-    
-    @Mock
-    private StoreFounder mockFounder;
+    private InMemoryStoreRepository storeRepository;
+    private UUID testStoreId;
+    private String testStoreName;
+    private String testFounder;
+    private Store testStore;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-       // repository = new InMemoryStoreRepository();
-       repository=RC.storeRepository();
-        // Set up test data
-        storeName = "Test Store";
-        founderUsername = "testFounder";
-        String address = "123 Test Street";
-        String email = "test@example.com";
-        String phoneNumber = "123-456-7890";
-        
-        // Set up mock founder
-        when(mockFounder.getUsername()).thenReturn(founderUsername);
-        
-        // Create a store
-        storeId = repository.createStore(founderUsername, storeName, address, email, phoneNumber);
+        System.out.println("\n===== Setting up test environment =====");
+        storeRepository = new InMemoryStoreRepository();
+        testFounder = "testFounder";
+        testStoreName = "TestStore";
+
+        // Create a test store
+        testStoreId = storeRepository.createStore(testFounder, testStoreName, "Test Address", "test@example.com", "123456789");
+        System.out.println("Created test store with ID: " + testStoreId);
+        System.out.println("Store name: " + testStoreName);
+        System.out.println("Store founder: " + testFounder);
+
+        // Get the store for use in tests
+        Optional<Store> storeOpt = storeRepository.findById(testStoreId);
+        assertTrue(storeOpt.isPresent(), "Test store should be found");
+        testStore = storeOpt.get();
+        System.out.println("Retrieved test store successfully");
+        System.out.println("===== Setup complete =====");
+    }
+
+    @AfterEach
+    void tearDown() {
+        System.out.println("===== Cleaning up test resources =====");
+        storeRepository.clear();
+        testStore = null;
+        System.out.println("Store repository cleared");
+        System.out.println("Test store reference set to null");
+        System.out.println("===== Cleanup complete =====\n");
+    }
+
+    // CRUD Operations Tests
+
+    @Test
+    void testFindById_ExistingStore_ReturnsStore() {
+        System.out.println("TEST: Verifying findById with existing store");
+
+        System.out.println("Looking for store with ID: " + testStoreId);
+        Optional<Store> result = storeRepository.findById(testStoreId);
+
+        System.out.println("Expected: Store should be present");
+        System.out.println("Actual: Store is present = " + result.isPresent());
+        assertTrue(result.isPresent(), "Store should be found");
+
+        System.out.println("Expected store ID: " + testStoreId);
+        System.out.println("Actual store ID: " + result.get().getStoreId());
+        assertEquals(testStoreId, result.get().getStoreId(), "Store ID should match");
+
+        System.out.println("Expected store name: " + testStoreName);
+        System.out.println("Actual store name: " + result.get().getName());
+        assertEquals(testStoreName, result.get().getName(), "Store name should match");
+
+        System.out.println("✓ findById correctly returns the store");
     }
 
     @Test
-    void testCreateStore() {
-        // Verify the store was created
-        assertTrue(repository.exists(storeId));
-        
-        // Get the store and verify details
-        Optional<Store> storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        
-        Store store = storeOpt.get();
-        assertEquals(storeName, store.getName());
-        assertEquals(founderUsername, store.getFounder().getUsername());
-        assertTrue(store.isActive());
+    void testFindById_NonExistingStore_ReturnsEmpty() {
+        System.out.println("TEST: Verifying findById with non-existing store");
+
+        UUID nonExistingId = UUID.randomUUID();
+        System.out.println("Looking for non-existing store with ID: " + nonExistingId);
+        Optional<Store> result = storeRepository.findById(nonExistingId);
+
+        System.out.println("Expected: Store should not be present");
+        System.out.println("Actual: Store is present = " + result.isPresent());
+        assertFalse(result.isPresent(), "Store should not be found");
+
+        System.out.println("✓ findById correctly returns empty for non-existing store");
     }
 
     @Test
-    void testFindById() {
-        // Find existing store
-        Optional<Store> storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        assertEquals(storeName, storeOpt.get().getName());
-        
-        // Find non-existent store
-        UUID nonExistentId = UUID.randomUUID();
-        Optional<Store> nonExistentStore = repository.findById(nonExistentId);
-        assertFalse(nonExistentStore.isPresent());
+    void testFindByName_ExistingStore_ReturnsStore() {
+        System.out.println("TEST: Verifying findByName with existing store");
+
+        System.out.println("Looking for store with name: " + testStoreName);
+        Optional<Store> result = storeRepository.findByName(testStoreName);
+
+        System.out.println("Expected: Store should be present");
+        System.out.println("Actual: Store is present = " + result.isPresent());
+        assertTrue(result.isPresent(), "Store should be found");
+
+        System.out.println("Expected store ID: " + testStoreId);
+        System.out.println("Actual store ID: " + result.get().getStoreId());
+        assertEquals(testStoreId, result.get().getStoreId(), "Store ID should match");
+
+        System.out.println("Expected store name: " + testStoreName);
+        System.out.println("Actual store name: " + result.get().getName());
+        assertEquals(testStoreName, result.get().getName(), "Store name should match");
+
+        System.out.println("✓ findByName correctly returns the store");
     }
 
     @Test
-    void testFindByName() {
-        // Find existing store
-        Optional<Store> storeOpt = repository.findByName(storeName);
-        assertTrue(storeOpt.isPresent());
-        assertEquals(storeId, storeOpt.get().getStoreId());
-        
-        // Find non-existent store
-        String nonExistentName = "Non-existent Store";
-        Optional<Store> nonExistentStore = repository.findByName(nonExistentName);
-        assertFalse(nonExistentStore.isPresent());
+    void testFindByName_NonExistingStore_ReturnsEmpty() {
+        System.out.println("TEST: Verifying findByName with non-existing store");
+
+        String nonExistingName = "NonExistingStore";
+        System.out.println("Looking for non-existing store with name: " + nonExistingName);
+        Optional<Store> result = storeRepository.findByName(nonExistingName);
+
+        System.out.println("Expected: Store should not be present");
+        System.out.println("Actual: Store is present = " + result.isPresent());
+        assertFalse(result.isPresent(), "Store should not be found");
+
+        System.out.println("✓ findByName correctly returns empty for non-existing store");
     }
 
     @Test
-    void testFindAll() {
-        // Initially should have one store
-        List<Store> allStores = repository.findAll();
-        assertEquals(1, allStores.size());
-        assertEquals(storeId, allStores.get(0).getStoreId());
-        
-        // Add another store
-        String anotherName = "Another Store";
-        repository.createStore(founderUsername, anotherName, "Address", "email@example.com", "987-654-3210");
-        
-        // Now should have two stores
-        allStores = repository.findAll();
-        assertEquals(2, allStores.size());
+    void testFindAll_ReturnsAllStores() {
+        System.out.println("TEST: Verifying findAll returns all stores");
+
+        // Create another store
+        String anotherStoreName = "AnotherStore";
+        UUID anotherStoreId = storeRepository.createStore("anotherFounder", anotherStoreName,
+                "Another Address", "another@example.com", "987654321");
+        System.out.println("Created another test store with ID: " + anotherStoreId);
+        System.out.println("Created another test store with name: " + anotherStoreName);
+
+        List<Store> stores = storeRepository.findAll();
+
+        System.out.println("Expected number of stores: 2");
+        System.out.println("Actual number of stores: " + stores.size());
+        assertEquals(2, stores.size(), "Should return 2 stores");
+
+        boolean containsFirstStore = stores.stream().anyMatch(s -> s.getStoreId().equals(testStoreId));
+        System.out.println("Expected to contain first store: true");
+        System.out.println("Actually contains first store: " + containsFirstStore);
+        assertTrue(containsFirstStore, "Should contain first store");
+
+        boolean containsSecondStore = stores.stream().anyMatch(s -> s.getStoreId().equals(anotherStoreId));
+        System.out.println("Expected to contain second store: true");
+        System.out.println("Actually contains second store: " + containsSecondStore);
+        assertTrue(containsSecondStore, "Should contain second store");
+
+        System.out.println("✓ findAll correctly returns all stores");
     }
 
     @Test
-    void testDeleteById() {
-        // Store exists initially
-        assertTrue(repository.exists(storeId));
-        
-        // Delete the store
-        repository.deleteById(storeId);
-        
-        // Verify it's gone
-        assertFalse(repository.exists(storeId));
+    void testDeleteById_ExistingStore_RemovesStore() {
+        System.out.println("TEST: Verifying deleteById removes an existing store");
+
+        System.out.println("Deleting store with ID: " + testStoreId);
+        storeRepository.deleteById(testStoreId);
+
+        Optional<Store> result = storeRepository.findById(testStoreId);
+        System.out.println("Expected: Store should not be present after deletion");
+        System.out.println("Actual: Store is present = " + result.isPresent());
+        assertFalse(result.isPresent(), "Store should be deleted");
+
+        System.out.println("✓ deleteById correctly removes the store");
     }
 
     @Test
-    void testExists() {
-        // Check existing store
-        assertTrue(repository.exists(storeId));
-        
-        // Check non-existent store
-        UUID nonExistentId = UUID.randomUUID();
-        assertFalse(repository.exists(nonExistentId));
+    void testExists_ExistingStore_ReturnsTrue() {
+        System.out.println("TEST: Verifying exists returns true for existing store");
+
+        System.out.println("Checking if store with ID exists: " + testStoreId);
+        boolean exists = storeRepository.exists(testStoreId);
+
+        System.out.println("Expected: true");
+        System.out.println("Actual: " + exists);
+        assertTrue(exists, "Store should exist");
+
+        System.out.println("✓ exists correctly returns true for existing store");
     }
 
     @Test
-    void testSave() {
-        // Get the existing store
-        Optional<Store> storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        Store store = storeOpt.get();
-        
-        // Modify and save
-        String newDescription = "Updated Description";
-        store.setDescription(newDescription);
-        repository.save(store);
-        
-        // Verify the update
-        Optional<Store> updatedStoreOpt = repository.findById(storeId);
-        assertTrue(updatedStoreOpt.isPresent());
-        assertEquals(newDescription, updatedStoreOpt.get().getDescription());
+    void testExists_NonExistingStore_ReturnsFalse() {
+        System.out.println("TEST: Verifying exists returns false for non-existing store");
+
+        UUID nonExistingId = UUID.randomUUID();
+        System.out.println("Checking if non-existing store with ID exists: " + nonExistingId);
+        boolean exists = storeRepository.exists(nonExistingId);
+
+        System.out.println("Expected: false");
+        System.out.println("Actual: " + exists);
+        assertFalse(exists, "Store should not exist");
+
+        System.out.println("✓ exists correctly returns false for non-existing store");
     }
 
     @Test
-    void testUpdateStoreStatus() {
-        // Initially active
-        Optional<Store> storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        assertTrue(storeOpt.get().isActive());
-        
-        // Update to inactive
-        repository.updateStoreStatus(storeId, false);
-        
-        // Verify
-        storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        assertFalse(storeOpt.get().isActive());
-        
-        // Update back to active
-        repository.updateStoreStatus(storeId, true);
-        
-        // Verify
-        storeOpt = repository.findById(storeId);
-        assertTrue(storeOpt.isPresent());
-        assertTrue(storeOpt.get().isActive());
+    void testSave_NewStore_StoresSuccessfully() {
+        System.out.println("TEST: Verifying save stores a new store successfully");
+
+        // Create a new store object to save
+        UUID newStoreId = UUID.randomUUID();
+        String newStoreName = "NewStore";
+        StoreFounder newFounder = new StoreFounder("newFounder", newStoreId, null);
+
+        System.out.println("Creating new store with ID: " + newStoreId);
+        System.out.println("Creating new store with name: " + newStoreName);
+        Store newStore = new Store(newStoreId, newStoreName, "Test Description", true, new Date(), newFounder);
+
+        Store savedStore = storeRepository.save(newStore);
+        System.out.println("Expected: saved store should match provided store");
+        assertEquals(newStore, savedStore, "Saved store should be the same");
+
+        Optional<Store> foundStore = storeRepository.findById(newStoreId);
+        System.out.println("Expected: Store should be found after saving");
+        System.out.println("Actual: Store is present = " + foundStore.isPresent());
+        assertTrue(foundStore.isPresent(), "Store should be found");
+
+        System.out.println("Expected store ID: " + newStoreId);
+        System.out.println("Actual store ID: " + foundStore.get().getStoreId());
+        assertEquals(newStoreId, foundStore.get().getStoreId(), "Store ID should match");
+
+        System.out.println("Expected store name: " + newStoreName);
+        System.out.println("Actual store name: " + foundStore.get().getName());
+        assertEquals(newStoreName, foundStore.get().getName(), "Store name should match");
+
+        System.out.println("✓ save correctly stores a new store");
+    }
+
+    // Store Status Tests
+
+    @Test
+    void testUpdateStoreStatus_Open_StoreIsActive() {
+        System.out.println("TEST: Verifying updateStoreStatus sets store to active");
+
+        // First close the store
+        System.out.println("First closing the store with ID: " + testStoreId);
+        storeRepository.updateStoreStatus(testStoreId, false);
+
+        Optional<Store> closedStore = storeRepository.findById(testStoreId);
+        System.out.println("Expected: Store should be closed");
+        System.out.println("Actual: Store is active = " + closedStore.get().isActive());
+        assertFalse(closedStore.get().isActive(), "Store should be closed");
+
+        // Then open it
+        System.out.println("Now reopening the store");
+        storeRepository.updateStoreStatus(testStoreId, true);
+
+        Optional<Store> reopenedStore = storeRepository.findById(testStoreId);
+        System.out.println("Expected: Store should be open");
+        System.out.println("Actual: Store is active = " + reopenedStore.get().isActive());
+        assertTrue(reopenedStore.get().isActive(), "Store should be open");
+
+        System.out.println("✓ updateStoreStatus correctly sets store to active");
     }
 
     @Test
-    void testUpdateStoreStatusNonExistentStore() {
-        // Update status of non-existent store - should not throw exception
-        UUID nonExistentId = UUID.randomUUID();
-        repository.updateStoreStatus(nonExistentId, false);
+    void testUpdateStoreStatus_Close_StoreIsInactive() {
+        System.out.println("TEST: Verifying updateStoreStatus sets store to inactive");
+
+        System.out.println("Closing store with ID: " + testStoreId);
+        storeRepository.updateStoreStatus(testStoreId, false);
+
+        Optional<Store> result = storeRepository.findById(testStoreId);
+        System.out.println("Expected: Store should be closed");
+        System.out.println("Actual: Store is active = " + result.get().isActive());
+        assertFalse(result.get().isActive(), "Store should be closed");
+
+        System.out.println("✓ updateStoreStatus correctly sets store to inactive");
+    }
+
+    // Store Personnel Management Tests
+
+    @Test
+    void testAddOwner_NewOwner_OwnerAdded() {
+        System.out.println("TEST: Verifying addOwner adds a new owner");
+
+        String newOwner = "newOwner";
+        System.out.println("Adding new owner: " + newOwner + " to store: " + testStoreId);
+        storeRepository.addOwner(testStoreId, newOwner);
+
+        Set<String> owners = storeRepository.getStoreOwners(testStoreId);
+        System.out.println("Expected: Owners set should contain new owner");
+        System.out.println("Actual: Owners set contains new owner = " + owners.contains(newOwner));
+        assertTrue(owners.contains(newOwner), "New owner should be added");
+
+        System.out.println("✓ addOwner correctly adds a new owner");
     }
 
     @Test
-    void testAddAndRemoveOwner() {
-        // Add an owner
-        String ownerUsername = "testOwner";
-        repository.addOwner(storeId, ownerUsername);
-        
-        // Verify owner was added
-        assertTrue(repository.isOwner(storeId, ownerUsername));
-        
-        // Remove the owner
-        repository.removeOwner(storeId, ownerUsername);
-        
-        // Verify owner was removed
-        assertFalse(repository.isOwner(storeId, ownerUsername));
+    void testRemoveOwner_ExistingOwner_OwnerRemoved() {
+        System.out.println("TEST: Verifying removeOwner removes an existing owner");
+
+        String newOwner = "newOwner";
+        System.out.println("First adding new owner: " + newOwner);
+        storeRepository.addOwner(testStoreId, newOwner);
+
+        Set<String> ownersBeforeRemoval = storeRepository.getStoreOwners(testStoreId);
+        System.out.println("Owners before removal: " + ownersBeforeRemoval);
+        System.out.println("Contains owner before removal: " + ownersBeforeRemoval.contains(newOwner));
+
+        System.out.println("Now removing owner: " + newOwner);
+        storeRepository.removeOwner(testStoreId, newOwner);
+
+        Set<String> owners = storeRepository.getStoreOwners(testStoreId);
+        System.out.println("Expected: Owners set should not contain removed owner");
+        System.out.println("Actual: Owners set contains removed owner = " + owners.contains(newOwner));
+        assertFalse(owners.contains(newOwner), "Owner should be removed");
+
+        System.out.println("✓ removeOwner correctly removes an existing owner");
     }
 
     @Test
-    void testAddAndRemoveManager() {
-        // Add a manager
-        String managerUsername = "testManager";
-        repository.addManager(storeId, managerUsername);
-        
-        // Verify manager was added
-        assertTrue(repository.isManager(storeId, managerUsername));
-        
-        // Remove the manager
-        repository.removeManager(storeId, managerUsername);
-        
-        // Verify manager was removed
-        assertFalse(repository.isManager(storeId, managerUsername));
+    void testAddManager_NewManager_ManagerAdded() {
+        System.out.println("TEST: Verifying addManager adds a new manager");
+
+        String newManager = "newManager";
+        System.out.println("Adding new manager: " + newManager + " to store: " + testStoreId);
+        storeRepository.addManager(testStoreId, newManager);
+
+        Set<String> managers = storeRepository.getStoreManagers(testStoreId);
+        System.out.println("Expected: Managers set should contain new manager");
+        System.out.println("Actual: Managers set contains new manager = " + managers.contains(newManager));
+        assertTrue(managers.contains(newManager), "New manager should be added");
+
+        System.out.println("✓ addManager correctly adds a new manager");
     }
 
     @Test
-    void testIsOwnerAndGetStoreOwners() {
-        // Initially, only the founder should be an owner
-        assertTrue(repository.isOwner(storeId, founderUsername));
-        
-        // Add another owner
-        String ownerUsername = "testOwner";
-        repository.addOwner(storeId, ownerUsername);
-        
-        // Verify both are owners
-        assertTrue(repository.isOwner(storeId, founderUsername));
-        assertTrue(repository.isOwner(storeId, ownerUsername));
-        
-        // Get all owners
-        Set<String> owners = repository.getStoreOwners(storeId);
-        assertEquals(2, owners.size());
-        assertTrue(owners.contains(founderUsername));
-        assertTrue(owners.contains(ownerUsername));
+    void testRemoveManager_ExistingManager_ManagerRemoved() {
+        System.out.println("TEST: Verifying removeManager removes an existing manager");
+
+        String newManager = "newManager";
+        System.out.println("First adding new manager: " + newManager);
+        storeRepository.addManager(testStoreId, newManager);
+
+        Set<String> managersBeforeRemoval = storeRepository.getStoreManagers(testStoreId);
+        System.out.println("Managers before removal: " + managersBeforeRemoval);
+        System.out.println("Contains manager before removal: " + managersBeforeRemoval.contains(newManager));
+
+        System.out.println("Now removing manager: " + newManager);
+        storeRepository.removeManager(testStoreId, newManager);
+
+        Set<String> managers = storeRepository.getStoreManagers(testStoreId);
+        System.out.println("Expected: Managers set should not contain removed manager");
+        System.out.println("Actual: Managers set contains removed manager = " + managers.contains(newManager));
+        assertFalse(managers.contains(newManager), "Manager should be removed");
+
+        System.out.println("✓ removeManager correctly removes an existing manager");
     }
 
     @Test
-    void testIsManagerAndGetStoreManagers() {
-        // Initially, there should be no managers
-        String managerUsername = "testManager";
-        assertFalse(repository.isManager(storeId, managerUsername));
-        
-        // Add a manager
-        repository.addManager(storeId, managerUsername);
-        
-        // Verify manager was added
-        assertTrue(repository.isManager(storeId, managerUsername));
-        
-        // Get all managers
-        Set<String> managers = repository.getStoreManagers(storeId);
-        assertEquals(1, managers.size());
-        assertTrue(managers.contains(managerUsername));
+    void testIsOwner_ExistingOwner_ReturnsTrue() {
+        System.out.println("TEST: Verifying isOwner returns true for existing owner");
+
+        System.out.println("Checking if user is an owner: " + testFounder);
+        boolean isOwner = storeRepository.isOwner(testStoreId, testFounder);
+
+        System.out.println("Expected: true (founder should be an owner)");
+        System.out.println("Actual: " + isOwner);
+        assertTrue(isOwner, "Founder should be an owner");
+
+        System.out.println("✓ isOwner correctly returns true for existing owner");
     }
 
     @Test
-    void testGetStoreFounder() {
-        // Verify founder
-        String founder = repository.getStoreFounder(storeId);
-        assertEquals(founderUsername, founder);
-        
-        // Non-existent store
-        UUID nonExistentId = UUID.randomUUID();
-        assertNull(repository.getStoreFounder(nonExistentId));
+    void testIsOwner_NonExistingOwner_ReturnsFalse() {
+        System.out.println("TEST: Verifying isOwner returns false for non-existing owner");
+
+        String nonExistingOwner = "nonExistingOwner";
+        System.out.println("Checking if non-existing user is an owner: " + nonExistingOwner);
+        boolean isOwner = storeRepository.isOwner(testStoreId, nonExistingOwner);
+
+        System.out.println("Expected: false");
+        System.out.println("Actual: " + isOwner);
+        assertFalse(isOwner, "Non-existing user should not be an owner");
+
+        System.out.println("✓ isOwner correctly returns false for non-existing owner");
     }
 
     @Test
-    void testProductManagement() {
-        // Add a product
+    void testIsManager_ExistingManager_ReturnsTrue() {
+        System.out.println("TEST: Verifying isManager returns true for existing manager");
+
+        String newManager = "newManager";
+        System.out.println("First adding new manager: " + newManager);
+        storeRepository.addManager(testStoreId, newManager);
+
+        System.out.println("Checking if user is a manager: " + newManager);
+        boolean isManager = storeRepository.isManager(testStoreId, newManager);
+
+        System.out.println("Expected: true");
+        System.out.println("Actual: " + isManager);
+        assertTrue(isManager, "Added user should be a manager");
+
+        System.out.println("✓ isManager correctly returns true for existing manager");
+    }
+
+    @Test
+    void testIsManager_NonExistingManager_ReturnsFalse() {
+        System.out.println("TEST: Verifying isManager returns false for non-existing manager");
+
+        String nonExistingManager = "nonExistingManager";
+        System.out.println("Checking if non-existing user is a manager: " + nonExistingManager);
+        boolean isManager = storeRepository.isManager(testStoreId, nonExistingManager);
+
+        System.out.println("Expected: false");
+        System.out.println("Actual: " + isManager);
+        assertFalse(isManager, "Non-existing user should not be a manager");
+
+        System.out.println("✓ isManager correctly returns false for non-existing manager");
+    }
+
+    @Test
+    void testGetStoreOwners_ReturnsAllOwners() {
+        System.out.println("TEST: Verifying getStoreOwners returns all owners");
+
+        String newOwner = "newOwner";
+        System.out.println("Adding new owner: " + newOwner);
+        storeRepository.addOwner(testStoreId, newOwner);
+
+        Set<String> owners = storeRepository.getStoreOwners(testStoreId);
+
+        System.out.println("Expected number of owners: 2");
+        System.out.println("Actual number of owners: " + owners.size());
+        assertEquals(2, owners.size(), "Should have 2 owners");
+
+        System.out.println("Expected to contain founder: " + testFounder);
+        System.out.println("Actually contains founder: " + owners.contains(testFounder));
+        assertTrue(owners.contains(testFounder), "Should contain founder");
+
+        System.out.println("Expected to contain new owner: " + newOwner);
+        System.out.println("Actually contains new owner: " + owners.contains(newOwner));
+        assertTrue(owners.contains(newOwner), "Should contain new owner");
+
+        System.out.println("✓ getStoreOwners correctly returns all owners");
+    }
+
+    @Test
+    void testGetStoreFounder_ReturnsFounder() {
+        System.out.println("TEST: Verifying getStoreFounder returns the correct founder");
+
+        System.out.println("Getting founder for store: " + testStoreId);
+        String founder = storeRepository.getStoreFounder(testStoreId);
+
+        System.out.println("Expected founder: " + testFounder);
+        System.out.println("Actual founder: " + founder);
+        assertEquals(testFounder, founder, "Founder should match");
+
+        System.out.println("✓ getStoreFounder correctly returns the founder");
+    }
+
+    // Inventory Management Tests
+
+    @Test
+    void testAddProduct_NewProduct_ProductAdded() {
+        System.out.println("TEST: Verifying addProduct adds a new product");
+
         UUID productId = UUID.randomUUID();
         int quantity = 10;
-        repository.addProduct(storeId, productId, quantity);
-        
-        // Verify product was added
-        assertTrue(repository.hasProduct(storeId, productId));
-        assertEquals(quantity, repository.getProductQuantity(storeId, productId));
-        
-        // Update quantity
-        int newQuantity = 5;
-        repository.updateProductQuantity(storeId, productId, newQuantity);
-        
-        // Verify quantity was updated
-        assertEquals(newQuantity, repository.getProductQuantity(storeId, productId));
-        
-        // Check sufficient stock
-        assertTrue(repository.hasProductInStock(storeId, productId, 3));
-        
-        // Check insufficient stock
-        assertFalse(repository.hasProductInStock(storeId, productId, 6));
-        
-        // Get all products
-        Map<UUID, Integer> products = repository.getAllProductsInStore(storeId);
-        assertEquals(1, products.size());
-        assertTrue(products.containsKey(productId));
-        assertEquals(newQuantity, products.get(productId));
-        
-        // Remove the product
-        repository.removeProduct(storeId, productId);
-        
-        // Verify product was removed
-        assertFalse(repository.hasProduct(storeId, productId));
+
+        System.out.println("Adding product with ID: " + productId + " and quantity: " + quantity);
+        storeRepository.addProduct(testStoreId, productId, quantity);
+
+        boolean hasProduct = storeRepository.hasProduct(testStoreId, productId);
+        System.out.println("Expected: Store has product = true");
+        System.out.println("Actual: Store has product = " + hasProduct);
+        assertTrue(hasProduct, "Product should be added");
+
+        int storedQuantity = storeRepository.getProductQuantity(testStoreId, productId);
+        System.out.println("Expected quantity: " + quantity);
+        System.out.println("Actual quantity: " + storedQuantity);
+        assertEquals(quantity, storedQuantity, "Product quantity should match");
+
+        System.out.println("✓ addProduct correctly adds a new product");
     }
 
     @Test
-    void testOrderManagement() {
-        // Add an order
-        UUID orderId = UUID.randomUUID();
-        repository.addOrderIdToStore(storeId, orderId);
-        
-        // Get orders
-        List<UUID> orders = repository.getStoreOrdersIds(storeId);
-        assertEquals(1, orders.size());
-        assertEquals(orderId, orders.get(0));
-    }
+    void testRemoveProduct_ExistingProduct_ProductRemoved() {
+        System.out.println("TEST: Verifying removeProduct removes an existing product");
 
-    @Test
-    void testProductManagementNonExistentStore() {
-        UUID nonExistentId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
-        
-        // These should not throw exceptions
-        repository.addProduct(nonExistentId, productId, 10);
-        repository.updateProductQuantity(nonExistentId, productId, 5);
-        repository.removeProduct(nonExistentId, productId);
-        
-        // These should return expected default values
-        assertFalse(repository.hasProduct(nonExistentId, productId));
-        assertFalse(repository.hasProductInStock(nonExistentId, productId, 1));
-        assertTrue(repository.getAllProductsInStore(nonExistentId).isEmpty());
+        System.out.println("First adding product with ID: " + productId);
+        storeRepository.addProduct(testStoreId, productId, 10);
+
+        boolean hasProductBeforeRemoval = storeRepository.hasProduct(testStoreId, productId);
+        System.out.println("Store has product before removal: " + hasProductBeforeRemoval);
+
+        System.out.println("Now removing product with ID: " + productId);
+        storeRepository.removeProduct(testStoreId, productId);
+
+        boolean hasProduct = storeRepository.hasProduct(testStoreId, productId);
+        System.out.println("Expected: Store has product after removal = false");
+        System.out.println("Actual: Store has product after removal = " + hasProduct);
+        assertFalse(hasProduct, "Product should be removed");
+
+        System.out.println("✓ removeProduct correctly removes an existing product");
     }
 
     @Test
-    void testOrderManagementNonExistentStore() {
-        UUID nonExistentId = UUID.randomUUID();
-        UUID orderId = UUID.randomUUID();
-        
-        // These should not throw exceptions
-        repository.addOrderIdToStore(nonExistentId, orderId);
-        
-        // These should return expected default values
-        assertTrue(repository.getStoreOrdersIds(nonExistentId).isEmpty());
-    }
+    void testHasProductInStock_SufficientQuantity_ReturnsTrue() {
+        System.out.println("TEST: Verifying hasProductInStock returns true with sufficient quantity");
 
-    @Test
-    void testFindByProductId() {
-        // Add a product
         UUID productId = UUID.randomUUID();
-        repository.addProduct(storeId, productId, 10);
-        
-        // Find stores with this product
-        Set<Store> stores = repository.findByProductId(productId);
-        assertEquals(1, stores.size());
-        assertEquals(storeId, stores.iterator().next().getStoreId());
-        
-        // Find stores with non-existent product
-        UUID nonExistentProductId = UUID.randomUUID();
-        stores = repository.findByProductId(nonExistentProductId);
-        assertTrue(stores.isEmpty());
+        int quantity = 10;
+        System.out.println("Adding product with ID: " + productId + " and quantity: " + quantity);
+        storeRepository.addProduct(testStoreId, productId, quantity);
+
+        int requestedQuantity = 5;
+        System.out.println("Checking if store has " + requestedQuantity + " items of product " + productId + " in stock");
+        boolean inStock = storeRepository.hasProductInStock(testStoreId, productId, requestedQuantity);
+
+        System.out.println("Expected: true");
+        System.out.println("Actual: " + inStock);
+        assertTrue(inStock, "Product should be in stock");
+
+        System.out.println("✓ hasProductInStock correctly returns true with sufficient quantity");
     }
 
     @Test
-    void testFindByProductCategory() {
-        // This is a limited implementation in InMemoryStoreRepository
-        String category = "Test Category";
-        Set<Store> stores = repository.findByProductCategory(category);
-        assertTrue(stores.isEmpty());
+    void testHasProductInStock_InsufficientQuantity_ReturnsFalse() {
+        System.out.println("TEST: Verifying hasProductInStock returns false with insufficient quantity");
+
+        UUID productId = UUID.randomUUID();
+        int quantity = 10;
+        System.out.println("Adding product with ID: " + productId + " and quantity: " + quantity);
+        storeRepository.addProduct(testStoreId, productId, quantity);
+
+        int requestedQuantity = 15;
+        System.out.println("Checking if store has " + requestedQuantity + " items of product " + productId + " in stock");
+        boolean inStock = storeRepository.hasProductInStock(testStoreId, productId, requestedQuantity);
+
+        System.out.println("Expected: false");
+        System.out.println("Actual: " + inStock);
+        assertFalse(inStock, "Product should not be in stock in required quantity");
+
+        System.out.println("✓ hasProductInStock correctly returns false with insufficient quantity");
     }
 
     @Test
-    void testGetFilteredProductIds() {
-        // This is a limited implementation in InMemoryStoreRepository
-        String namePattern = "Test";
-        String category = "Test Category";
-        Double maxPrice = 100.0;
-        Double minRating = 4.0;
-        
-        Set<UUID> productIds = repository.getFilteredProductIds(storeId, namePattern, category, maxPrice, minRating);
-        assertTrue(productIds.isEmpty());
+    void testUpdateProductQuantity_ExistingProduct_QuantityUpdated() {
+        System.out.println("TEST: Verifying updateProductQuantity updates quantity correctly");
+
+        UUID productId = UUID.randomUUID();
+        int initialQuantity = 10;
+        System.out.println("Adding product with ID: " + productId + " and initial quantity: " + initialQuantity);
+        storeRepository.addProduct(testStoreId, productId, initialQuantity);
+
+        int newQuantity = 20;
+        System.out.println("Updating product quantity to: " + newQuantity);
+        storeRepository.updateProductQuantity(testStoreId, productId, newQuantity);
+
+        int quantity = storeRepository.getProductQuantity(testStoreId, productId);
+        System.out.println("Expected quantity after update: " + newQuantity);
+        System.out.println("Actual quantity after update: " + quantity);
+        assertEquals(newQuantity, quantity, "Quantity should be updated");
+
+        System.out.println("✓ updateProductQuantity correctly updates product quantity");
+    }
+
+    @Test
+    void testGetAllProductsInStore_ReturnsAllProducts() {
+        System.out.println("TEST: Verifying getAllProductsInStore returns all products");
+
+        UUID product1 = UUID.randomUUID();
+        UUID product2 = UUID.randomUUID();
+        int quantity1 = 10;
+        int quantity2 = 20;
+
+        System.out.println("Adding product 1 with ID: " + product1 + " and quantity: " + quantity1);
+        storeRepository.addProduct(testStoreId, product1, quantity1);
+
+        System.out.println("Adding product 2 with ID: " + product2 + " and quantity: " + quantity2);
+        storeRepository.addProduct(testStoreId, product2, quantity2);
+
+        Map<UUID, Integer> products = storeRepository.getAllProductsInStore(testStoreId);
+
+        System.out.println("Expected number of products: 2");
+        System.out.println("Actual number of products: " + products.size());
+        assertEquals(2, products.size(), "Should have 2 products");
+
+        System.out.println("Expected to contain product 1: true");
+        System.out.println("Actually contains product 1: " + products.containsKey(product1));
+        assertTrue(products.containsKey(product1), "Should contain first product");
+
+        System.out.println("Expected to contain product 2: true");
+        System.out.println("Actually contains product 2: " + products.containsKey(product2));
+        assertTrue(products.containsKey(product2), "Should contain second product");
+
+        System.out.println("Expected quantity for product 1: " + quantity1);
+        System.out.println("Actual quantity for product 1: " + products.get(product1));
+        assertEquals(quantity1, (int)products.get(product1), "First product quantity should match");
+
+        System.out.println("Expected quantity for product 2: " + quantity2);
+        System.out.println("Actual quantity for product 2: " + products.get(product2));
+        assertEquals(quantity2, (int)products.get(product2), "Second product quantity should match");
+
+        System.out.println("✓ getAllProductsInStore correctly returns all products");
+    }
+
+    // Order Management Tests
+
+    @Test
+    void testAddOrderIdToStore_NewOrder_OrderAdded() {
+        System.out.println("TEST: Verifying addOrderIdToStore adds a new order");
+
+        UUID orderId = UUID.randomUUID();
+        System.out.println("Adding order with ID: " + orderId + " to store: " + testStoreId);
+        storeRepository.addOrderIdToStore(testStoreId, orderId);
+
+        List<UUID> orders = storeRepository.getStoreOrdersIds(testStoreId);
+        System.out.println("Expected: Orders list should contain the order");
+        System.out.println("Actual: Orders list contains the order = " + orders.contains(orderId));
+        assertTrue(orders.contains(orderId), "Order should be added");
+
+        System.out.println("✓ addOrderIdToStore correctly adds a new order");
+    }
+
+    @Test
+    void testGetStoreOrdersIds_ReturnsAllOrders() {
+        System.out.println("TEST: Verifying getStoreOrdersIds returns all orders");
+
+        UUID order1 = UUID.randomUUID();
+        UUID order2 = UUID.randomUUID();
+
+        System.out.println("Adding order 1 with ID: " + order1);
+        storeRepository.addOrderIdToStore(testStoreId, order1);
+
+        System.out.println("Adding order 2 with ID: " + order2);
+        storeRepository.addOrderIdToStore(testStoreId, order2);
+
+        List<UUID> orders = storeRepository.getStoreOrdersIds(testStoreId);
+
+        System.out.println("Expected number of orders: 2");
+        System.out.println("Actual number of orders: " + orders.size());
+        assertEquals(2, orders.size(), "Should have 2 orders");
+
+        System.out.println("Expected to contain order 1: true");
+        System.out.println("Actually contains order 1: " + orders.contains(order1));
+        assertTrue(orders.contains(order1), "Should contain first order");
+
+        System.out.println("Expected to contain order 2: true");
+        System.out.println("Actually contains order 2: " + orders.contains(order2));
+        assertTrue(orders.contains(order2), "Should contain second order");
+
+        System.out.println("✓ getStoreOrdersIds correctly returns all orders");
     }
 }

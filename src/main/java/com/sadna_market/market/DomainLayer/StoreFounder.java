@@ -2,6 +2,8 @@ package com.sadna_market.market.DomainLayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 //StoreFounder can close the store
@@ -19,8 +21,8 @@ public class StoreFounder extends UserStoreRoles {
 
     @Override
     public boolean hasPermission(Permission permission) {
-        logger.info("Entering hasPermission with permission={}", permission);
-        logger.info("Exiting hasPermission with result=true");
+        // Store founders always have all permissions
+        logger.info("Checking permission {} for store founder: granted", permission);
         return true;
     }
 
@@ -58,6 +60,27 @@ public class StoreFounder extends UserStoreRoles {
                 username, storeId);
         visitor.processFounderRoleRemoval(this, storeId, user);
         logger.info("Role removal processing completed for StoreFounder");
+    }
+
+    @Override
+    public void addPermission(Permission permission) {
+        // Optional: we could allow adding permissions during initialization only
+        // But for founders it's cleaner to just reject all modifications
+        logger.warn("Attempted to add permission {} to store founder (unnecessary)", permission);
+        // Don't throw an exception, just ignore - founders always have all permissions
+    }
+
+    @Override
+    public void removePermission(Permission permission) {
+        // Never allow removing permissions from a founder
+        logger.error("can't remove permission {} from store founder", permission);
+        throw new IllegalStateException("can't remove permissions from store founder");
+    }
+
+    public List<Permission> getPermissions() {
+        // Return ALL possible permissions when asked
+        logger.info("Returning all permissions for store founder");
+        return Arrays.asList(Permission.values());
     }
 
 }
