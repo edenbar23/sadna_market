@@ -21,6 +21,7 @@ public class InMemoryOrderRepositoryUnitTest {
     private UUID testOrderId;
     private UUID testStoreId;
     private String testUserName;
+    private UUID testDeliveryId;
     private Map<UUID, Integer> testProducts;
     private double testTotalPrice;
     private double testFinalPrice;
@@ -342,22 +343,32 @@ public class InMemoryOrderRepositoryUnitTest {
     void testSetDeliveryId_ExistingOrder_DeliveryIdSet() {
         System.out.println("TEST: Verifying setDeliveryId sets delivery ID for existing order");
 
-        UUID deliveryId = UUID.randomUUID();
-        System.out.println("Setting delivery ID: " + deliveryId + " for order: " + testOrderId);
-        boolean updated = orderRepository.setDeliveryId(testOrderId, deliveryId);
+        // Save the order to repository
+        orderRepository.save(testOrder);
+
+        // First update the order status to PAID (required before setting delivery ID)
+        boolean statusUpdated = orderRepository.updateOrderStatus(testOrder.getOrderId(), OrderStatus.PAID);
+        assertTrue(statusUpdated, "Order status update to PAID should succeed");
+
+        // Create a delivery ID if not already initialized
+        if (testOrderId == null) {
+            testOrderId = UUID.randomUUID();
+        }
+
+        // Now try to set the delivery ID
+        System.out.println("Setting delivery ID: " + testOrderId + " for order: " + testOrder.getOrderId());
+        boolean updated = orderRepository.setDeliveryId(testOrder.getOrderId(), testOrderId);
 
         System.out.println("Expected update result: true");
         System.out.println("Actual update result: " + updated);
+
+        // Verify that the update was successful
         assertTrue(updated, "Delivery ID update should succeed");
 
-        Optional<Order> updatedOrder = orderRepository.findById(testOrderId);
-        assertTrue(updatedOrder.isPresent(), "Order should exist");
-
-        System.out.println("Expected delivery ID after update: " + deliveryId);
-        System.out.println("Actual delivery ID after update: " + updatedOrder.get().getDeliveryId());
-        assertEquals(deliveryId, updatedOrder.get().getDeliveryId(), "Delivery ID should be set");
-
-        System.out.println("✓ setDeliveryId correctly sets delivery ID");
+        // Also verify the delivery ID was set correctly
+        Optional<Order> updatedOrder = orderRepository.findById(testOrder.getOrderId());
+        assertTrue(updatedOrder.isPresent(), "Updated order should exist");
+        assertEquals(testOrderId, updatedOrder.get().getDeliveryId(), "Delivery ID should match");
     }
 
     // Query Method Tests
@@ -371,7 +382,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID anotherOrderId = orderRepository.createOrder(
                 testStoreId,
                 "anotherUser",
-                new HashMap<>(),
+                testProducts,
                 75.0,
                 70.0,
                 LocalDateTime.now(),
@@ -385,7 +396,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID differentOrderId = orderRepository.createOrder(
                 differentStoreId,
                 "differentUser",
-                new HashMap<>(),
+                testProducts,
                 60.0,
                 55.0,
                 LocalDateTime.now(),
@@ -429,12 +440,13 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID anotherOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 testUserName,
-                new HashMap<>(),
+                testProducts,
                 120.0,
                 110.0,
                 LocalDateTime.now(),
                 OrderStatus.PENDING,
                 UUID.randomUUID()
+
         );
         System.out.println("Created another order with ID: " + anotherOrderId + " for the same user");
 
@@ -443,7 +455,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID differentOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 differentUserName,
-                new HashMap<>(),
+                testProducts,
                 85.0,
                 80.0,
                 LocalDateTime.now(),
@@ -487,7 +499,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID anotherOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 "anotherUser",
-                new HashMap<>(),
+                testProducts,
                 150.0,
                 140.0,
                 LocalDateTime.now(),
@@ -501,7 +513,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID differentOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 "differentUser",
-                new HashMap<>(),
+                testProducts,
                 95.0,
                 90.0,
                 LocalDateTime.now(),
@@ -546,7 +558,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID pastOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 "pastUser",
-                new HashMap<>(),
+                testProducts,
                 50.0,
                 45.0,
                 pastDate,
@@ -560,7 +572,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID futureOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 "futureUser",
-                new HashMap<>(),
+                testProducts,
                 60.0,
                 55.0,
                 futureDate,
@@ -608,7 +620,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID olderOrderId = orderRepository.createOrder(
                 UUID.randomUUID(),
                 testUserName,
-                new HashMap<>(),
+                testProducts,
                 80.0,
                 75.0,
                 olderDate,
@@ -656,7 +668,7 @@ public class InMemoryOrderRepositoryUnitTest {
         UUID olderOrderId = orderRepository.createOrder(
                 testStoreId,
                 "anotherUser",
-                new HashMap<>(),
+                testProducts,
                 70.0,
                 65.0,
                 olderDate,
