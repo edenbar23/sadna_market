@@ -251,6 +251,7 @@ public class Store {
             }
 
             productQuantities.put(productId, quantity);
+            System.out.println("Product added: " + productId + ", Quantity: " + quantity);
         } finally {
             storeLock.writeLock().unlock();
         }

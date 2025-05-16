@@ -11,6 +11,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.ProductReviewRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
+import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
@@ -30,15 +31,17 @@ public class UserService {
 
     private final AuthenticationBridge authentication;
     private final UserAccessService userAccessService;
+    private final InventoryManagementService inventoryManagementService;
     private final ObjectMapper objectMapper;
 
     @Autowired
     public UserService(AuthenticationBridge authentication,
                        UserAccessService userAccessService,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper, InventoryManagementService inventoryManagementService) {
         this.authentication = authentication;
         this.userAccessService = userAccessService;
         this.objectMapper = objectMapper;
+        this.inventoryManagementService = inventoryManagementService;
     }
 
     //Guest functions here:
@@ -84,6 +87,9 @@ public class UserService {
         logger.info("Adding product with ID: {} to guest: {}", productId);
         //maybe add here a domainService to make sure product in stock
         try {
+            if (!inventoryManagementService.checkProductAvailability(storeId, productId, quantity)) {
+                return Response.error("Product not available");
+            }
             cart.addToCartRequest(storeId, productId, quantity);
             String json = objectMapper.writeValueAsString(cart);
             logger.info("Product added to cart successfully");

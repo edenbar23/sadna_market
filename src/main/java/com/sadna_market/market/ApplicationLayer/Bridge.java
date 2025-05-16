@@ -52,7 +52,7 @@ public class Bridge {
         RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);
 
         // Create application services
-        this.userService = new UserService(authentication, userAccessService, objectMapper);
+        this.userService = new UserService(authentication, userAccessService, objectMapper,inventoryManagementService);
         this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService, objectMapper);
         this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService, objectMapper);
         this.messageService = new MessageApplicationService(authentication, messageService, objectMapper);
