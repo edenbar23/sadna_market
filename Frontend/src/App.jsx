@@ -8,6 +8,7 @@ import MessagesPage from "./pages/MessagesPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
 import HeaderBar from "./components/HeaderBar";
 import ProductPage from "./pages/ProductPage";
+import StorePage from "./pages/StorePage";
 
 function App() {
   const [user, setUser] = useState(null); // null = guest
@@ -26,6 +27,7 @@ function App() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
         <Route path="/product/:productId" element={<ProductPage />} />
+        <Route path="/store/:storeId" element={<StorePage user={user} />} />
       </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
     </Router>
