@@ -14,7 +14,7 @@ public class Store {
     private boolean active;
     private final UUID storeId;
     private final Date creationDate;
-    private final StoreFounder founder;
+    private StoreFounder founder;
 
     // Rating properties
     private double ratingSum;
@@ -33,7 +33,21 @@ public class Store {
     public Store() {
         this.storeId = UUID.randomUUID();
         this.creationDate = new Date();
+        this.active = true;
         this.founder = null;
+    }
+
+    public Store(String name, String description) {
+        validateConstructorParameters(name);
+
+        this.storeId = UUID.randomUUID();
+        this.name = name;
+        this.description = description;
+        this.active = true;
+        this.creationDate = new Date();
+        this.founder = null; // Will be set later
+        this.ratingSum = 0.0;
+        this.ratingCount = 0;
     }
 
     public Store(String name, String description, StoreFounder founder) {
@@ -42,14 +56,16 @@ public class Store {
         this.storeId = UUID.randomUUID();
         this.name = name;
         this.description = description;
-        this.founder = founder;
         this.active = true;
         this.creationDate = new Date();
+        this.founder = null;
         this.ratingSum = 0.0;
         this.ratingCount = 0;
 
-        // Add the founder as the first owner
-        this.ownerUsernames.add(founder.getUsername());
+        // If founder is provided, set it properly
+        if (founder != null) {
+            setFounder(founder);
+        }
     }
 
     // Full constructor for repository reconstruction
@@ -67,14 +83,37 @@ public class Store {
         this.ratingCount = 0;
 
         // Add the founder as the first owner
+        if (founder != null) {
+            this.ownerUsernames.add(founder.getUsername());
+        }
+    }
+
+    public void setFounder(StoreFounder founder) {
+        if (this.founder != null) {
+            throw new IllegalStateException("Store already has a founder");
+        }
+        if (founder == null) {
+            throw new IllegalArgumentException("Founder cannot be null");
+        }
+
+        if (!founder.getStoreId().equals(this.storeId)) {
+            throw new IllegalArgumentException("Founder's store ID does not match this store's ID");
+        }
+
+
+        this.founder = founder;
         this.ownerUsernames.add(founder.getUsername());
     }
 
     // Validation methods
-    private void validateConstructorParameters(String name, StoreFounder founder) {
+    private void validateConstructorParameters(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Store name cannot be null or empty");
         }
+    }
+
+    private void validateConstructorParameters(String name, StoreFounder founder) {
+        validateConstructorParameters(name);
         if (founder == null) {
             throw new IllegalArgumentException("Store founder cannot be null");
         }
@@ -118,6 +157,7 @@ public class Store {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
     }
+
 
     // Rating methods
     public void addRating(int ratingValue) {

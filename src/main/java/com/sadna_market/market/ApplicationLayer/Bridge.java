@@ -165,7 +165,7 @@ public class Bridge {
     }
 
     public Response createStore(String username, String token, StoreRequest newStore){
-        return storeService.openStore(username, token, newStore);
+        return storeService.createStore(username, token, newStore);
     }
 
     public Response closeStore(String username, String token, UUID storeId){
