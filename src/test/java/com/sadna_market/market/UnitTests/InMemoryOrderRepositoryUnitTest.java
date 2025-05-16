@@ -1,550 +1,717 @@
-//
-//package com.sadna_market.market.UnitTests;
-//
-//import com.sadna_market.market.DomainLayer.IOrderRepository;
-//import com.sadna_market.market.DomainLayer.Order;
-//import com.sadna_market.market.DomainLayer.OrderStatus;
-//import com.sadna_market.market.InfrastructureLayer.RepositoryConfiguration;
-//
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.Test;
-//
-//import java.time.LocalDateTime;
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Optional;
-//import java.util.UUID;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//
-//class InMemoryOrderRepositoryUnitTest {
-//
-//    private IOrderRepository repository;
-//    private Order testOrder;
-//    private UUID storeId= UUID.randomUUID();
-//    private String userName;
-//    private HashMap<UUID, Integer> products;
-//    private LocalDateTime orderDate;
-//    private UUID paymentId1= UUID.randomUUID();
-//    private UUID paymentId2=UUID.randomUUID();
-//    private UUID paymentId3=UUID.randomUUID();
-//    private UUID deliveryId=UUID.randomUUID();
-//     private RepositoryConfiguration RC;
-//
-//    @BeforeEach
-//    void setUp() {
-//        repository = RC.orderRepository();
-//
-//        // Set up test data
-//       // storeId = UUID.randomUUID();
-//        userName = "testUser";
-//        products = new HashMap<>();
-//        UUID productId1 = UUID.randomUUID();
-//        UUID productId2 = UUID.randomUUID();
-//        products.put(productId1, 2); // Product ID 101, quantity 2
-//        products.put(productId2, 1); // Product ID 102, quantity 1
-//        double totalPrice = 100.0;
-//        double finalPrice = 90.0; // After discount
-//        orderDate = LocalDateTime.now();
-//        OrderStatus initialStatus = OrderStatus.PENDING;
-//        //paymentId = UUID.randomUUID();
-//
-//
-//
-//       // UUID storeId, String userName, Map<UUID, Integer> products, double totalPrice,
-//       // double finalPrice,LocalDateTime orderDate, OrderStatus status, UUID paymentId)
-//
-//        testOrder = new Order(storeId, userName, products, totalPrice, finalPrice, orderDate, initialStatus, paymentId1);
-//    }
-//
-//    @Test
-//    void testSaveAndFindById() {
-//        // Save the order
-//        Order savedOrder = repository.save(testOrder);
-//
-//        // Find the order by ID
-//        Optional<Order> retrievedOrderOpt = repository.findById(testOrder.getOrderId());
-//
-//        // Verify
-//        assertTrue(retrievedOrderOpt.isPresent());
-//        Order retrievedOrder = retrievedOrderOpt.get();
-//        assertEquals(testOrder.getOrderId(), retrievedOrder.getOrderId());
-//        assertEquals(storeId, retrievedOrder.getStoreId());
-//        assertEquals(userName, retrievedOrder.getUserName());
-//    }
-//
-//    @Test
-//    void testSaveNull() {
-//        // Attempting to save null should throw an exception
-//        assertThrows(IllegalArgumentException.class, () -> repository.save(null));
-//    }
-//
-//    @Test
-//    void testFindByIdNonExistent() {
-//        // Find an order that doesn't exist
-//        UUID a=UUID.randomUUID();
-//        Optional<Order> retrievedOrderOpt = repository.findById(a);
-//
-//        // Verify
-//        assertFalse(retrievedOrderOpt.isPresent());
-//    }
-//
-//    @Test
-//    void testFindByIdNull() {
-//        // Find with null ID should return empty
-//        Optional<Order> retrievedOrderOpt = repository.findById(null);
-//
-//        // Verify
-//        assertFalse(retrievedOrderOpt.isPresent());
-//    }
-//
-//    @Test
-//    void testFindAll() {
-//        // Initially empty
-//        List<Order> allOrders = repository.findAll();
-//        assertTrue(allOrders.isEmpty());
-//
-//        // Save some orders
-//        repository.save(testOrder);
-//        Order secondOrder = new Order(storeId, "anotherUser", products, 200.0, 180.0, orderDate, OrderStatus.PAID, paymentId2);
-//        repository.save(secondOrder);
-//
-//        // Find all orders
-//        allOrders = repository.findAll();
-//
-//        // Verify
-//        assertEquals(2, allOrders.size());
-//        assertTrue(allOrders.stream().anyMatch(o -> o.getOrderId().equals(testOrder.getOrderId())));
-//        assertTrue(allOrders.stream().anyMatch(o -> o.getOrderId().equals(secondOrder.getOrderId())));
-//    }
-//
-//    @Test
-//    void testDeleteById() {
-//        // Save the order
-//        repository.save(testOrder);
-//
-//        // Verify it exists
-//        assertTrue(repository.exists(testOrder.getOrderId()));
-//
-//        // Delete the order
-//        repository.deleteById(testOrder.getOrderId());
-//
-//        // Verify it's gone
-//        assertFalse(repository.exists(testOrder.getOrderId()));
-//    }
-//
-//    @Test
-//    void testDeleteByIdNull() {
-//        // Delete with null ID should not throw an exception
-//        repository.deleteById(null);
-//    }
-//
-//    @Test
-//    void testExists() {
-//        // Initially doesn't exist
-//        assertFalse(repository.exists(testOrder.getOrderId()));
-//
-//        // Save the order
-//        repository.save(testOrder);
-//
-//        // Now it should exist
-//        assertTrue(repository.exists(testOrder.getOrderId()));
-//    }
-//
-//    @Test
-//    void testExistsNull() {
-//        // Exists with null ID should return false
-//        assertFalse(repository.exists(null));
-//    }
-//
-//    @Test
-//    void testCreateOrder() {
-//        // Create a new order using the repository method
-//        UUID orderId = repository.createOrder(
-//            storeId, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1
-//        );
-//
-//        // Verify
-//        assertNotNull(orderId);
-//        assertTrue(repository.exists(orderId));
-//
-//        // Retrieve and check details
-//        Optional<Order> createdOrderOpt = repository.findById(orderId);
-//        assertTrue(createdOrderOpt.isPresent());
-//
-//        Order createdOrder = createdOrderOpt.get();
-//        assertEquals(storeId, createdOrder.getStoreId());
-//        assertEquals(userName, createdOrder.getUserName());
-//        assertEquals(OrderStatus.PENDING, createdOrder.getStatus());
-//    }
-//
-//    @Test
-//    void testCreateOrderWithInvalidParams() {
-//        // Test with null store ID
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(null, userName, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with null username
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, null, products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with empty username
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, "", products, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with null products
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, userName, null, 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with empty products
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, userName, new HashMap<>(), 100.0, 90.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with null order date
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, userName, products, 100.0, 90.0, null, OrderStatus.PENDING, paymentId1);
-//        });
-//
-//        // Test with null status
-//        assertThrows(IllegalArgumentException.class, () -> {
-//            repository.createOrder(storeId, userName, products, 100.0, 90.0, orderDate, null, paymentId1);
-//        });
-//    }
-//
-//    @Test
-//    void testUpdateOrderStatus() {
-//        // Save the order
-//        repository.save(testOrder);
-//
-//        // Update status
-//        boolean updated = repository.updateOrderStatus(testOrder.getOrderId(), OrderStatus.PAID);
-//
-//        // Verify
-//        assertTrue(updated);
-//
-//        // Check the updated status
-//        Optional<Order> updatedOrderOpt = repository.findById(testOrder.getOrderId());
-//        assertTrue(updatedOrderOpt.isPresent());
-//        assertEquals(OrderStatus.PAID, updatedOrderOpt.get().getStatus());
-//    }
-//
-//    @Test
-//    void testUpdateOrderStatusInvalidTransition() {
-//        // Save the order
-//        repository.save(testOrder);
-//
-//        // Try an invalid transition (PENDING to SHIPPED)
-//        boolean updated = repository.updateOrderStatus(testOrder.getOrderId(), OrderStatus.SHIPPED);
-//
-//        // Verify
-//        assertFalse(updated);
-//
-//        // Status should not change
-//        Optional<Order> orderOpt = repository.findById(testOrder.getOrderId());
-//        assertTrue(orderOpt.isPresent());
-//        assertEquals(OrderStatus.PENDING, orderOpt.get().getStatus());
-//    }
-//
-//    @Test
-//    void testUpdateOrderStatusNonExistentOrder() {
-//        // Try to update a non-existent order
-//        UUID orderId = UUID.randomUUID();
-//        boolean updated = repository.updateOrderStatus(orderId, OrderStatus.PAID);
-//
-//        // Verify
-//        assertFalse(updated);
-//    }
-//
-//    @Test
-//    void testUpdateOrderStatusNullParams() {
-//        // Save the order
-//        repository.save(testOrder);
-//
-//        // Update with null ID
-//        assertFalse(repository.updateOrderStatus(null, OrderStatus.PAID));
-//
-//        // Update with null status
-//        assertFalse(repository.updateOrderStatus(testOrder.getOrderId(), null));
-//    }
-//
-//    @Test
-//    void testSetDeliveryId() {
-//        // Save the order and update to PAID status
-//        repository.save(testOrder);
-//        repository.updateOrderStatus(testOrder.getOrderId(), OrderStatus.PAID);
-//
-//        // Set delivery ID
-//       // String deliveryId = "del_123456";
-//        boolean updated = repository.setDeliveryId(testOrder.getOrderId(), deliveryId);
-//
-//        // Verify
-//        assertTrue(updated);
-//
-//        // Check the updated delivery ID
-//        Optional<Order> updatedOrderOpt = repository.findById(testOrder.getOrderId());
-//        assertTrue(updatedOrderOpt.isPresent());
-//        assertEquals(deliveryId, updatedOrderOpt.get().getDeliveryId());
-//    }
-//
-//    @Test
-//    void testSetDeliveryIdWrongStatus() {
-//        // Save the order (status PENDING)
-//        repository.save(testOrder);
-//
-//        // Try to set delivery ID (should fail for PENDING)
-//        boolean updated = repository.setDeliveryId(testOrder.getOrderId(), deliveryId);
-//
-//        // Verify
-//        assertFalse(updated);
-//    }
-//
-//    @Test
-//    void testSetDeliveryIdNonExistentOrder() {
-//        // Try to set delivery ID for non-existent order
-//        UUID orderId = UUID.randomUUID();
-//        boolean updated = repository.setDeliveryId(orderId, deliveryId);
-//
-//        // Verify
-//        assertFalse(updated);
-//    }
-//
-//    @Test
-//    void testSetDeliveryIdNullOrderId() {
-//        // Try to set delivery ID with null order ID
-//        boolean updated = repository.setDeliveryId(null, deliveryId);
-//
-//        // Verify
-//        assertFalse(updated);
-//    }
-//
-//    @Test
-//    void testFindByStoreId() {
-//        // Save some orders
-//        repository.save(testOrder); // Store ID: 1001L
-//
-//        //Long anotherStoreId = 1002L;
-//        UUID anotherStoreIdUUID = UUID.randomUUID();
-//        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(anotherStoreOrder);
-//
-//        // Find orders for store 1001L
-//        List<Order> storeOrders = repository.findByStoreId(storeId);
-//
-//        // Verify
-//        assertEquals(1, storeOrders.size());
-//        assertEquals(testOrder.getOrderId(), storeOrders.get(0).getOrderId());
-//    }
-//
-//    @Test
-//    void testFindByStoreIdNull() {
-//        // Find orders for null store ID
-//        List<Order> storeOrders = repository.findByStoreId(null);
-//
-//        // Verify
-//        assertTrue(storeOrders.isEmpty());
-//    }
-//
-//    @Test
-//    void testFindByUserName() {
-//        // Save some orders
-//        repository.save(testOrder); // Username: testUser
-//
-//        String anotherUserName = "anotherUser";
-//        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(anotherUserOrder);
-//
-//        // Find orders for testUser
-//        List<Order> userOrders = repository.findByUserName(userName);
-//
-//        // Verify
-//        assertEquals(1, userOrders.size());
-//        assertEquals(testOrder.getOrderId(), userOrders.get(0).getOrderId());
-//    }
-//
-//    @Test
-//    void testFindByUserNameNull() {
-//        // Find orders for null username
-//        List<Order> userOrders = repository.findByUserName(null);
-//
-//        // Verify
-//        assertTrue(userOrders.isEmpty());
-//    }
-//
-//    @Test
-//    void testFindByUserNameEmpty() {
-//        // Find orders for empty username
-//        List<Order> userOrders = repository.findByUserName("");
-//
-//        // Verify
-//        assertTrue(userOrders.isEmpty());
-//    }
-//
-//    @Test
-//    void testFindByStatus() {
-//        // Save some orders
-//        repository.save(testOrder); // Status: PENDING
-//
-//        Order paidOrder = new Order(storeId, userName, products, 200.0, 180.0, orderDate, OrderStatus.PAID, paymentId1);
-//        repository.save(paidOrder);
-//
-//        // Find PENDING orders
-//        List<Order> pendingOrders = repository.findByStatus(OrderStatus.PENDING);
-//
-//        // Verify
-//        assertEquals(1, pendingOrders.size());
-//        assertEquals(testOrder.getOrderId(), pendingOrders.get(0).getOrderId());
-//
-//        // Find PAID orders
-//        List<Order> paidOrders = repository.findByStatus(OrderStatus.PAID);
-//
-//        // Verify
-//        assertEquals(1, paidOrders.size());
-//        assertEquals(paidOrder.getOrderId(), paidOrders.get(0).getOrderId());
-//    }
-//
-//    @Test
-//    void testFindByStatusNull() {
-//        // Find orders for null status
-//        List<Order> orders = repository.findByStatus(null);
-//
-//        // Verify
-//        assertTrue(orders.isEmpty());
-//    }
-//
-//    @Test
-//    void testFindByDateRange() {
-//        // Save some orders
-//        repository.save(testOrder); // Date: now
-//
-//        LocalDateTime pastDate = LocalDateTime.now().minusDays(2);
-//        Order pastOrder = new Order(storeId, userName, products, 200.0, 180.0, pastDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(pastOrder);
-//
-//        LocalDateTime futureDate = LocalDateTime.now().plusDays(2);
-//        Order futureOrder = new Order(storeId, userName, products, 300.0, 270.0, futureDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(futureOrder);
-//
-//        // Find orders within range (past to future)
-//        LocalDateTime startDate = LocalDateTime.now().minusDays(3);
-//        LocalDateTime endDate = LocalDateTime.now().plusDays(3);
-//        List<Order> rangeOrders = repository.findByDateRange(startDate, endDate);
-//
-//        // Verify (should find all 3)
-//        assertEquals(3, rangeOrders.size());
-//
-//        // Find orders within narrower range (now to future)
-//        startDate = LocalDateTime.now().minusHours(1);
-//        endDate = LocalDateTime.now().plusDays(3);
-//        rangeOrders = repository.findByDateRange(startDate, endDate);
-//
-//        // Verify (should find 2 - current and future)
-//        assertEquals(2, rangeOrders.size());
-//    }
-//
-//    @Test
-//    void testFindByDateRangeNullDates() {
-//        // Find orders with null start date
-//        List<Order> orders = repository.findByDateRange(null, LocalDateTime.now());
-//
-//        // Verify
-//        assertTrue(orders.isEmpty());
-//
-//        // Find orders with null end date
-//        orders = repository.findByDateRange(LocalDateTime.now(), null);
-//
-//        // Verify
-//        assertTrue(orders.isEmpty());
-//    }
-//
-//    @Test
-//    void testFindByDateRangeInvalidRange() {
-//        // Find orders with invalid range (end before start)
-//        LocalDateTime startDate = LocalDateTime.now();
-//        LocalDateTime endDate = LocalDateTime.now().minusDays(1);
-//
-//        List<Order> orders = repository.findByDateRange(startDate, endDate);
-//
-//        // Verify
-//        assertTrue(orders.isEmpty());
-//    }
-//
-//    @Test
-//    void testGetUserPurchaseHistory() {
-//        // Save some orders for different users
-//        repository.save(testOrder); // User: testUser
-//
-//        String anotherUserName = "anotherUser";
-//        Order anotherUserOrder = new Order(storeId, anotherUserName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(anotherUserOrder);
-//
-//        // Also save an older order for testUser
-//        LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
-//        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId1);
-//        repository.save(olderOrder);
-//
-//        // Get purchase history for testUser
-//        List<Order> purchaseHistory = repository.getUserPurchaseHistory(userName);
-//
-//        // Verify
-//        assertEquals(2, purchaseHistory.size());
-//
-//        // Check sorting (newest first)
-//        assertEquals(testOrder.getOrderId(), purchaseHistory.get(0).getOrderId());
-//        assertEquals(olderOrder.getOrderId(), purchaseHistory.get(1).getOrderId());
-//    }
-//
-//    @Test
-//    void testGetUserPurchaseHistoryNullOrEmpty() {
-//        // Get purchase history for null username
-//        List<Order> purchaseHistory = repository.getUserPurchaseHistory(null);
-//
-//        // Verify
-//        assertTrue(purchaseHistory.isEmpty());
-//
-//        // Get purchase history for empty username
-//        purchaseHistory = repository.getUserPurchaseHistory("");
-//
-//        // Verify
-//        assertTrue(purchaseHistory.isEmpty());
-//    }
-//
-//    @Test
-//    void testGetStorePurchaseHistory() {
-//        // Save some orders for different stores
-//        repository.save(testOrder); // Store: 1001L
-//
-//        ///Long anotherStoreId = 1002L;
-//        UUID anotherStoreIdUUID = UUID.randomUUID();
-//        Order anotherStoreOrder = new Order(anotherStoreIdUUID, userName, products, 200.0, 180.0, orderDate, OrderStatus.PENDING, paymentId1);
-//        repository.save(anotherStoreOrder);
-//
-//        // Also save an older order for the test store
-//        LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
-//        Order olderOrder = new Order(storeId, userName, products, 300.0, 270.0, olderDate, OrderStatus.COMPLETED, paymentId1);
-//        repository.save(olderOrder);
-//
-//        // Get purchase history for test store
-//        List<Order> purchaseHistory = repository.getStorePurchaseHistory(storeId);
-//
-//        // Verify
-//        assertEquals(2, purchaseHistory.size());
-//
-//        // Check sorting (newest first)
-//        assertEquals(testOrder.getOrderId(), purchaseHistory.get(0).getOrderId());
-//        assertEquals(olderOrder.getOrderId(), purchaseHistory.get(1).getOrderId());
-//    }
-//
-//    @Test
-//    void testGetStorePurchaseHistoryNull() {
-//        // Get purchase history for null store ID
-//        List<Order> purchaseHistory = repository.getStorePurchaseHistory(null);
-//
-//        // Verify
-//        assertTrue(purchaseHistory.isEmpty());
-//    }
-//}
+package com.sadna_market.market.UnitTests;
+
+import com.sadna_market.market.DomainLayer.Order;
+import com.sadna_market.market.DomainLayer.OrderStatus;
+import com.sadna_market.market.InfrastructureLayer.InMemoryRepos.InMemoryOrderRepository;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("InMemoryOrderRepository Unit Tests")
+public class InMemoryOrderRepositoryUnitTest {
+
+    private InMemoryOrderRepository orderRepository;
+    private UUID testOrderId;
+    private UUID testStoreId;
+    private String testUserName;
+    private Map<UUID, Integer> testProducts;
+    private double testTotalPrice;
+    private double testFinalPrice;
+    private LocalDateTime testOrderDate;
+    private OrderStatus testOrderStatus;
+    private UUID testPaymentId;
+    private Order testOrder;
+
+    @BeforeEach
+    void setUp() {
+        System.out.println("\n===== Setting up test environment =====");
+        orderRepository = new InMemoryOrderRepository();
+        testStoreId = UUID.randomUUID();
+        testUserName = "testUser";
+        testProducts = new HashMap<>();
+
+        // Add some test products
+        UUID product1 = UUID.randomUUID();
+        UUID product2 = UUID.randomUUID();
+        testProducts.put(product1, 2);
+        testProducts.put(product2, 3);
+
+        testTotalPrice = 100.0;
+        testFinalPrice = 90.0; // With discount
+        testOrderDate = LocalDateTime.now();
+        testOrderStatus = OrderStatus.PENDING;
+        testPaymentId = UUID.randomUUID();
+
+        // Create a test order
+        testOrderId = orderRepository.createOrder(
+                testStoreId,
+                testUserName,
+                testProducts,
+                testTotalPrice,
+                testFinalPrice,
+                testOrderDate,
+                testOrderStatus,
+                testPaymentId
+        );
+
+        System.out.println("Created test order with ID: " + testOrderId);
+        System.out.println("Store ID: " + testStoreId);
+        System.out.println("User name: " + testUserName);
+
+        // Get the order for use in tests
+        Optional<Order> orderOpt = orderRepository.findById(testOrderId);
+        assertTrue(orderOpt.isPresent(), "Test order should be found");
+        testOrder = orderOpt.get();
+        System.out.println("Retrieved test order successfully");
+        System.out.println("===== Setup complete =====");
+    }
+
+    @AfterEach
+    void tearDown() {
+        System.out.println("===== Cleaning up test resources =====");
+        orderRepository.clear();
+        testOrder = null;
+        System.out.println("Order repository cleared");
+        System.out.println("Test order reference set to null");
+        System.out.println("===== Cleanup complete =====\n");
+    }
+
+    // CRUD Operation Tests
+
+    @Test
+    @DisplayName("findById should return an order when it exists")
+    void testFindById_ExistingOrder_ReturnsOrder() {
+        System.out.println("TEST: Verifying findById with existing order");
+
+        System.out.println("Looking for order with ID: " + testOrderId);
+        Optional<Order> result = orderRepository.findById(testOrderId);
+
+        System.out.println("Expected: Order should be present");
+        System.out.println("Actual: Order is present = " + result.isPresent());
+        assertTrue(result.isPresent(), "Order should be found");
+
+        System.out.println("Expected order ID: " + testOrderId);
+        System.out.println("Actual order ID: " + result.get().getOrderId());
+        assertEquals(testOrderId, result.get().getOrderId(), "Order ID should match");
+
+        System.out.println("Expected store ID: " + testStoreId);
+        System.out.println("Actual store ID: " + result.get().getStoreId());
+        assertEquals(testStoreId, result.get().getStoreId(), "Store ID should match");
+
+        System.out.println("Expected username: " + testUserName);
+        System.out.println("Actual username: " + result.get().getUserName());
+        assertEquals(testUserName, result.get().getUserName(), "Username should match");
+
+        System.out.println("✓ findById correctly returns the order");
+    }
+
+    @Test
+    @DisplayName("findById should return empty when order does not exist")
+    void testFindById_NonExistingOrder_ReturnsEmpty() {
+        System.out.println("TEST: Verifying findById with non-existing order");
+
+        UUID nonExistingId = UUID.randomUUID();
+        System.out.println("Looking for non-existing order with ID: " + nonExistingId);
+        Optional<Order> result = orderRepository.findById(nonExistingId);
+
+        System.out.println("Expected: Order should not be present");
+        System.out.println("Actual: Order is present = " + result.isPresent());
+        assertFalse(result.isPresent(), "Order should not be found");
+
+        System.out.println("✓ findById correctly returns empty for non-existing order");
+    }
+
+    @Test
+    @DisplayName("findAll should return all orders")
+    void testFindAll_ReturnsAllOrders() {
+        System.out.println("TEST: Verifying findAll returns all orders");
+
+        // Create another order
+        UUID anotherStoreId = UUID.randomUUID();
+        String anotherUserName = "anotherUser";
+        Map<UUID, Integer> anotherProducts = new HashMap<>();
+        anotherProducts.put(UUID.randomUUID(), 1);
+
+        UUID anotherOrderId = orderRepository.createOrder(
+                anotherStoreId,
+                anotherUserName,
+                anotherProducts,
+                50.0,
+                45.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created another test order with ID: " + anotherOrderId);
+
+        List<Order> orders = orderRepository.findAll();
+
+        System.out.println("Expected number of orders: 2");
+        System.out.println("Actual number of orders: " + orders.size());
+        assertEquals(2, orders.size(), "Should return 2 orders");
+
+        boolean containsFirstOrder = orders.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected to contain first order: true");
+        System.out.println("Actually contains first order: " + containsFirstOrder);
+        assertTrue(containsFirstOrder, "Should contain first order");
+
+        boolean containsSecondOrder = orders.stream().anyMatch(o -> o.getOrderId().equals(anotherOrderId));
+        System.out.println("Expected to contain second order: true");
+        System.out.println("Actually contains second order: " + containsSecondOrder);
+        assertTrue(containsSecondOrder, "Should contain second order");
+
+        System.out.println("✓ findAll correctly returns all orders");
+    }
+
+    @Test
+    @DisplayName("deleteById should remove an existing order")
+    void testDeleteById_ExistingOrder_RemovesOrder() {
+        System.out.println("TEST: Verifying deleteById removes an existing order");
+
+        System.out.println("Deleting order with ID: " + testOrderId);
+        orderRepository.deleteById(testOrderId);
+
+        Optional<Order> result = orderRepository.findById(testOrderId);
+        System.out.println("Expected: Order should not be present after deletion");
+        System.out.println("Actual: Order is present = " + result.isPresent());
+        assertFalse(result.isPresent(), "Order should be deleted");
+
+        System.out.println("✓ deleteById correctly removes the order");
+    }
+
+    @Test
+    @DisplayName("exists should return true for existing order")
+    void testExists_ExistingOrder_ReturnsTrue() {
+        System.out.println("TEST: Verifying exists returns true for existing order");
+
+        System.out.println("Checking if order with ID exists: " + testOrderId);
+        boolean exists = orderRepository.exists(testOrderId);
+
+        System.out.println("Expected: true");
+        System.out.println("Actual: " + exists);
+        assertTrue(exists, "Order should exist");
+
+        System.out.println("✓ exists correctly returns true for existing order");
+    }
+
+    @Test
+    @DisplayName("exists should return false for non-existing order")
+    void testExists_NonExistingOrder_ReturnsFalse() {
+        System.out.println("TEST: Verifying exists returns false for non-existing order");
+
+        UUID nonExistingId = UUID.randomUUID();
+        System.out.println("Checking if non-existing order with ID exists: " + nonExistingId);
+        boolean exists = orderRepository.exists(nonExistingId);
+
+        System.out.println("Expected: false");
+        System.out.println("Actual: " + exists);
+        assertFalse(exists, "Order should not exist");
+
+        System.out.println("✓ exists correctly returns false for non-existing order");
+    }
+
+    @Test
+    @DisplayName("save should store an order successfully")
+    void testSave_NewOrder_StoresSuccessfully() {
+        System.out.println("TEST: Verifying save stores a new order successfully");
+
+        // Create a new order to save
+        UUID newOrderId = UUID.randomUUID();
+        Order newOrder = new Order(
+                newOrderId,
+                UUID.randomUUID(),
+                "newUser",
+                new HashMap<>(),
+                75.0,
+                70.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID(),
+                null
+        );
+
+        System.out.println("Saving new order with ID: " + newOrderId);
+        Order savedOrder = orderRepository.save(newOrder);
+
+        System.out.println("Expected: saved order should match provided order");
+        assertEquals(newOrder.getOrderId(), savedOrder.getOrderId(), "Saved order ID should match");
+
+        Optional<Order> foundOrder = orderRepository.findById(newOrderId);
+        System.out.println("Expected: Order should be found after saving");
+        System.out.println("Actual: Order is present = " + foundOrder.isPresent());
+        assertTrue(foundOrder.isPresent(), "Order should be found");
+
+        System.out.println("Expected order ID: " + newOrderId);
+        System.out.println("Actual order ID: " + foundOrder.get().getOrderId());
+        assertEquals(newOrderId, foundOrder.get().getOrderId(), "Order ID should match");
+
+        System.out.println("✓ save correctly stores a new order");
+    }
+
+    // Order Creation and Management Tests
+
+    @Test
+    @DisplayName("createOrder should create a new order with given parameters")
+    void testCreateOrder_ValidParameters_CreatesOrder() {
+        System.out.println("TEST: Verifying createOrder creates a new order with valid parameters");
+
+        UUID storeId = UUID.randomUUID();
+        String userName = "newUser";
+        Map<UUID, Integer> products = new HashMap<>();
+        products.put(UUID.randomUUID(), 1);
+        double totalPrice = 200.0;
+        double finalPrice = 180.0;
+        LocalDateTime orderDate = LocalDateTime.now();
+        OrderStatus status = OrderStatus.PENDING;
+        UUID paymentId = UUID.randomUUID();
+
+        System.out.println("Creating new order for user: " + userName + " in store: " + storeId);
+        UUID orderId = orderRepository.createOrder(
+                storeId, userName, products, totalPrice, finalPrice, orderDate, status, paymentId
+        );
+
+        System.out.println("Created order with ID: " + orderId);
+
+        Optional<Order> createdOrder = orderRepository.findById(orderId);
+        System.out.println("Expected: Order should exist");
+        System.out.println("Actual: Order exists = " + createdOrder.isPresent());
+        assertTrue(createdOrder.isPresent(), "Created order should exist");
+
+        Order order = createdOrder.get();
+        System.out.println("Verifying order properties:");
+
+        System.out.println("Expected store ID: " + storeId);
+        System.out.println("Actual store ID: " + order.getStoreId());
+        assertEquals(storeId, order.getStoreId(), "Store ID should match");
+
+        System.out.println("Expected username: " + userName);
+        System.out.println("Actual username: " + order.getUserName());
+        assertEquals(userName, order.getUserName(), "Username should match");
+
+        System.out.println("Expected total price: " + totalPrice);
+        System.out.println("Actual total price: " + order.getTotalPrice());
+        assertEquals(totalPrice, order.getTotalPrice(), "Total price should match");
+
+        System.out.println("Expected final price: " + finalPrice);
+        System.out.println("Actual final price: " + order.getFinalPrice());
+        assertEquals(finalPrice, order.getFinalPrice(), "Final price should match");
+
+        System.out.println("Expected status: " + status);
+        System.out.println("Actual status: " + order.getStatus());
+        assertEquals(status, order.getStatus(), "Status should match");
+
+        System.out.println("Expected payment ID: " + paymentId);
+        System.out.println("Actual payment ID: " + order.getPaymentId());
+        assertEquals(paymentId, order.getPaymentId(), "Payment ID should match");
+
+        System.out.println("✓ createOrder correctly creates a new order");
+    }
+
+    @Test
+    @DisplayName("updateOrderStatus should update the status of an existing order")
+    void testUpdateOrderStatus_ExistingOrder_StatusUpdated() {
+        System.out.println("TEST: Verifying updateOrderStatus updates status of existing order");
+
+        OrderStatus newStatus = OrderStatus.PAID;
+        System.out.println("Updating order status from " + testOrderStatus + " to " + newStatus);
+        boolean updated = orderRepository.updateOrderStatus(testOrderId, newStatus);
+
+        System.out.println("Expected update result: true");
+        System.out.println("Actual update result: " + updated);
+        assertTrue(updated, "Status update should succeed");
+
+        Optional<Order> updatedOrder = orderRepository.findById(testOrderId);
+        assertTrue(updatedOrder.isPresent(), "Order should exist");
+
+        System.out.println("Expected status after update: " + newStatus);
+        System.out.println("Actual status after update: " + updatedOrder.get().getStatus());
+        assertEquals(newStatus, updatedOrder.get().getStatus(), "Status should be updated");
+
+        System.out.println("✓ updateOrderStatus correctly updates order status");
+    }
+
+    @Test
+    @DisplayName("setDeliveryId should set the delivery ID for an existing order")
+    void testSetDeliveryId_ExistingOrder_DeliveryIdSet() {
+        System.out.println("TEST: Verifying setDeliveryId sets delivery ID for existing order");
+
+        UUID deliveryId = UUID.randomUUID();
+        System.out.println("Setting delivery ID: " + deliveryId + " for order: " + testOrderId);
+        boolean updated = orderRepository.setDeliveryId(testOrderId, deliveryId);
+
+        System.out.println("Expected update result: true");
+        System.out.println("Actual update result: " + updated);
+        assertTrue(updated, "Delivery ID update should succeed");
+
+        Optional<Order> updatedOrder = orderRepository.findById(testOrderId);
+        assertTrue(updatedOrder.isPresent(), "Order should exist");
+
+        System.out.println("Expected delivery ID after update: " + deliveryId);
+        System.out.println("Actual delivery ID after update: " + updatedOrder.get().getDeliveryId());
+        assertEquals(deliveryId, updatedOrder.get().getDeliveryId(), "Delivery ID should be set");
+
+        System.out.println("✓ setDeliveryId correctly sets delivery ID");
+    }
+
+    // Query Method Tests
+
+    @Test
+    @DisplayName("findByStoreId should return all orders for a store")
+    void testFindByStoreId_ExistingStore_ReturnsOrders() {
+        System.out.println("TEST: Verifying findByStoreId returns orders for a store");
+
+        // Create another order for the same store
+        UUID anotherOrderId = orderRepository.createOrder(
+                testStoreId,
+                "anotherUser",
+                new HashMap<>(),
+                75.0,
+                70.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created another order with ID: " + anotherOrderId + " for the same store");
+
+        // Create an order for a different store
+        UUID differentStoreId = UUID.randomUUID();
+        UUID differentOrderId = orderRepository.createOrder(
+                differentStoreId,
+                "differentUser",
+                new HashMap<>(),
+                60.0,
+                55.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an order with ID: " + differentOrderId + " for a different store");
+
+        System.out.println("Looking for orders in store with ID: " + testStoreId);
+        List<Order> storeOrders = orderRepository.findByStoreId(testStoreId);
+
+        System.out.println("Expected number of orders for store: 2");
+        System.out.println("Actual number of orders for store: " + storeOrders.size());
+        assertEquals(2, storeOrders.size(), "Should find 2 orders for the store");
+
+        boolean containsTestOrder = storeOrders.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order");
+
+        boolean containsAnotherOrder = storeOrders.stream().anyMatch(o -> o.getOrderId().equals(anotherOrderId));
+        System.out.println("Expected: Contains another order = true");
+        System.out.println("Actual: Contains another order = " + containsAnotherOrder);
+        assertTrue(containsAnotherOrder, "Should contain another order for same store");
+
+        System.out.println("Looking for orders in store with ID: " + differentStoreId);
+        List<Order> differentStoreOrders = orderRepository.findByStoreId(differentStoreId);
+        System.out.println("Expected number of orders for different store: 1");
+        System.out.println("Actual number of orders for different store: " + differentStoreOrders.size());
+        assertEquals(1, differentStoreOrders.size(), "Should find 1 order for the different store");
+
+        System.out.println("✓ findByStoreId correctly returns orders for a store");
+    }
+
+    @Test
+    @DisplayName("findByUserName should return all orders for a user")
+    void testFindByUserName_ExistingUser_ReturnsOrders() {
+        System.out.println("TEST: Verifying findByUserName returns orders for a user");
+
+        // Create another order for the same user
+        UUID anotherOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                testUserName,
+                new HashMap<>(),
+                120.0,
+                110.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created another order with ID: " + anotherOrderId + " for the same user");
+
+        // Create an order for a different user
+        String differentUserName = "differentUser";
+        UUID differentOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                differentUserName,
+                new HashMap<>(),
+                85.0,
+                80.0,
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an order with ID: " + differentOrderId + " for a different user");
+
+        System.out.println("Looking for orders for user: " + testUserName);
+        List<Order> userOrders = orderRepository.findByUserName(testUserName);
+
+        System.out.println("Expected number of orders for user: 2");
+        System.out.println("Actual number of orders for user: " + userOrders.size());
+        assertEquals(2, userOrders.size(), "Should find 2 orders for the user");
+
+        boolean containsTestOrder = userOrders.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order");
+
+        boolean containsAnotherOrder = userOrders.stream().anyMatch(o -> o.getOrderId().equals(anotherOrderId));
+        System.out.println("Expected: Contains another order = true");
+        System.out.println("Actual: Contains another order = " + containsAnotherOrder);
+        assertTrue(containsAnotherOrder, "Should contain another order for same user");
+
+        System.out.println("Looking for orders for user: " + differentUserName);
+        List<Order> differentUserOrders = orderRepository.findByUserName(differentUserName);
+        System.out.println("Expected number of orders for different user: 1");
+        System.out.println("Actual number of orders for different user: " + differentUserOrders.size());
+        assertEquals(1, differentUserOrders.size(), "Should find 1 order for the different user");
+
+        System.out.println("✓ findByUserName correctly returns orders for a user");
+    }
+
+    @Test
+    @DisplayName("findByStatus should return all orders with specified status")
+    void testFindByStatus_ExistingStatus_ReturnsOrders() {
+        System.out.println("TEST: Verifying findByStatus returns orders with specified status");
+
+        // Create another order with the same status
+        UUID anotherOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                "anotherUser",
+                new HashMap<>(),
+                150.0,
+                140.0,
+                LocalDateTime.now(),
+                testOrderStatus,
+                UUID.randomUUID()
+        );
+        System.out.println("Created another order with ID: " + anotherOrderId + " with status: " + testOrderStatus);
+
+        // Create an order with a different status
+        OrderStatus differentStatus = OrderStatus.SHIPPED;
+        UUID differentOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                "differentUser",
+                new HashMap<>(),
+                95.0,
+                90.0,
+                LocalDateTime.now(),
+                differentStatus,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an order with ID: " + differentOrderId + " with status: " + differentStatus);
+
+        System.out.println("Looking for orders with status: " + testOrderStatus);
+        List<Order> statusOrders = orderRepository.findByStatus(testOrderStatus);
+
+        System.out.println("Expected number of orders with status: 2");
+        System.out.println("Actual number of orders with status: " + statusOrders.size());
+        assertEquals(2, statusOrders.size(), "Should find 2 orders with the status");
+
+        boolean containsTestOrder = statusOrders.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order");
+
+        boolean containsAnotherOrder = statusOrders.stream().anyMatch(o -> o.getOrderId().equals(anotherOrderId));
+        System.out.println("Expected: Contains another order = true");
+        System.out.println("Actual: Contains another order = " + containsAnotherOrder);
+        assertTrue(containsAnotherOrder, "Should contain another order with same status");
+
+        System.out.println("Looking for orders with status: " + differentStatus);
+        List<Order> differentStatusOrders = orderRepository.findByStatus(differentStatus);
+        System.out.println("Expected number of orders with different status: 1");
+        System.out.println("Actual number of orders with different status: " + differentStatusOrders.size());
+        assertEquals(1, differentStatusOrders.size(), "Should find 1 order with the different status");
+
+        System.out.println("✓ findByStatus correctly returns orders with specified status");
+    }
+
+    @Test
+    @DisplayName("findByDateRange should return all orders within specified date range")
+    void testFindByDateRange_DateRange_ReturnsOrdersInRange() {
+        System.out.println("TEST: Verifying findByDateRange returns orders within specified date range");
+
+        // Create an order with a past date
+        LocalDateTime pastDate = LocalDateTime.now().minusDays(2);
+        UUID pastOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                "pastUser",
+                new HashMap<>(),
+                50.0,
+                45.0,
+                pastDate,
+                OrderStatus.PAID,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an order with ID: " + pastOrderId + " with date: " + pastDate);
+
+        // Create an order with a future date
+        LocalDateTime futureDate = LocalDateTime.now().plusDays(2);
+        UUID futureOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                "futureUser",
+                new HashMap<>(),
+                60.0,
+                55.0,
+                futureDate,
+                OrderStatus.PENDING,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an order with ID: " + futureOrderId + " with date: " + futureDate);
+
+        // Set up the date range to include today but exclude the past and future dates
+        LocalDateTime startDate = LocalDateTime.now().minusDays(1);
+        LocalDateTime endDate = LocalDateTime.now().plusDays(1);
+        System.out.println("Looking for orders between: " + startDate + " and " + endDate);
+
+        List<Order> dateRangeOrders = orderRepository.findByDateRange(startDate, endDate);
+
+        System.out.println("Expected number of orders in date range: 1");
+        System.out.println("Actual number of orders in date range: " + dateRangeOrders.size());
+        assertEquals(1, dateRangeOrders.size(), "Should find 1 order in the date range");
+
+        boolean containsTestOrder = dateRangeOrders.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order in date range");
+
+        // Test a wider date range that includes all orders
+        LocalDateTime wideStartDate = LocalDateTime.now().minusDays(3);
+        LocalDateTime wideEndDate = LocalDateTime.now().plusDays(3);
+        System.out.println("Looking for orders in wider range between: " + wideStartDate + " and " + wideEndDate);
+
+        List<Order> allDateRangeOrders = orderRepository.findByDateRange(wideStartDate, wideEndDate);
+        System.out.println("Expected number of orders in wider date range: 3");
+        System.out.println("Actual number of orders in wider date range: " + allDateRangeOrders.size());
+        assertEquals(3, allDateRangeOrders.size(), "Should find all 3 orders in the wider date range");
+
+        System.out.println("✓ findByDateRange correctly returns orders within specified date range");
+    }
+
+    @Test
+    @DisplayName("getUserPurchaseHistory should return purchase history for a user")
+    void testGetUserPurchaseHistory_ExistingUser_ReturnsPurchaseHistory() {
+        System.out.println("TEST: Verifying getUserPurchaseHistory returns purchase history for a user");
+
+        // Create another order for the same user with a different date
+        LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
+        UUID olderOrderId = orderRepository.createOrder(
+                UUID.randomUUID(),
+                testUserName,
+                new HashMap<>(),
+                80.0,
+                75.0,
+                olderDate,
+                OrderStatus.COMPLETED,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an older order with ID: " + olderOrderId + " for the same user with date: " + olderDate);
+
+        System.out.println("Getting purchase history for user: " + testUserName);
+        List<Order> purchaseHistory = orderRepository.getUserPurchaseHistory(testUserName);
+
+        System.out.println("Expected number of orders in purchase history: 2");
+        System.out.println("Actual number of orders in purchase history: " + purchaseHistory.size());
+        assertEquals(2, purchaseHistory.size(), "Should find 2 orders in the purchase history");
+
+        // Check if orders are sorted by date (newest first)
+        System.out.println("Expected: Orders sorted by date (newest first)");
+        assertTrue(purchaseHistory.get(0).getOrderDate().isAfter(purchaseHistory.get(1).getOrderDate()) ||
+                        purchaseHistory.get(0).getOrderDate().isEqual(purchaseHistory.get(1).getOrderDate()),
+                "Orders should be sorted by date (newest first)");
+
+        System.out.println("First order date: " + purchaseHistory.get(0).getOrderDate());
+        System.out.println("Second order date: " + purchaseHistory.get(1).getOrderDate());
+
+        boolean containsTestOrder = purchaseHistory.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order in purchase history");
+
+        boolean containsOlderOrder = purchaseHistory.stream().anyMatch(o -> o.getOrderId().equals(olderOrderId));
+        System.out.println("Expected: Contains older order = true");
+        System.out.println("Actual: Contains older order = " + containsOlderOrder);
+        assertTrue(containsOlderOrder, "Should contain older order in purchase history");
+
+        System.out.println("✓ getUserPurchaseHistory correctly returns purchase history for a user");
+    }
+
+    @Test
+    @DisplayName("getStorePurchaseHistory should return purchase history for a store")
+    void testGetStorePurchaseHistory_ExistingStore_ReturnsPurchaseHistory() {
+        System.out.println("TEST: Verifying getStorePurchaseHistory returns purchase history for a store");
+
+        // Create another order for the same store with a different date
+        LocalDateTime olderDate = LocalDateTime.now().minusDays(1);
+        UUID olderOrderId = orderRepository.createOrder(
+                testStoreId,
+                "anotherUser",
+                new HashMap<>(),
+                70.0,
+                65.0,
+                olderDate,
+                OrderStatus.COMPLETED,
+                UUID.randomUUID()
+        );
+        System.out.println("Created an older order with ID: " + olderOrderId + " for the same store with date: " + olderDate);
+
+        System.out.println("Getting purchase history for store: " + testStoreId);
+        List<Order> purchaseHistory = orderRepository.getStorePurchaseHistory(testStoreId);
+
+        System.out.println("Expected number of orders in purchase history: 2");
+        System.out.println("Actual number of orders in purchase history: " + purchaseHistory.size());
+        assertEquals(2, purchaseHistory.size(), "Should find 2 orders in the purchase history");
+
+        // Check if orders are sorted by date (newest first)
+        System.out.println("Expected: Orders sorted by date (newest first)");
+        assertTrue(purchaseHistory.get(0).getOrderDate().isAfter(purchaseHistory.get(1).getOrderDate()) ||
+                        purchaseHistory.get(0).getOrderDate().isEqual(purchaseHistory.get(1).getOrderDate()),
+                "Orders should be sorted by date (newest first)");
+
+        System.out.println("First order date: " + purchaseHistory.get(0).getOrderDate());
+        System.out.println("Second order date: " + purchaseHistory.get(1).getOrderDate());
+
+        boolean containsTestOrder = purchaseHistory.stream().anyMatch(o -> o.getOrderId().equals(testOrderId));
+        System.out.println("Expected: Contains test order = true");
+        System.out.println("Actual: Contains test order = " + containsTestOrder);
+        assertTrue(containsTestOrder, "Should contain test order in purchase history");
+
+        boolean containsOlderOrder = purchaseHistory.stream().anyMatch(o -> o.getOrderId().equals(olderOrderId));
+        System.out.println("Expected: Contains older order = true");
+        System.out.println("Actual: Contains older order = " + containsOlderOrder);
+        assertTrue(containsOlderOrder, "Should contain older order in purchase history");
+
+        System.out.println("✓ getStorePurchaseHistory correctly returns purchase history for a store");
+    }
+
+    @Test
+    @DisplayName("clear should remove all orders")
+    void testClear_RemovesAllOrders() {
+        System.out.println("TEST: Verifying clear removes all orders");
+
+        // Check that we have at least one order before clearing
+        List<Order> ordersBefore = orderRepository.findAll();
+        System.out.println("Number of orders before clearing: " + ordersBefore.size());
+        assertTrue(ordersBefore.size() > 0, "Should have at least one order before clearing");
+
+        System.out.println("Clearing order repository");
+        orderRepository.clear();
+
+        List<Order> ordersAfter = orderRepository.findAll();
+        System.out.println("Expected number of orders after clearing: 0");
+        System.out.println("Actual number of orders after clearing: " + ordersAfter.size());
+        assertEquals(0, ordersAfter.size(), "Should have no orders after clearing");
+
+        System.out.println("✓ clear correctly removes all orders");
+    }
+}
