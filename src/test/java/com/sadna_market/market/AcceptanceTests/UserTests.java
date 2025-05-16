@@ -6,16 +6,17 @@ import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
-import java.util.logging.Logger;
 
 @SpringBootTest
 public class UserTests {
     private Bridge bridge = new Bridge();
     ObjectMapper objectMapper = new ObjectMapper();
-    private Logger logger = Logger.getLogger(UserTests.class.getName());
+    private Logger logger =  LoggerFactory.getLogger(UserTests.class.getName());
     // Test data
     private UUID storeId;
     private UUID productId;
@@ -121,7 +122,7 @@ public class UserTests {
         }
         // Create a ProductRequest object for adding a product
         ProductRequest productRequest = new ProductRequest(
-                UUID.randomUUID(),  // Generate a random UUID for the new product
+                null, // No product ID for new product
                 PRODUCT_NAME,
                 PRODUCT_CATEGORY,
                 PRODUCT_DESCRIPTION,
@@ -138,8 +139,17 @@ public class UserTests {
         );
         Assertions.assertFalse(addProductResponse.isError(), "Product addition should succeed");
 
-        // Use the UUID we generated for the product
-        productId = productRequest.getProductId();
+        // Extract product ID from response
+        try {
+            // The response is just the UUID string, not a JSON object
+            String uuidString = addProductResponse.getJson();
+            productId = UUID.fromString(uuidString);
+            logger.info("Product ID extracted from response: " + productId);
+        } catch (Exception e) {
+            logger.error("Failed to extract product ID from response: " + e.getMessage());
+            logger.info("Response was: " + addProductResponse.getJson());
+            throw new AssertionError("Product ID extraction failed", e);
+        }
     }
 
     @AfterEach
@@ -151,7 +161,7 @@ public class UserTests {
     // CART ADDITION TESTS
 
     @Test
-    @DisplayName("Valid product addition to user cart")
+    //@DisplayName("Valid product addition to user cart")
     void validProductAdditionToCartTest() {
         // Add product to cart with valid quantity
         Response response = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -168,7 +178,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid product addition to user cart - negative quantity")
+    //@DisplayName("Invalid product addition to user cart - negative quantity")
     void negativeQuantityProductAdditionTest() {
         // Try to add product with negative quantity
         int negativeQuantity = -1;
@@ -182,7 +192,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid product addition to user cart - quantity exceeds inventory")
+    //@DisplayName("Invalid product addition to user cart - quantity exceeds inventory")
     void excessiveQuantityProductAdditionTest() {
         // Try to add more products than available in inventory
         int excessiveQuantity = STORE_PRODUCT_QUANTITY + 5; // 5 more than available
@@ -196,7 +206,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid product addition to user cart - logged out user")
+    //@DisplayName("Invalid product addition to user cart - logged out user")
     void loggedOutUserProductAdditionTest() {
         // First log out the user
         Response logoutResponse = bridge.logout(testUsername, testToken);
@@ -215,7 +225,7 @@ public class UserTests {
     // CART UPDATE TESTS
 
     @Test
-    @DisplayName("Valid update of product quantity in user cart")
+    //@DisplayName("Valid update of product quantity in user cart")
     void validCartUpdateTest() {
         // First add product to cart
         Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -233,7 +243,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid update of product quantity in user cart - negative quantity")
+    //@DisplayName("Invalid update of product quantity in user cart - negative quantity")
     void negativeQuantityCartUpdateTest() {
         // First add product to cart
         Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -251,7 +261,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid update of product quantity in user cart - product not in cart")
+    //@DisplayName("Invalid update of product quantity in user cart - product not in cart")
     void nonExistentProductCartUpdateTest() {
         // Generate a random product ID that doesn't exist in the cart
         UUID nonExistentProductId = UUID.randomUUID();
@@ -269,7 +279,7 @@ public class UserTests {
     // PRODUCT REMOVAL TESTS
 
     @Test
-    @DisplayName("Valid removal of product from user cart")
+    //@DisplayName("Valid removal of product from user cart")
     void validProductRemovalTest() {
         // First add product to cart
         Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -286,7 +296,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid removal of product from user cart - product not in cart")
+    //@DisplayName("Invalid removal of product from user cart - product not in cart")
     void nonExistentProductRemovalTest() {
         // Generate a random product ID that doesn't exist in the cart
         UUID nonExistentProductId = UUID.randomUUID();
@@ -302,7 +312,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid removal of product from user cart - logged out user")
+    //@DisplayName("Invalid removal of product from user cart - logged out user")
     void loggedOutUserProductRemovalTest() {
         // First add product to cart
         Response addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -325,7 +335,7 @@ public class UserTests {
     // CART PURCHASE TESTS
 
     @Test
-    @DisplayName("Valid purchase of user cart")
+    //@DisplayName("Valid purchase of user cart")
     void validCartPurchaseTest() {
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
@@ -349,7 +359,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid purchase of user cart - empty cart")
+    //@DisplayName("Invalid purchase of user cart - empty cart")
     void emptyCartPurchaseTest() {
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
@@ -372,7 +382,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid purchase of user cart - invalid credit card")
+    //@DisplayName("Invalid purchase of user cart - invalid credit card")
     void invalidCreditCardPurchaseTest() {
         // Create an invalid credit card number
         CreditCardDTO creditCard = new CreditCardDTO(
@@ -397,7 +407,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Invalid purchase of user cart - logged out user")
+    //@DisplayName("Invalid purchase of user cart - logged out user")
     void loggedOutUserPurchaseTest() {
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
@@ -428,7 +438,7 @@ public class UserTests {
     // Add these tests to your UserTests class
 
     @Test
-    @DisplayName("User searches for a product that exists in store")
+    //@DisplayName("User searches for a product that exists in store")
     void searchExistingProductTest() {
         // Create a search request for the product we added in setup
         ProductSearchRequest searchRequest = new ProductSearchRequest();
@@ -489,7 +499,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("User searches for a product that doesn't exist in store")
+    //@DisplayName("User searches for a product that doesn't exist in store")
     void searchNonExistingProductTest() {
         // Create a search request for a product that doesn't exist
         String nonExistingProductName = "NonExistingProduct" + UUID.randomUUID().toString();
@@ -532,7 +542,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("User searches with partial product name that exists")
+    //@DisplayName("User searches with partial product name that exists")
     void searchPartialProductNameTest() {
         // Assume our product name is something like "Test Product"
         // We'll search for just "Test" to test partial matching
@@ -563,7 +573,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("User searches with price range filter")
+    //@DisplayName("User searches with price range filter")
     void searchWithPriceRangeTest() {
         // Create a search request with a price range that includes our product
         ProductSearchRequest searchRequest = new ProductSearchRequest();
@@ -613,7 +623,7 @@ public class UserTests {
 
 
     @Test
-    @DisplayName("User successfully rates an existing product")
+    //@DisplayName("User successfully rates an existing product")
     void successfulProductRatingTest() {
         // First add the product to cart and purchase it
         Response addToCartResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -649,7 +659,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("User fails to rate a non-existent product")
+    //@DisplayName("User fails to rate a non-existent product")
     void rateNonExistentProductTest() {
         // Generate a random UUID for a non-existent product
         UUID nonExistentProductId = UUID.randomUUID();
@@ -674,7 +684,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Logged out user fails to rate a product")
+    //@DisplayName("Logged out user fails to rate a product")
     void loggedOutUserRatingTest() {
         // First, log out the user
         Response logoutResponse = bridge.logout(testUsername, testToken);
@@ -700,7 +710,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("User tries to rate a product with an invalid rating value")
+    //@DisplayName("User tries to rate a product with an invalid rating value")
     void invalidRatingValueTest() {
         // Create a rating request with an invalid rating value (outside 1-5 range)
         int invalidRating = 10; // Assuming valid ratings are 1-5
@@ -720,7 +730,7 @@ public class UserTests {
         Assertions.assertNotNull(rateResponse.getErrorMessage(), "Response should contain error message");
     }
     @Test
-    @DisplayName("Logged in user successfully retrieves order history")
+    //@DisplayName("Logged in user successfully retrieves order history")
     void loggedInUserOrderHistoryTest() {
         // First, add a product to cart and make a purchase to have order history
         Response addToCartResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
@@ -750,7 +760,7 @@ public class UserTests {
     }
 
     @Test
-    @DisplayName("Logged out user fails to retrieve order history")
+    //@DisplayName("Logged out user fails to retrieve order history")
     void loggedOutUserOrderHistoryTest() {
         // First, add a product to cart and make a purchase to have order history
         Response addToCartResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);

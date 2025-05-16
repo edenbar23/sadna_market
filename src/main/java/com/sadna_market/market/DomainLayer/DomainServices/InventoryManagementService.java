@@ -340,4 +340,52 @@ public class InventoryManagementService {
 
         return validationErrors;
     }
+
+    /**
+     * Checks if a specific product exists in a store's inventory with the given quantity
+     *
+     * @param storeId The ID of the store
+     * @param productId The ID of the product to check
+     * @param requiredQuantity The quantity to verify
+     * @return true if the product exists in the store inventory with at least the required quantity
+     * @throws IllegalArgumentException if storeId, productId is null or requiredQuantity is negative
+     * @throws StoreNotFoundException if the store doesn't exist
+     */
+    public boolean checkProductAvailability(UUID storeId, UUID productId, int requiredQuantity) {
+        logger.info("Checking if product: {} is available in store: {} with quantity: {}",
+                productId, storeId, requiredQuantity);
+
+        // Input validation
+        if (storeId == null) {
+            throw new IllegalArgumentException("Store ID cannot be null");
+        }
+
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+
+        if (requiredQuantity < 0) {
+            throw new IllegalArgumentException("Required quantity cannot be negative");
+        }
+
+        // Check if the store exists
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+        logger.info("Store {} found", storeId);
+        // Check if the product exists in the store
+        if (!store.hasProduct(productId)) {
+            logger.info("Product {} does not exist in store {}", productId, storeId);
+            return false;
+        }
+        logger.info("Product {} exists in store {}", productId, storeId);
+        // Check if there's enough quantity
+        int availableQuantity = store.getProductQuantity(productId);
+        logger.info("Available quantity for product {} in store {}: {}", productId, storeId, availableQuantity);
+        boolean isAvailable = availableQuantity >= requiredQuantity;
+
+        logger.debug("Product {} in store {}: available quantity = {}, required = {}, available = {}",
+                productId, storeId, availableQuantity, requiredQuantity, isAvailable);
+
+        return isAvailable;
+    }
 }

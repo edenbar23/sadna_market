@@ -141,8 +141,10 @@ public class ProductService {
                     product.getPrice(),
                     quantity
             );
+            logger.info("Service layer: Product added with ID: {}", productId);
+            //return Response.success(productId.toString());
+            return Response.success(String.valueOf(productId));
 
-            return Response.success(productId.toString());
         } catch (Exception e) {
             logger.error("Error adding product: {}", e.getMessage(), e);
             return Response.error("Error adding product: " + e.getMessage());

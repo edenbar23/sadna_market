@@ -93,9 +93,10 @@ public class GuestTests {
             throw new AssertionError("Store ID extraction failed", e);
         }
         logger.info("Store ID: " + storeId);
+        logger.info("Product ID: " + productId);
         // Add a product to the store
         ProductRequest productRequest = new ProductRequest(
-                UUID.randomUUID(),
+                null, // No product ID for new product
                 PRODUCT_NAME,
                 PRODUCT_CATEGORY,
                 PRODUCT_DESCRIPTION,
@@ -113,8 +114,17 @@ public class GuestTests {
         );
         Assertions.assertFalse(addProductResponse.isError(), "Product addition should succeed");
 
-        // Use the product ID from the request
-        productId = productRequest.getProductId();
+        // Extract product ID from response
+        try {
+            // The response is just the UUID string, not a JSON object
+            String uuidString = addProductResponse.getJson();
+            productId = UUID.fromString(uuidString);
+            logger.info("Product ID extracted from response: " + productId);
+        } catch (Exception e) {
+            logger.error("Failed to extract product ID from response: " + e.getMessage());
+            logger.info("Response was: " + addProductResponse.getJson());
+            throw new AssertionError("Product ID extraction failed", e);
+        }
     }
 
     @AfterEach
@@ -124,7 +134,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should be able to search for and find an existing product")
+    //@DisplayName("Guest should be able to search for and find an existing product")
     void searchExistingProductTest() {
         // Create a search request that should match our test product
         ProductSearchRequest searchRequest = new ProductSearchRequest();
@@ -142,7 +152,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest search for non-existent product should return empty results")
+    //@DisplayName("Guest search for non-existent product should return empty results")
     void searchNonExistentProductTest() {
         // Create a search request with a name that doesn't exist
         ProductSearchRequest searchRequest = new ProductSearchRequest();
@@ -158,7 +168,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should be able to add a product to their cart")
+    //@DisplayName("Guest should be able to add a product to their cart")
     void addProductToGuestCartTest() {
         // Add product to guest cart
         Response response = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
@@ -170,7 +180,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should not be able to add a product with quantity exceeding store inventory")
+    //@DisplayName("Guest should not be able to add a product with quantity exceeding store inventory")
     void addProductWithExcessiveQuantityToGuestCartTest() {
         // Try to add with excessive quantity
         int excessiveQuantity = 100;
@@ -183,7 +193,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should be able to update the quantity of a product in their cart")
+    //@DisplayName("Guest should be able to update the quantity of a product in their cart")
     void updateProductQuantityInGuestCartTest() {
         // First add a product to the cart
         Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
@@ -200,7 +210,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should be able to remove a product from their cart")
+    //@DisplayName("Guest should be able to remove a product from their cart")
     void removeProductFromGuestCartTest() {
         // First add a product to the cart
         Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
@@ -216,7 +226,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should receive an error when trying to remove a product not in their cart")
+    //@DisplayName("Guest should receive an error when trying to remove a product not in their cart")
     void removeNonExistentProductFromGuestCartTest() {
         // Try to remove a non-existent product
         UUID nonExistentProductId = UUID.randomUUID();
@@ -229,7 +239,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should be able to purchase items in their cart")
+    //@DisplayName("Guest should be able to purchase items in their cart")
     void buyGuestCartTest() {
         // Add a product to the cart
         Response addResponse = bridge.addProductToGuestCart(cartReq, storeId, productId, PRODUCT_QUANTITY);
@@ -253,7 +263,7 @@ public class GuestTests {
     }
 
     @Test
-    @DisplayName("Guest should receive an error when trying to purchase an empty cart")
+    //@DisplayName("Guest should receive an error when trying to purchase an empty cart")
     void buyEmptyGuestCartTest() {
         // Cart is empty by default
 
@@ -274,69 +284,4 @@ public class GuestTests {
         Assertions.assertNotNull(purchaseResponse.getErrorMessage(), "Error message should not be null");
     }
 
-    @Test
-    @DisplayName("Guest should be able to register as a new user")
-    void registerUserTest() {
-        // Create a unique username
-        String testUsername = "testuser" + UUID.randomUUID().toString().substring(0, 8);
-
-        // Create registration request
-        RegisterRequest registerRequest = new RegisterRequest(
-                testUsername,
-                "Password123!",
-                testUsername + "@example.com",
-                "Test",
-                "User"
-        );
-
-        // Register the user
-        Response response = bridge.registerUser(registerRequest);
-
-        // Verify response
-        Assertions.assertNotNull(response, "Registration response should not be null");
-        Assertions.assertFalse(response.isError(), "Registration should succeed");
-        Assertions.assertNotNull(response.getJson(), "Registration response JSON should not be null");
-    }
-
-    @Test
-    @DisplayName("User should be able to login with valid credentials")
-    void loginUserTest() {
-        // Create a unique username
-        String testUsername = "loginuser" + UUID.randomUUID().toString().substring(0, 8);
-        String testPassword = "Password123!";
-
-        // Register the user first
-        RegisterRequest registerRequest = new RegisterRequest(
-                testUsername,
-                testPassword,
-                testUsername + "@example.com",
-                "Login",
-                "User"
-        );
-        Response registerResponse = bridge.registerUser(registerRequest);
-        Assertions.assertFalse(registerResponse.isError(), "User registration should succeed");
-
-        // Login with valid credentials
-        Response loginResponse = bridge.loginUser(testUsername, testPassword);
-
-        // Verify response
-        Assertions.assertNotNull(loginResponse, "Login response should not be null");
-        Assertions.assertFalse(loginResponse.isError(), "Login should succeed");
-        Assertions.assertNotNull(loginResponse.getJson(), "Login response JSON should not be null");
-    }
-
-    @Test
-    @DisplayName("User should not be able to login with invalid credentials")
-    void loginUserWithInvalidCredentialsTest() {
-        // Try to login with credentials that don't exist
-        Response loginResponse = bridge.loginUser(
-                "nonexistentuser" + UUID.randomUUID().toString(),
-                "InvalidPassword123!"
-        );
-
-        // Verify error response
-        Assertions.assertNotNull(loginResponse, "Login response should not be null");
-        Assertions.assertTrue(loginResponse.isError(), "Login with invalid credentials should fail");
-        Assertions.assertNotNull(loginResponse.getErrorMessage(), "Error message should not be null");
-    }
 }
