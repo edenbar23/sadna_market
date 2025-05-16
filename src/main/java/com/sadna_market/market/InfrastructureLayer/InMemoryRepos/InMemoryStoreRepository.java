@@ -67,15 +67,18 @@ public class InMemoryStoreRepository implements IStoreRepository {
     public UUID createStore(String founderUsername, String storeName, String address, String email, String phoneNumber) {
         logger.info("Creating new store with name: {} for founder: {}", storeName, founderUsername);
 
-        // Create a StoreFounder object
-        StoreFounder founder = new StoreFounder(founderUsername, UUID.randomUUID(), null);
-
-        // Create store description from address, email, and phone
+        // Create description from address, email, and phone
         String description = String.format("Address: %s, Email: %s, Phone: %s",
                 address, email, phoneNumber);
 
-        // Create a new store
-        Store store = new Store(storeName, description, founder);
+        // Create a new store without a founder
+        Store store = new Store(storeName, description);
+
+        // Create a StoreFounder object with the store's ID
+        StoreFounder founder = new StoreFounder(founderUsername, store.getStoreId(), null);
+
+        // Set the founder in the store
+        store.setFounder(founder);
 
         // Save the store to our in-memory repository
         stores.put(store.getStoreId(), store);

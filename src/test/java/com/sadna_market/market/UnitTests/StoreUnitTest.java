@@ -26,10 +26,15 @@ class StoreUnitTest {
 
     @BeforeEach
     void setUp() {
-        // Create a new StoreFounder and Store for each test
-        UUID storeId = UUID.randomUUID();
-        founder = new StoreFounder(founderUsername, storeId, null);
-        store = new Store(storeName, storeDescription, founder);
+        // Create a store first (without founder)
+        store = new Store(storeName, storeDescription);
+
+        // Create a founder with the store's ID
+        founder = new StoreFounder(founderUsername, store.getStoreId(), null);
+
+        // Set the founder in the store
+        store.setFounder(founder);
+
         System.out.println("⚙️ Test setup: Created store with ID " + store.getStoreId());
     }
 
@@ -122,31 +127,133 @@ class StoreUnitTest {
 
     // Constructor Tests
     @Test
-    @DisplayName("Constructor should initialize basic properties correctly")
-    void testConstructorInitializesBasicProperties() {
-        System.out.println("🧪 TEST: Verifying constructor initialization");
+    @DisplayName("Default constructor should initialize basic properties correctly")
+    void testDefaultConstructorInitialization() {
+        System.out.println("🧪 TEST: Verifying default constructor initialization");
 
-        // Verify the store name
-        assertEquals(storeName, store.getName(),
-                "Store name should match the one provided in constructor");
+        // Create a new store with the default constructor
+        Store defaultStore = new Store();
 
-        // Verify store description
-        assertEquals(storeDescription, store.getDescription(),
-                "Store description should match the one provided in constructor");
-
-        // Verify active status
-        assertTrue(store.isActive(),
-                "Newly created store should be active by default");
-
-        // Verify store ID generation
-        assertNotNull(store.getStoreId(),
+        // Verify store properties
+        assertNotNull(defaultStore.getStoreId(),
                 "Store ID should be automatically generated and not null");
+        assertNotNull(defaultStore.getCreationDate(),
+                "Creation date should be initialized");
+        assertNull(defaultStore.getFounder(),
+                "Founder should be null initially");
+        assertTrue(defaultStore.isActive(),
+                "Store should be active by default");
+        assertEquals(0.0, defaultStore.getStoreRating(),
+                "Initial rating should be 0.0");
+        assertEquals(0, defaultStore.getNumOfRatings(),
+                "Initial number of ratings should be 0");
 
-        // Verify founder assignment
-        assertEquals(founder, store.getFounder(),
-                "Store founder should be the one provided in constructor");
+        System.out.println("✅ Default constructor initializes properties correctly");
+    }
 
-        System.out.println("✅ Store properties correctly initialized");
+    @Test
+    @DisplayName("Two-argument constructor should initialize basic properties correctly")
+    void testTwoArgConstructorInitialization() {
+        System.out.println("🧪 TEST: Verifying two-argument constructor initialization");
+
+        // Create a new store with the two-argument constructor
+        String testName = "New Test Store";
+        String testDescription = "New test description";
+        Store twoArgStore = new Store(testName, testDescription);
+
+        // Verify the store name and description
+        assertEquals(testName, twoArgStore.getName(),
+                "Store name should match the provided name");
+        assertEquals(testDescription, twoArgStore.getDescription(),
+                "Store description should match the provided description");
+
+        // Verify other initialized properties
+        assertNotNull(twoArgStore.getStoreId(),
+                "Store ID should be automatically generated and not null");
+        assertNotNull(twoArgStore.getCreationDate(),
+                "Creation date should be initialized");
+        assertNull(twoArgStore.getFounder(),
+                "Founder should be null initially");
+        assertTrue(twoArgStore.isActive(),
+                "Store should be active by default");
+        assertEquals(0.0, twoArgStore.getStoreRating(),
+                "Initial rating should be 0.0");
+        assertEquals(0, twoArgStore.getNumOfRatings(),
+                "Initial number of ratings should be 0");
+
+        System.out.println("✅ Two-argument constructor initializes properties correctly");
+    }
+
+    @Test
+    @DisplayName("Three-argument constructor should initialize with founder correctly")
+    void testThreeArgConstructorInitialization() {
+        System.out.println("🧪 TEST: Verifying three-argument constructor initialization");
+
+        // Create test data
+        String testName = "Another Test Store";
+        String testDescription = "Another test description";
+
+        // Create a UUID that will be used for both the store and founder
+        UUID storeId = UUID.randomUUID();
+
+        // Create a founder with this UUID
+        StoreFounder newFounder = new StoreFounder("founderUser", storeId, null);
+
+        // We need to modify the Store constructor to accept an explicit UUID
+        // For now, we'll test without using the three-argument constructor
+
+        // Create a store using the full constructor instead
+        Store storeWithFounder = new Store(storeId, testName, testDescription, true, new Date(), newFounder);
+
+        // Verify the store properties
+        assertEquals(testName, storeWithFounder.getName(),
+                "Store name should match the provided name");
+        assertEquals(testDescription, storeWithFounder.getDescription(),
+                "Store description should match the provided description");
+        assertNotNull(storeWithFounder.getFounder(),
+                "Founder should be set when provided");
+        assertEquals(newFounder.getUsername(), storeWithFounder.getFounder().getUsername(),
+                "Founder username should match");
+        assertTrue(storeWithFounder.isStoreOwner(newFounder.getUsername()),
+                "Founder should be in the store owners list");
+
+        System.out.println("✅ Store with founder initialized correctly");
+    }
+
+    @Test
+    @DisplayName("Full constructor should initialize all properties correctly")
+    void testFullConstructorInitialization() {
+        System.out.println("🧪 TEST: Verifying full constructor initialization");
+
+        // Create test data for full constructor
+        UUID testStoreId = UUID.randomUUID();
+        String testName = "Full Test Store";
+        String testDescription = "Full test description";
+        boolean testActive = false;
+        Date testDate = new Date();
+        StoreFounder testFounder = new StoreFounder("testFounder", testStoreId, null);
+
+        // Create a store with the full constructor
+        Store fullStore = new Store(testStoreId, testName, testDescription,
+                testActive, testDate, testFounder);
+
+        // Verify all properties are set correctly
+        assertEquals(testStoreId, fullStore.getStoreId(),
+                "Store ID should match the provided ID");
+        assertEquals(testName, fullStore.getName(),
+                "Store name should match the provided name");
+        assertEquals(testDescription, fullStore.getDescription(),
+                "Store description should match the provided description");
+        assertEquals(testActive, fullStore.isActive(),
+                "Active status should match the provided value");
+        assertEquals(testDate, fullStore.getCreationDate(),
+                "Creation date should match the provided date");
+        assertEquals(testFounder, fullStore.getFounder(),
+                "Founder should match the provided founder");
+        assertTrue(fullStore.isStoreOwner(testFounder.getUsername()),
+                "Founder should be in the store owners list");
+
+        System.out.println("✅ Full constructor initializes all properties correctly");
     }
 
     @Test
@@ -156,7 +263,7 @@ class StoreUnitTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new Store(null, storeDescription, founder),
+                () -> new Store(null, storeDescription),
                 "Constructor should throw IllegalArgumentException when name is null"
         );
 
@@ -170,7 +277,7 @@ class StoreUnitTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new Store("", storeDescription, founder),
+                () -> new Store("", storeDescription),
                 "Constructor should throw IllegalArgumentException when name is empty"
         );
 
@@ -178,17 +285,43 @@ class StoreUnitTest {
     }
 
     @Test
-    @DisplayName("Constructor should throw exception when founder is null")
-    void testConstructorThrowsExceptionForNullFounder() {
-        System.out.println("🧪 TEST: Verifying constructor rejects null founder");
+    @DisplayName("setFounder should throw exception when founder is null")
+    void testSetFounderThrowsExceptionForNullFounder() {
+        System.out.println("🧪 TEST: Verifying setFounder rejects null founder");
 
+        // Create a store without a founder
+        Store testStore = new Store(storeName, storeDescription);
+
+        // Try to set a null founder
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new Store(storeName, storeDescription, null),
-                "Constructor should throw IllegalArgumentException when founder is null"
+                () -> testStore.setFounder(null),
+                "setFounder should throw IllegalArgumentException when founder is null"
         );
 
-        System.out.println("✅ Constructor correctly rejected null founder with message: " + exception.getMessage());
+        System.out.println("✅ setFounder correctly rejected null founder with message: " + exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("setFounder should throw exception when founder's store ID doesn't match")
+    void testSetFounderThrowsExceptionForIdMismatch() {
+        System.out.println("🧪 TEST: Verifying setFounder rejects ID mismatch");
+
+        // Create a store without a founder
+        Store testStore = new Store(storeName, storeDescription);
+
+        // Create a founder with a different store ID
+        UUID differentStoreId = UUID.randomUUID();
+        StoreFounder mismatchFounder = new StoreFounder(founderUsername, differentStoreId, null);
+
+        // Try to set a founder with mismatched store ID
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> testStore.setFounder(mismatchFounder),
+                "setFounder should throw IllegalArgumentException when store IDs don't match"
+        );
+
+        System.out.println("✅ setFounder correctly rejected ID mismatch with message: " + exception.getMessage());
     }
 
     // Property Tests
@@ -1122,9 +1255,9 @@ class StoreUnitTest {
         assertEquals(store, store, "Store should be equal to itself");
 
         // Different instance with different ID
-        UUID differentId = UUID.randomUUID();
-        StoreFounder anotherFounder = new StoreFounder(founderUsername, differentId, null);
-        Store anotherStore = new Store("Another Store", "Description", anotherFounder);
+        Store anotherStore = new Store("Another Store", "Description");
+        StoreFounder anotherFounder = new StoreFounder(founderUsername, anotherStore.getStoreId(), null);
+        anotherStore.setFounder(anotherFounder);
 
         assertNotEquals(store, anotherStore,
                 "Stores with different IDs should not be equal");

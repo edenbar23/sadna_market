@@ -97,8 +97,8 @@ public class StoreManagementService {
      * 2.Founder must be a registered user.
      * 3.Store name and email and phone must be valid
      */
-    public Store createStore (String founderUserName, String storeName, String description,
-                              String address, String email, String phone){
+    public Store createStore(String founderUserName, String storeName, String description,
+                             String address, String email, String phone) {
         logger.debug("Creating store '{}' for founder '{}'", storeName, founderUserName);
 
         User founder = userRepository.findByUsername(founderUserName)
@@ -111,11 +111,15 @@ public class StoreManagementService {
 
         validateStoreInfo(storeName, email);
 
+        // Create the store through the repository
         UUID storeId = storeRepository.createStore(founderUserName, storeName, address, email, phone);
 
+        // Get the created store
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalStateException("Store creation failed"));
 
+        // The StoreFounder is already created in the repository layer
+        // We just need to add the role to the user
         StoreFounder storeFounder = new StoreFounder(founderUserName, storeId, null);
         founder.addStoreRole(storeFounder);
         userRepository.update(founder);

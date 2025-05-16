@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,7 +29,7 @@ public class StoreService {
     private final ObjectMapper objectMapper;
 
     //req 3.2
-    public Response openStore(String username, String token, StoreRequest storeRequest) {
+    public Response createStore(String username, String token, StoreRequest storeRequest) {
         logger.info("Opening new store with name: {} for founder: {}", storeRequest.getStoreName(), username);
 
         try {
