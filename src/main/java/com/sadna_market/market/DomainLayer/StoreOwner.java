@@ -1,10 +1,10 @@
 package com.sadna_market.market.DomainLayer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 
 public class StoreOwner extends UserStoreRoles {
     private static final Logger logger = LogManager.getLogger(StoreOwner.class);
@@ -28,26 +28,23 @@ public class StoreOwner extends UserStoreRoles {
 
     @Override
     protected void initializePermissions() {
-        //owner can manage products in the store
-        //owner can manage policies in the store
-        //owner can appoint other users to owners
-        //owner can remove other users he appointed as owners
-        //owner that IS NOT the founder of the store can remove himself from this role
-        //owner can appoint other users to managers
-        //owner can choose permissions to his appointed managers
-        //owner can remove other users he appointed as managers
-        //owner can view all the roles in the store + managers permissions
-        //owner can respond to requests/questions from the customers
-        //owner can view all history orders
-        addPermission(Permission.VIEW_STORE_INFO);
-        addPermission(Permission.VIEW_PRODUCT_INFO);
-        addPermission(Permission.MANAGE_DISCOUNT_POLICY);
-        addPermission(Permission.MANAGE_PURCHASE_POLICY);
-        addPermission(Permission.APPOINT_STORE_OWNER);
-        addPermission(Permission.REMOVE_STORE_OWNER);
-        addPermission(Permission.APPOINT_STORE_MANAGER);
-        addPermission(Permission.REMOVE_STORE_MANAGER);
-        addPermission(Permission.VIEW_STORE_PURCHASE_HISTORY);
+        // Call the parent's addPermission directly to bypass our overridden version
+        // This avoids the exception during initialization
+        super.addPermission(Permission.VIEW_STORE_INFO);
+        super.addPermission(Permission.VIEW_PRODUCT_INFO);
+        super.addPermission(Permission.MANAGE_DISCOUNT_POLICY);
+        super.addPermission(Permission.MANAGE_PURCHASE_POLICY);
+        super.addPermission(Permission.APPOINT_STORE_OWNER);
+        super.addPermission(Permission.REMOVE_STORE_OWNER);
+        super.addPermission(Permission.APPOINT_STORE_MANAGER);
+        super.addPermission(Permission.REMOVE_STORE_MANAGER);
+        super.addPermission(Permission.UPDATE_MANAGER_PERMISSIONS);
+        super.addPermission(Permission.VIEW_STORE_PURCHASE_HISTORY);
+        super.addPermission(Permission.MANAGE_INVENTORY);
+        super.addPermission(Permission.ADD_PRODUCT);
+        super.addPermission(Permission.REMOVE_PRODUCT);
+        super.addPermission(Permission.UPDATE_PRODUCT);
+        super.addPermission(Permission.RESPOND_TO_USER_INQUIRIES);
     }
 
     @Override
@@ -56,7 +53,6 @@ public class StoreOwner extends UserStoreRoles {
         throw new IllegalStateException("Store owner has all the permissions");
     }
 
-
     public boolean isAppointedByUser(String username) {
         logger.info("Entering isAppointedByUser with username={}", username);
         boolean result = appointees.contains(username);
@@ -64,15 +60,12 @@ public class StoreOwner extends UserStoreRoles {
         return result;
     }
 
-
-
     @Override
     public List<String> getAppointees() {
         logger.info("Entering getAppointers");
         logger.info("Exiting getAppointers with result={}", appointees);
         return appointees;
     }
-
 
     @Override
     public String getAppointedBy() {
@@ -94,8 +87,6 @@ public class StoreOwner extends UserStoreRoles {
         logger.info("Exiting addAppointers");
     }
 
-
-
     @Override
     public RoleType getRoleType() {
         return RoleType.STORE_OWNER;
@@ -103,10 +94,9 @@ public class StoreOwner extends UserStoreRoles {
 
     @Override
     public void processRoleRemoval(UserRoleVisitor visitor, User user) {
-        logger.info("Processing role removal for StoreOwner with username={} and storeId={}", 
-                   username, storeId);
+        logger.info("Processing role removal for StoreOwner with username={} and storeId={}",
+                username, storeId);
         visitor.processOwnerRoleRemoval(this, storeId, user);
         logger.info("Role removal processing completed for StoreOwner");
     }
-
 }

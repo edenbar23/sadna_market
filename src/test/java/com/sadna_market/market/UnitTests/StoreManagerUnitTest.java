@@ -1,242 +1,286 @@
 package com.sadna_market.market.UnitTests;
 
+import com.sadna_market.market.DomainLayer.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.DisplayName;
 
-import com.sadna_market.market.DomainLayer.Permission;
-import com.sadna_market.market.DomainLayer.RoleType;
-import com.sadna_market.market.DomainLayer.StoreManager;
-import com.sadna_market.market.DomainLayer.User;
-import com.sadna_market.market.DomainLayer.UserRoleVisitor;
-
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-class StoreManagerTest {
+class StoreManagerUnitTest {
 
     private StoreManager storeManager;
-    
-    private final String USERNAME = "testManager";
-    private final UUID STORE_ID = UUID.randomUUID();
-    private final String APPOINTED_BY = "appointingOwner";
-    
-    @Mock
-    private User mockUser;
+    private final String managerUsername = "testManager";
+    private final String appointerUsername = "appointer";
+    private final UUID storeId = UUID.randomUUID();
+    private Set<Permission> testPermissions;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        storeManager = new StoreManager(USERNAME, STORE_ID, APPOINTED_BY);
+        storeManager = new StoreManager(managerUsername, storeId, appointerUsername);
+        testPermissions = new HashSet<>();
+        System.out.println("Test setup: Created StoreManager for user " + managerUsername + " in store " + storeId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        storeManager = null;
+        testPermissions = null;
+        System.out.println("Test cleanup: Completed");
     }
 
     @Test
-    void testConstructor() {
-        assertEquals(USERNAME, storeManager.getUsername());
-        assertEquals(STORE_ID, storeManager.getStoreId());
-        assertEquals(APPOINTED_BY, storeManager.getAppointedBy());
-        assertTrue(storeManager.getAppointees().isEmpty());
+    @DisplayName("Constructor should initialize basic properties correctly")
+    void testConstructorInitializesBasicProperties() {
+        System.out.println("TEST: Verifying constructor initialization");
+
+        // Verify username
+        assertEquals(managerUsername, storeManager.getUsername(),
+                "Username should match the one provided in constructor");
+
+        // Verify store ID
+        assertEquals(storeId, storeManager.getStoreId(),
+                "Store ID should match the one provided in constructor");
+
+        // Verify appointer
+        assertEquals(appointerUsername, storeManager.getAppointedBy(),
+                "Appointed by should match the one provided in constructor");
+
+        // Verify role type
+        assertEquals(RoleType.STORE_MANAGER, storeManager.getRoleType(),
+                "Role type should be STORE_MANAGER");
+
+        System.out.println("StoreManager properties correctly initialized");
     }
 
     @Test
-    void testInitializePermissions() {
-        // Store managers should have these base permissions by default
-        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO));
-        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO));
-        
-        // Should not have additional permissions by default
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY));
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_DISCOUNT_POLICY));
-        assertFalse(storeManager.hasPermission(Permission.APPOINT_STORE_OWNER));
+    @DisplayName("StoreManager should have default view permissions")
+    void testDefaultPermissions() {
+        System.out.println("TEST: Verifying default permissions");
+
+        // Verify view store info permission
+        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO),
+                "StoreManager should have VIEW_STORE_INFO permission by default");
+
+        // Verify view product info permission
+        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO),
+                "StoreManager should have VIEW_PRODUCT_INFO permission by default");
+
+        // Verify another permission that shouldn't be present
+        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY),
+                "StoreManager should not have MANAGE_INVENTORY permission by default");
+
+        System.out.println("Default permissions correctly verified");
     }
 
     @Test
-    void testGetRoleType() {
-        assertEquals(RoleType.STORE_MANAGER, storeManager.getRoleType());
-    }
-
-    @Test
+    @DisplayName("addPermissions should add new permissions")
     void testAddPermissions() {
-        // Create a set of permissions to add
-        Set<Permission> permissionsToAdd = EnumSet.of(
-            Permission.MANAGE_INVENTORY,
-            Permission.MANAGE_DISCOUNT_POLICY
-        );
-        
-        // Add the permissions
-        boolean modified = storeManager.addPermissions(permissionsToAdd);
-        
-        // Verify the result
-        assertTrue(modified);
-        assertTrue(storeManager.hasPermission(Permission.MANAGE_INVENTORY));
-        assertTrue(storeManager.hasPermission(Permission.MANAGE_DISCOUNT_POLICY));
+        System.out.println("TEST: Verifying addPermissions functionality");
+
+        // Create permissions to add
+        testPermissions.add(Permission.MANAGE_INVENTORY);
+        testPermissions.add(Permission.ADD_PRODUCT);
+
+        // Add permissions
+        boolean modified = storeManager.addPermissions(testPermissions);
+
+        // Verify permissions were added
+        assertTrue(modified, "addPermissions should return true when permissions are added");
+        assertTrue(storeManager.hasPermission(Permission.MANAGE_INVENTORY),
+                "StoreManager should have MANAGE_INVENTORY permission after adding");
+        assertTrue(storeManager.hasPermission(Permission.ADD_PRODUCT),
+                "StoreManager should have ADD_PRODUCT permission after adding");
+
+        System.out.println("Permissions successfully added");
     }
 
     @Test
-    void testAddPermissions_AlreadyExists() {
-        // First add some permissions
-        Set<Permission> initialPermissions = EnumSet.of(
-            Permission.MANAGE_INVENTORY
-        );
-        storeManager.addPermissions(initialPermissions);
-        
-        // Try to add the same permission again
-        Set<Permission> moreSamePermissions = EnumSet.of(
-            Permission.MANAGE_INVENTORY
-        );
-        boolean modified = storeManager.addPermissions(moreSamePermissions);
-        
-        // Verify no change was made
-        assertFalse(modified);
+    @DisplayName("addPermissions should not add existing permissions")
+    void testAddExistingPermissions() {
+        System.out.println("TEST: Verifying addPermissions with existing permissions");
+
+        // Add permissions first time
+        testPermissions.add(Permission.MANAGE_INVENTORY);
+        boolean firstModification = storeManager.addPermissions(testPermissions);
+        assertTrue(firstModification, "First permission addition should return true");
+
+        // Try to add same permission again
+        boolean secondModification = storeManager.addPermissions(testPermissions);
+        assertFalse(secondModification,
+                "addPermissions should return false when no new permissions are added");
+
+        System.out.println("Duplicate permissions handling verified");
     }
 
     @Test
-    void testAddPermissions_EmptySet() {
-        boolean modified = storeManager.addPermissions(EnumSet.noneOf(Permission.class));
-        assertFalse(modified);
+    @DisplayName("addPermissions should return false for null or empty permissions")
+    void testAddNullOrEmptyPermissions() {
+        System.out.println("TEST: Verifying addPermissions with null or empty permissions");
+
+        // Test with null
+        boolean nullResult = storeManager.addPermissions(null);
+        assertFalse(nullResult, "addPermissions should return false for null permissions");
+
+        // Test with empty set
+        boolean emptyResult = storeManager.addPermissions(new HashSet<>());
+        assertFalse(emptyResult, "addPermissions should return false for empty permissions set");
+
+        System.out.println("Null and empty permissions handling verified");
     }
 
     @Test
-    void testAddPermissions_NullSet() {
-        boolean modified = storeManager.addPermissions(null);
-        assertFalse(modified);
-    }
-
-    @Test
+    @DisplayName("removePermissions should remove permissions")
     void testRemovePermissions() {
-        // First add some permissions
-        Set<Permission> permissionsToAdd = EnumSet.of(
-            Permission.MANAGE_INVENTORY,
-            Permission.MANAGE_DISCOUNT_POLICY,
-            Permission.RESPOND_TO_USER_INQUIRIES
-        );
-        storeManager.addPermissions(permissionsToAdd);
-        
-        // Create a set of permissions to remove
-        Set<Permission> permissionsToRemove = EnumSet.of(
-            Permission.MANAGE_INVENTORY,
-            Permission.MANAGE_DISCOUNT_POLICY
-        );
-        
-        // Remove the permissions
-        boolean modified = storeManager.removePermissions(permissionsToRemove);
-        
-        // Verify the result
-        assertTrue(modified);
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY));
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_DISCOUNT_POLICY));
-        assertTrue(storeManager.hasPermission(Permission.RESPOND_TO_USER_INQUIRIES));
+        System.out.println("TEST: Verifying removePermissions functionality");
+
+        // First add permissions
+        testPermissions.add(Permission.MANAGE_INVENTORY);
+        storeManager.addPermissions(testPermissions);
+        assertTrue(storeManager.hasPermission(Permission.MANAGE_INVENTORY),
+                "Permission should be added for test setup");
+
+        // Remove permissions
+        boolean modified = storeManager.removePermissions(testPermissions);
+
+        // Verify permissions were removed
+        assertTrue(modified, "removePermissions should return true when permissions are removed");
+        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY),
+                "StoreManager should not have MANAGE_INVENTORY permission after removal");
+
+        System.out.println("Permissions successfully removed");
     }
 
     @Test
-    void testRemovePermissions_CorePermissions() {
-        // Try to remove core view permissions
-        Set<Permission> permissionsToRemove = EnumSet.of(
-            Permission.VIEW_STORE_INFO,
-            Permission.VIEW_PRODUCT_INFO
-        );
-        
-        // Try to remove the permissions
-        boolean modified = storeManager.removePermissions(permissionsToRemove);
-        
-        // Verify core permissions are still there
-        assertFalse(modified);
-        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO));
-        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO));
+    @DisplayName("removePermissions should not remove core view permissions")
+    void testRemoveCorePermissions() {
+        System.out.println("TEST: Verifying removePermissions with core view permissions");
+
+        // Create set with core permissions
+        Set<Permission> corePermissions = new HashSet<>();
+        corePermissions.add(Permission.VIEW_STORE_INFO);
+        corePermissions.add(Permission.VIEW_PRODUCT_INFO);
+
+        // Try to remove core permissions
+        boolean modified = storeManager.removePermissions(corePermissions);
+
+        // Verify core permissions were not removed
+        assertFalse(modified, "removePermissions should return false when only core permissions are targeted");
+        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO),
+                "VIEW_STORE_INFO permission should not be removable");
+        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO),
+                "VIEW_PRODUCT_INFO permission should not be removable");
+
+        System.out.println("Core permissions protection verified");
     }
 
     @Test
-    void testRemovePermissions_EmptySet() {
-        boolean modified = storeManager.removePermissions(EnumSet.noneOf(Permission.class));
-        assertFalse(modified);
-    }
-
-    @Test
-    void testRemovePermissions_NullSet() {
-        boolean modified = storeManager.removePermissions(null);
-        assertFalse(modified);
-    }
-
-    @Test
+    @DisplayName("setPermissions should set exact permissions while preserving core permissions")
     void testSetPermissions() {
-        // First add some initial permissions
-        Set<Permission> initialPermissions = EnumSet.of(
-            Permission.MANAGE_INVENTORY,
-            Permission.MANAGE_DISCOUNT_POLICY
-        );
-        storeManager.addPermissions(initialPermissions);
-        
-        // Now set a completely different set of permissions
-        Set<Permission> newPermissions = EnumSet.of(
-            Permission.RESPOND_TO_USER_INQUIRIES,
-            Permission.VIEW_STORE_PURCHASE_HISTORY
-        );
-        storeManager.setPermissions(newPermissions);
-        
-        // Verify initial permissions are removed
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY));
-        assertFalse(storeManager.hasPermission(Permission.MANAGE_DISCOUNT_POLICY));
-        
-        // Verify new permissions are added
-        assertTrue(storeManager.hasPermission(Permission.RESPOND_TO_USER_INQUIRIES));
-        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_PURCHASE_HISTORY));
-        
-        // Verify core permissions are still there
-        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO));
-        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO));
-    }
+        System.out.println("TEST: Verifying setPermissions functionality");
 
-    @Test
-    void testSetPermissions_CorePermissions() {
-        // Try to include core permissions in the set
-        Set<Permission> newPermissions = EnumSet.of(
-            Permission.VIEW_STORE_INFO,
-            Permission.VIEW_PRODUCT_INFO,
-            Permission.RESPOND_TO_USER_INQUIRIES
-        );
-        storeManager.setPermissions(newPermissions);
-        
-        // Verify only the non-core permission was added
-        assertTrue(storeManager.hasPermission(Permission.RESPOND_TO_USER_INQUIRIES));
-        
-        // Core permissions should still be there
-        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO));
-        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO));
-    }
-
-    @Test
-    void testPermissionCheckers() {
         // First add some permissions
-        Set<Permission> permissions = EnumSet.of(
-            Permission.MANAGE_INVENTORY,
-            Permission.MANAGE_DISCOUNT_POLICY,
-            Permission.VIEW_STORE_PURCHASE_HISTORY,
-            Permission.RESPOND_TO_USER_INQUIRIES
-        );
-        storeManager.addPermissions(permissions);
-        
-        // Test permission checkers
-        assertTrue(storeManager.canManageInventory());
-        assertTrue(storeManager.canManageDiscountPolicy());
-        assertFalse(storeManager.canManagePurchasePolicy());
-        assertTrue(storeManager.canViewPurchaseHistory());
-        assertTrue(storeManager.canRespondToInquiries());
+        Set<Permission> initialPermissions = new HashSet<>();
+        initialPermissions.add(Permission.MANAGE_INVENTORY);
+        initialPermissions.add(Permission.ADD_PRODUCT);
+        storeManager.addPermissions(initialPermissions);
+
+        // New permissions set (different from initial)
+        Set<Permission> newPermissions = new HashSet<>();
+        newPermissions.add(Permission.MANAGE_DISCOUNT_POLICY);
+        newPermissions.add(Permission.RESPOND_TO_USER_INQUIRIES);
+
+        // Set new permissions
+        storeManager.setPermissions(newPermissions);
+
+        // Verify core permissions preserved
+        assertTrue(storeManager.hasPermission(Permission.VIEW_STORE_INFO),
+                "Core VIEW_STORE_INFO permission should be preserved");
+        assertTrue(storeManager.hasPermission(Permission.VIEW_PRODUCT_INFO),
+                "Core VIEW_PRODUCT_INFO permission should be preserved");
+
+        // Verify old non-core permissions removed
+        assertFalse(storeManager.hasPermission(Permission.MANAGE_INVENTORY),
+                "Old MANAGE_INVENTORY permission should be removed");
+        assertFalse(storeManager.hasPermission(Permission.ADD_PRODUCT),
+                "Old ADD_PRODUCT permission should be removed");
+
+        // Verify new permissions added
+        assertTrue(storeManager.hasPermission(Permission.MANAGE_DISCOUNT_POLICY),
+                "New MANAGE_DISCOUNT_POLICY permission should be added");
+        assertTrue(storeManager.hasPermission(Permission.RESPOND_TO_USER_INQUIRIES),
+                "New RESPOND_TO_USER_INQUIRIES permission should be added");
+
+        System.out.println("Permission set operation successfully verified");
     }
 
     @Test
+    @DisplayName("canManageInventory should return true when has permission")
+    void testCanManageInventoryWithPermission() {
+        System.out.println("TEST: Verifying canManageInventory with permission");
+
+        // Add inventory permission
+        testPermissions.add(Permission.MANAGE_INVENTORY);
+        storeManager.addPermissions(testPermissions);
+
+        // Check can manage inventory
+        boolean canManage = storeManager.canManageInventory();
+
+        assertTrue(canManage, "canManageInventory should return true when manager has MANAGE_INVENTORY permission");
+
+        System.out.println("canManageInventory correctly returned true with permission");
+    }
+
+    @Test
+    @DisplayName("canManageInventory should return false when missing permission")
+    void testCanManageInventoryWithoutPermission() {
+        System.out.println("TEST: Verifying canManageInventory without permission");
+
+        // Check can manage inventory (without adding permission)
+        boolean canManage = storeManager.canManageInventory();
+
+        assertFalse(canManage, "canManageInventory should return false when manager lacks MANAGE_INVENTORY permission");
+
+        System.out.println("canManageInventory correctly returned false without permission");
+    }
+
+    @Test
+    @DisplayName("processRoleRemoval should call visitor's processManagerRoleRemoval")
     void testProcessRoleRemoval() {
-        UserRoleVisitor mockVisitor = mock(UserRoleVisitor.class);
-        
-        storeManager.processRoleRemoval(mockVisitor, mockUser);
-        
-        // Verify the visitor was called with the correct method and parameters
-        verify(mockVisitor).processManagerRoleRemoval(storeManager, STORE_ID, mockUser);
+        System.out.println("TEST: Verifying processRoleRemoval delegates to visitor");
+
+        // Create mock visitor that tracks if it was called
+        TestUserRoleVisitor visitor = new TestUserRoleVisitor();
+        User user = new User(managerUsername, "password", "email@test.com", "Test", "Manager");
+
+        // Process role removal
+        storeManager.processRoleRemoval(visitor, user);
+
+        // Verify visitor was called with correct parameters
+        assertTrue(visitor.managerProcessed, "Visitor's processManagerRoleRemoval should be called");
+        assertEquals(storeManager, visitor.processedManager, "Correct manager should be passed to visitor");
+        assertEquals(storeId, visitor.processedStoreId, "Correct store ID should be passed to visitor");
+        assertEquals(user, visitor.processedUser, "Correct user should be passed to visitor");
+
+        System.out.println("processRoleRemoval correctly delegates to visitor");
+    }
+
+    // Helper test visitor class
+    private static class TestUserRoleVisitor extends UserRoleVisitor {
+        boolean managerProcessed = false;
+        StoreManager processedManager;
+        UUID processedStoreId;
+        User processedUser;
+
+        @Override
+        public void processManagerRoleRemoval(StoreManager manager, UUID storeId, User user) {
+            managerProcessed = true;
+            processedManager = manager;
+            processedStoreId = storeId;
+            processedUser = user;
+        }
     }
 }

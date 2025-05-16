@@ -663,3 +663,32 @@ h2 {
 .close-btn:hover {
   color: #000;
 }
+
+/* styles/StorePage.css */
+.store-page {
+  padding: 2rem;
+}
+
+.store-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.store-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.store-actions {
+  margin: 1rem 0;
+}
+
+.store-products-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+}
