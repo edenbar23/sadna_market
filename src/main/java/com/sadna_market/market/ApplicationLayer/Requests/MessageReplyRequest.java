@@ -15,4 +15,6 @@ import java.util.UUID;
 public class MessageReplyRequest {
     private UUID messageId;
     private String content;
+
 }
+

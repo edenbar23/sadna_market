@@ -1,272 +1,273 @@
-//package com.sadna_market.market.AcceptanceTests;
-//
-//import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.sadna_market.market.ApplicationLayer.*;
-//import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
-//import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
-//import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
-//import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
-//import com.sadna_market.market.DomainLayer.Permission;
-//import org.junit.jupiter.api.*;
-//import org.springframework.boot.test.context.SpringBootTest;
-//
-//import java.util.HashSet;
-//import java.util.Set;
-//import java.util.UUID;
-//
-//@SpringBootTest
-//public class StoreManagerTests {
-//    private final static Bridge bridge = new Bridge();
-//    ObjectMapper objectMapper = new ObjectMapper();
-//
-//    // Test data that will be used across tests
-//    private UUID storeId;
-//    private static final String STORE_NAME = "Manager Test Store";
-//    private static final String STORE_DESCRIPTION = "A store for testing manager operations";
-//    private static final String STORE_ADDRESS = "789 Store Avenue, Test City";
-//    private static final String STORE_EMAIL = "manager-store@example.com";
-//    private static final String STORE_PHONE = "555-123-4567";
-//
-//    // User credentials that will be set up before each test
-//    private String ownerUsername;
-//    private String ownerPassword;
-//    private String ownerToken;
-//
-//    private String managerUsername;
-//    private String managerPassword;
-//    private String managerToken;
-//    private PermissionsRequest managerPermissions;
-//
-//    // Product data for testing
-//    private ProductRequest testProduct;
-//    private static final int PRODUCT_QUANTITY = 10;
-//
-//    @BeforeEach
-//    void setUp() {
-//        // Create the users required for testing
-//        setupUsers();
-//
-//        // Create a store owned by the owner user
-//        setupStore();
-//
-//        // Set up product data for testing
-//        setupProducts();
-//
-//        // Appoint the manager with specific permissions
-//        appointManager();
-//    }
-//
-//    @AfterEach
-//    void tearDown() {
-//        // Clear the system state after each test
-//        bridge.clear();
-//    }
-//
-//    private void setupUsers() {
-//        // Create owner user
-//        ownerUsername = "storeowner_" + System.currentTimeMillis();
-//        ownerPassword = "Owner123!";
-//        RegisterRequest ownerRequest = new RegisterRequest(
-//                ownerUsername,
-//                ownerPassword,
-//                ownerUsername + "@example.com",
-//                "Store",
-//                "Owner"
-//        );
-//        Response ownerRegisterResponse = bridge.registerUser(ownerRequest);
-//        Assertions.assertFalse(ownerRegisterResponse.isError(), "Store owner registration should succeed");
-//
-//        // Create manager user
-//        managerUsername = "manager_" + System.currentTimeMillis();
-//        managerPassword = "Manager123!";
-//        RegisterRequest managerRequest = new RegisterRequest(
-//                managerUsername,
-//                managerPassword,
-//                managerUsername + "@example.com",
-//                "Store",
-//                "Manager"
-//        );
-//        Response managerRegisterResponse = bridge.registerUser(managerRequest);
-//        Assertions.assertFalse(managerRegisterResponse.isError(), "Manager user registration should succeed");
-//
-//        // Login both users to get their tokens
-//        Response ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
-//        Assertions.assertFalse(ownerLoginResponse.isError(), "Owner login should succeed");
-//        ownerToken = ownerLoginResponse.getJson();
-//
-//        Response managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
-//        Assertions.assertFalse(managerLoginResponse.isError(), "Manager login should succeed");
-//        managerToken = managerLoginResponse.getJson();
-//    }
-//
-//    private void setupStore() {
-//        StoreRequest newStore = new StoreRequest(
-//                STORE_NAME,
-//                STORE_DESCRIPTION,
-//                STORE_ADDRESS,
-//                STORE_EMAIL,
-//                STORE_PHONE,
-//                ownerUsername
-//        );
-//
-//        Response createStoreResponse = bridge.createStore(
-//                ownerUsername,
-//                ownerToken,
-//                newStore
-//        );
-//        Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
-//
-//        // Extract the store ID from the response
-//        try {
-//            storeId = UUID.fromString(createStoreResponse.getJson());
-//        } catch (Exception e) {
-//            storeId = UUID.randomUUID();
-//            System.out.println("Using generated store ID for testing: " + storeId);
-//        }
-//    }
-//
-//    private void setupProducts() {
-//        testProduct = new ProductRequest(
-//                UUID.randomUUID(),
-//                "Manager Test Product",
-//                "Electronics",
-//                "High-quality test product for manager tests",
-//                129.99
-//        );
-//    }
-//
-//    private void appointManager() {
-//        // Create limited permissions for the manager
-//        // Giving ADD_PRODUCT, VIEW permissions but NOT REMOVE_PRODUCT
-//        Set<Permission> permissions = new HashSet<>();
-//        permissions.add(Permission.VIEW_STORE_INFO);
-//        permissions.add(Permission.VIEW_PRODUCT_INFO);
-//        permissions.add(Permission.ADD_PRODUCT);
-//        permissions.add(Permission.UPDATE_PRODUCT);
-//        // Note: Deliberately NOT adding REMOVE_PRODUCT to test permission limitations
-//
-//        managerPermissions = new PermissionsRequest(permissions);
-//
-//        // Owner appoints the manager with limited permissions
-//        Response appointResponse = bridge.appointManager(
-//                ownerUsername,
-//                ownerToken,
-//                storeId,
-//                managerUsername,
-//                managerPermissions
-//        );
-//
-//        Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
-//    }
-//
-//    @Test
-//    @DisplayName("Store manager should be able to add a product (permitted operation)")
-//    void managerAddProductTest() {
-//        // Since the manager has ADD_PRODUCT permission, this should succeed
-//        Response addResponse = bridge.addProductToStore(
-//                managerToken,
-//                managerUsername,
-//                storeId,
-//                testProduct,
-//                PRODUCT_QUANTITY
-//        );
-//
-//        Assertions.assertNotNull(addResponse, "Response should not be null");
-//        Assertions.assertFalse(addResponse.isError(), "Manager with ADD_PRODUCT permission should be able to add products");
-//        Assertions.assertNotNull(addResponse.getJson(), "Response JSON should not be null");
-//    }
-//
-//    @Test
-//    @DisplayName("Store manager should be able to edit a product (permitted operation)")
-//    void managerEditProductTest() {
-//        // First, owner adds a product to the store
-//        Response addResponse = bridge.addProductToStore(
-//                ownerToken,
-//                ownerUsername,
-//                storeId,
-//                testProduct,
-//                PRODUCT_QUANTITY
-//        );
-//        Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
-//
-//        // Create an updated product with the same ID
-//        ProductRequest updatedProduct = new ProductRequest(
-//                testProduct.getProductId(),
-//                "Updated Product Name",
-//                "Electronics",
-//                "Updated product description",
-//                149.99
-//        );
-//
-//        // Manager attempts to edit the product - should succeed since they have UPDATE_PRODUCT permission
-//        Response editResponse = bridge.editProductDetails(
-//                managerToken,
-//                managerUsername,
-//                storeId,
-//                updatedProduct,
-//                PRODUCT_QUANTITY + 5 // Increase quantity
-//        );
-//
-//        Assertions.assertNotNull(editResponse, "Response should not be null");
-//        Assertions.assertFalse(editResponse.isError(), "Manager with UPDATE_PRODUCT permission should be able to edit products");
-//        Assertions.assertNotNull(editResponse.getJson(), "Response JSON should not be null");
-//    }
-//
-//    @Test
-//    @DisplayName("Store manager should not be able to remove a product (unpermitted operation)")
-//    void unauthorizedProductRemoval() {
-//        // First, owner adds a product to the store
-//        Response addResponse = bridge.addProductToStore(
-//                ownerToken,
-//                ownerUsername,
-//                storeId,
-//                testProduct,
-//                PRODUCT_QUANTITY
-//        );
-//        Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
-//
-//        // Manager attempts to remove the product - should fail since they don't have REMOVE_PRODUCT permission
-//        Response removeResponse = bridge.removeProductFromStore(
-//                managerToken,
-//                managerUsername,
-//                storeId,
-//                testProduct
-//        );
-//
-//        Assertions.assertNotNull(removeResponse, "Response should not be null");
-//        Assertions.assertTrue(removeResponse.isError(),
-//                "Manager without REMOVE_PRODUCT permission should not be able to remove products");
-//        Assertions.assertNotNull(removeResponse.getErrorMessage(), "Error message should not be null");
-//    }
-//
-//    @Test
-//    @DisplayName("Store manager should not be able to appoint another manager (unpermitted operation)")
-//    void unauthorizedAppointmentTest() {
-//        // Create a third user who would be appointed as manager
-//        String thirdUsername = "thirduser_" + System.currentTimeMillis();
-//        String thirdPassword = "Third123!";
-//        RegisterRequest thirdUserRequest = new RegisterRequest(
-//                thirdUsername,
-//                thirdPassword,
-//                thirdUsername + "@example.com",
-//                "Third",
-//                "User"
-//        );
-//        Response thirdRegisterResponse = bridge.registerUser(thirdUserRequest);
-//        Assertions.assertFalse(thirdRegisterResponse.isError(), "Third user registration should succeed");
-//
-//        // Manager attempts to appoint the third user as another manager
-//        Response appointResponse = bridge.appointManager(
-//                managerUsername,
-//                managerToken,
-//                storeId,
-//                thirdUsername,
-//                managerPermissions
-//        );
-//
-//        Assertions.assertNotNull(appointResponse, "Response should not be null");
-//        Assertions.assertTrue(appointResponse.isError(),
-//                "Manager should not be able to appoint another manager");
-//        Assertions.assertNotNull(appointResponse.getErrorMessage(), "Error message should not be null");
-//    }
-//}
+package com.sadna_market.market.AcceptanceTests;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sadna_market.market.ApplicationLayer.*;
+import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
+import com.sadna_market.market.DomainLayer.Permission;
+import org.junit.jupiter.api.*;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@SpringBootTest
+public class StoreManagerTests {
+    private final static Bridge bridge = new Bridge();
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    // Test data that will be used across tests
+    private UUID storeId;
+    private static final String STORE_NAME = "Manager Test Store";
+    private static final String STORE_DESCRIPTION = "A store for testing manager operations";
+    private static final String STORE_ADDRESS = "789 Store Avenue, Test City";
+    private static final String STORE_EMAIL = "manager-store@example.com";
+    private static final String STORE_PHONE = "555-123-4567";
+
+    // User credentials that will be set up before each test
+    private String ownerUsername;
+    private String ownerPassword;
+    private String ownerToken;
+
+    private String managerUsername;
+    private String managerPassword;
+    private String managerToken;
+    private PermissionsRequest managerPermissions;
+
+    // Product data for testing
+    private ProductRequest testProduct;
+    private static final int PRODUCT_QUANTITY = 10;
+
+    @BeforeEach
+    void setUp() {
+        // Create the users required for testing
+        setupUsers();
+
+        // Create a store owned by the owner user
+        setupStore();
+
+        // Set up product data for testing
+        setupProducts();
+
+        // Appoint the manager with specific permissions
+        appointManager();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Clear the system state after each test
+        bridge.clear();
+    }
+
+    private void setupUsers() {
+        // Create owner user
+        ownerUsername = "storeowner_" + System.currentTimeMillis();
+        ownerPassword = "Owner123!";
+        RegisterRequest ownerRequest = new RegisterRequest(
+                ownerUsername,
+                ownerPassword,
+                ownerUsername + "@example.com",
+                "Store",
+                "Owner"
+        );
+        Response ownerRegisterResponse = bridge.registerUser(ownerRequest);
+        Assertions.assertFalse(ownerRegisterResponse.isError(), "Store owner registration should succeed");
+
+        // Create manager user
+        managerUsername = "manager_" + System.currentTimeMillis();
+        managerPassword = "Manager123!";
+        RegisterRequest managerRequest = new RegisterRequest(
+                managerUsername,
+                managerPassword,
+                managerUsername + "@example.com",
+                "Store",
+                "Manager"
+        );
+        Response managerRegisterResponse = bridge.registerUser(managerRequest);
+        Assertions.assertFalse(managerRegisterResponse.isError(), "Manager user registration should succeed");
+
+        // Login both users to get their tokens
+        Response ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
+        Assertions.assertFalse(ownerLoginResponse.isError(), "Owner login should succeed");
+        ownerToken = ownerLoginResponse.getJson();
+
+        Response managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
+        Assertions.assertFalse(managerLoginResponse.isError(), "Manager login should succeed");
+        managerToken = managerLoginResponse.getJson();
+    }
+
+    private void setupStore() {
+        StoreRequest newStore = new StoreRequest(
+                STORE_NAME,
+                STORE_DESCRIPTION,
+                STORE_ADDRESS,
+                STORE_EMAIL,
+                STORE_PHONE,
+                ownerUsername
+        );
+
+        Response createStoreResponse = bridge.createStore(
+                ownerUsername,
+                ownerToken,
+                newStore
+        );
+        Assertions.assertFalse(createStoreResponse.isError(), "Store creation should succeed");
+
+        // Extract the store ID from the response
+        try {
+            JsonNode jsonNode = objectMapper.readTree(createStoreResponse.getJson());
+            storeId = UUID.fromString(jsonNode.get("storeId").asText());
+        } catch (Exception e) {
+            throw new AssertionError("Store ID extraction failed", e);
+        }
+    }
+
+    private void setupProducts() {
+        testProduct = new ProductRequest(
+                UUID.randomUUID(),
+                "Manager Test Product",
+                "Electronics",
+                "High-quality test product for manager tests",
+                129.99
+        );
+    }
+
+    private void appointManager() {
+        // Create limited permissions for the manager
+        // Giving ADD_PRODUCT, VIEW permissions but NOT REMOVE_PRODUCT
+        Set<Permission> permissions = new HashSet<>();
+        permissions.add(Permission.VIEW_STORE_INFO);
+        permissions.add(Permission.VIEW_PRODUCT_INFO);
+        permissions.add(Permission.ADD_PRODUCT);
+        permissions.add(Permission.UPDATE_PRODUCT);
+        // Note: Deliberately NOT adding REMOVE_PRODUCT to test permission limitations
+
+        managerPermissions = new PermissionsRequest(permissions);
+
+        // Owner appoints the manager with limited permissions
+        Response appointResponse = bridge.appointManager(
+                ownerUsername,
+                ownerToken,
+                storeId,
+                managerUsername,
+                managerPermissions
+        );
+
+        Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
+    }
+
+    @Test
+    @DisplayName("Store manager should be able to add a product (permitted operation)")
+    void managerAddProductTest() {
+        // Since the manager has ADD_PRODUCT permission, this should succeed
+        Response addResponse = bridge.addProductToStore(
+                managerToken,
+                managerUsername,
+                storeId,
+                testProduct,
+                PRODUCT_QUANTITY
+        );
+
+        Assertions.assertNotNull(addResponse, "Response should not be null");
+        Assertions.assertFalse(addResponse.isError(), "Manager with ADD_PRODUCT permission should be able to add products");
+        Assertions.assertNotNull(addResponse.getJson(), "Response JSON should not be null");
+    }
+
+    @Test
+    @DisplayName("Store manager should be able to edit a product (permitted operation)")
+    void managerEditProductTest() {
+        // First, owner adds a product to the store
+        Response addResponse = bridge.addProductToStore(
+                ownerToken,
+                ownerUsername,
+                storeId,
+                testProduct,
+                PRODUCT_QUANTITY
+        );
+        Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
+
+        // Create an updated product with the same ID
+        ProductRequest updatedProduct = new ProductRequest(
+                testProduct.getProductId(),
+                "Updated Product Name",
+                "Electronics",
+                "Updated product description",
+                149.99
+        );
+
+        // Manager attempts to edit the product - should succeed since they have UPDATE_PRODUCT permission
+        Response editResponse = bridge.editProductDetails(
+                managerToken,
+                managerUsername,
+                storeId,
+                updatedProduct,
+                PRODUCT_QUANTITY + 5 // Increase quantity
+        );
+
+        Assertions.assertNotNull(editResponse, "Response should not be null");
+        Assertions.assertFalse(editResponse.isError(), "Manager with UPDATE_PRODUCT permission should be able to edit products");
+        Assertions.assertNotNull(editResponse.getJson(), "Response JSON should not be null");
+    }
+
+    @Test
+    @DisplayName("Store manager should not be able to remove a product (unpermitted operation)")
+    void unauthorizedProductRemoval() {
+        // First, owner adds a product to the store
+        Response addResponse = bridge.addProductToStore(
+                ownerToken,
+                ownerUsername,
+                storeId,
+                testProduct,
+                PRODUCT_QUANTITY
+        );
+        Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
+
+        // Manager attempts to remove the product - should fail since they don't have REMOVE_PRODUCT permission
+        Response removeResponse = bridge.removeProductFromStore(
+                managerToken,
+                managerUsername,
+                storeId,
+                testProduct
+        );
+
+        Assertions.assertNotNull(removeResponse, "Response should not be null");
+        Assertions.assertTrue(removeResponse.isError(),
+                "Manager without REMOVE_PRODUCT permission should not be able to remove products");
+        Assertions.assertNotNull(removeResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+    @Test
+    @DisplayName("Store manager should not be able to appoint another manager (unpermitted operation)")
+    void unauthorizedAppointmentTest() {
+        // Create a third user who would be appointed as manager
+        String thirdUsername = "thirduser_" + System.currentTimeMillis();
+        String thirdPassword = "Third123!";
+        RegisterRequest thirdUserRequest = new RegisterRequest(
+                thirdUsername,
+                thirdPassword,
+                thirdUsername + "@example.com",
+                "Third",
+                "User"
+        );
+        Response thirdRegisterResponse = bridge.registerUser(thirdUserRequest);
+        Assertions.assertFalse(thirdRegisterResponse.isError(), "Third user registration should succeed");
+
+        // Manager attempts to appoint the third user as another manager
+        Response appointResponse = bridge.appointManager(
+                managerUsername,
+                managerToken,
+                storeId,
+                thirdUsername,
+                managerPermissions
+        );
+
+        Assertions.assertNotNull(appointResponse, "Response should not be null");
+        Assertions.assertTrue(appointResponse.isError(),
+                "Manager should not be able to appoint another manager");
+        Assertions.assertNotNull(appointResponse.getErrorMessage(), "Error message should not be null");
+    }
+}
