@@ -26,7 +26,6 @@ public class User extends IUser {
     @Getter
     private String lastName;
     private boolean isLoggedIn;
-    private Cart cart;
     private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
     private ArrayList<UUID> ordersHistory; // List of order IDs
     private ArrayList<UUID> myReports;
@@ -38,7 +37,6 @@ public class User extends IUser {
         this.firstName = firstName;
         this.lastName = lastName;
         this.isLoggedIn = false;
-        this.cart = new Cart();
         this.userStoreRoles = new ArrayList<>();
         this.ordersHistory = new ArrayList<>();
         this.myReports = new ArrayList<>();
