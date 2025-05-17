@@ -1,21 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../index.css";
 import logo from "../assets/logo.png";
 import UserProfileBadge from "./UserProfileBadge";
 import { Link } from "react-router-dom";
 import LoginBanner from "./LoginBanner"; 
 import RegisterBanner from "./RegisterBanner"; 
+import { fetchUserStores } from "../api/user";
 
 
 function HeaderBar({ user, onLogout, onLogin }) {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [userStores, setUserStores] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserStores(user.username).then(setUserStores).catch(console.error);
+    }
+  }, [user]);
 
   return (
     <>
       <header className="header">
         {/* Left Side */}
         <UserProfileBadge user={user} />
+        {user && (
+            userStores.length > 0 ? (
+              <Link to="/my-stores">
+                <button className="button">Stores</button>
+              </Link>
+            ) : (
+              <Link to="/create-store">
+                <button className="button">Create Store</button>
+              </Link>
+            )
+          )}
 
         {/* Center: Logo */}
         <div className="logo-container">

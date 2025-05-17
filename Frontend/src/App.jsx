@@ -9,17 +9,27 @@ import SearchResultsPage from "./pages/SearchResultsPage";
 import HeaderBar from "./components/HeaderBar";
 import ProductPage from "./pages/ProductPage";
 import StorePage from "./pages/StorePage";
+import StoreManagementPage from "./pages/StoreManagementPage";
+import StoreManagePage from "./pages/StoreManagePage";
+
+//temporary data for testing
+import { mockUsers } from "./data/mockUsers";
 
 function App() {
   const [user, setUser] = useState(null); // null = guest
 
   // Simulated login (replace with real logic)
-  const fakeLogin = () => setUser({ name: "John", role: "user" });
+  
+const fakeLogin = () => {
+  const alice = mockUsers.find((u) => u.username === "alice123");
+  if (alice) setUser(alice);
+  else console.error("alice123 not found in mockUsers");
+  };
   const logout = () => setUser(null);
 
   return (
     <Router>
-      <HeaderBar user={user} onLogout={logout} />
+      <HeaderBar user={user} onLogout={ logout} />
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/cart" element={<CartPage />} />
@@ -28,6 +38,9 @@ function App() {
         <Route path="/search" element={<SearchResultsPage />} />
         <Route path="/product/:productId" element={<ProductPage />} />
         <Route path="/store/:storeId" element={<StorePage user={user} />} />
+        <Route path="/my-stores" element={<StoreManagementPage user={user} />} />
+        <Route path="/store-manage/:storeId" element={<StoreManagePage />} />
+        <Route path="*" element={<div>404 Not Found</div>} />
       </Routes>
       {!user && <button onClick={fakeLogin}>Fake Login</button>}
     </Router>
