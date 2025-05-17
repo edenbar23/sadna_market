@@ -32,6 +32,15 @@ public class InMemoryProductRepository implements IProductRepository {
     }
 
     @Override
+    public List<Optional<Product>> findAll() {
+        logger.debug("Retrieving all products (total: {})", productStorage.size());
+        return productStorage.values().stream()
+                .filter(Product::isAvailable)
+                .map(Optional::of)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<Optional<Product>> filterByName(String name) {
         logger.debug("Filtering products by name: '{}'", name);
         return productStorage.values().stream()
@@ -80,7 +89,7 @@ public class InMemoryProductRepository implements IProductRepository {
             throw new IllegalArgumentException("Product with the same name already exists in this store");
         }
 
-        Product product = new Product(name, storeId, description, category, price, isAvailable);
+        Product product = new Product(name, storeId, category, description, price, isAvailable);
         productStorage.put(product.getProductId(), product);
         logger.info("Product successfully added: {}", product.getProductId());
 
@@ -308,6 +317,8 @@ public class InMemoryProductRepository implements IProductRepository {
             return false;
         }
     }
+
+
 
     @Override
     public void clear() {

@@ -45,21 +45,53 @@ public class ProductService {
     public Response<List<ProductDTO>> searchProduct(ProductSearchRequest request) {
         logger.info("Searching for products with criteria");
         try {
-            // Convert application request to domain parameters
-            List<Optional<Product>> result = productRepository.searchProduct(
-                    request.getName(),
-                    request.getCategory(),
-                    request.getMinPrice(),
-                    request.getMaxPrice(),
-                    request.getMinRank(),
-                    request.getMaxRank()
-            );
-            logger.info("products found: {}", result.size());
-            // Filter out empty Optionals and extract the products
-            List<Product> products = result.stream()
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .collect(Collectors.toList());
+            List<Product> products = new ArrayList<>();
+
+            // If no search criteria, get all products
+            if (isEmptyRequest(request)) {
+                logger.info("No search criteria provided, returning all products");
+                List<Optional<Product>> allProducts = productRepository.findAll();
+                for (Optional<Product> productOpt : allProducts) {
+                    productOpt.ifPresent(products::add);
+                }
+            } else {
+                // First try with specific search criteria
+                List<Optional<Product>> searchResults = productRepository.searchProduct(
+                        request.getName(),
+                        request.getCategory(),
+                        request.getMinPrice(),
+                        request.getMaxPrice(),
+                        request.getMinRank(),
+                        request.getMaxRank()
+                );
+
+                logger.info("Search results size: {}", searchResults.size());
+
+                // Extract actual products
+                for (Optional<Product> productOpt : searchResults) {
+                    if (productOpt.isPresent()) {
+                        products.add(productOpt.get());
+                    }
+                }
+
+                // If no results yet and name was provided, try a more flexible name search
+                if (products.isEmpty() && request.getName() != null && !request.getName().isEmpty()) {
+                    logger.info("No exact matches found, trying partial name match");
+                    List<Optional<Product>> allProducts = productRepository.findAll();
+                    String searchName = request.getName().toLowerCase();
+
+                    for (Optional<Product> productOpt : allProducts) {
+                        if (productOpt.isPresent()) {
+                            Product product = productOpt.get();
+                            if (product.getName().toLowerCase().contains(searchName)) {
+                                products.add(product);
+                            }
+                        }
+                    }
+                }
+            }
+
+            logger.info("Final products found: {}", products.size());
 
             // Convert to DTOs for the application layer
             List<ProductDTO> productDTOs = products.stream()
@@ -72,6 +104,15 @@ public class ProductService {
             logger.error("Error while searching for products: {}", e.getMessage(), e);
             return Response.error("Failed to search products: " + e.getMessage());
         }
+    }
+
+    private boolean isEmptyRequest(ProductSearchRequest request) {
+        return (request.getName() == null || request.getName().isEmpty()) &&
+                (request.getCategory() == null || request.getCategory().isEmpty()) &&
+                (request.getMinPrice() == null) &&
+                (request.getMaxPrice() == null) &&
+                (request.getMinRank() == null) &&
+                (request.getMaxRank() == null);
     }
 
     //req 3.3

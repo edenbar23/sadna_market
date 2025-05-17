@@ -74,7 +74,7 @@ public class StoreManagerTests {
                 "Store",
                 "Owner"
         );
-        Response ownerRegisterResponse = bridge.registerUser(ownerRequest);
+        Response<String> ownerRegisterResponse = bridge.registerUser(ownerRequest);
         Assertions.assertFalse(ownerRegisterResponse.isError(), "Store owner registration should succeed");
 
         // Create manager user
@@ -87,17 +87,17 @@ public class StoreManagerTests {
                 "Store",
                 "Manager"
         );
-        Response managerRegisterResponse = bridge.registerUser(managerRequest);
+        Response<String> managerRegisterResponse = bridge.registerUser(managerRequest);
         Assertions.assertFalse(managerRegisterResponse.isError(), "Manager user registration should succeed");
 
         // Login both users to get their tokens
-        Response ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
+        Response<String> ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
         Assertions.assertFalse(ownerLoginResponse.isError(), "Owner login should succeed");
-        ownerToken = ownerLoginResponse.getJson();
+        ownerToken = ownerLoginResponse.getData();
 
-        Response managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
+        Response<String> managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
         Assertions.assertFalse(managerLoginResponse.isError(), "Manager login should succeed");
-        managerToken = managerLoginResponse.getJson();
+        managerToken = managerLoginResponse.getData();
     }
 
     private void setupStore() {
@@ -110,7 +110,7 @@ public class StoreManagerTests {
                 ownerUsername
         );
 
-        Response createStoreResponse = bridge.createStore(
+        Response<?> createStoreResponse = bridge.createStore(
                 ownerUsername,
                 ownerToken,
                 newStore
@@ -119,7 +119,7 @@ public class StoreManagerTests {
 
         // Extract the store ID from the response
         try {
-            JsonNode jsonNode = objectMapper.readTree(createStoreResponse.getJson());
+            JsonNode jsonNode = objectMapper.readTree(objectMapper.writeValueAsString(createStoreResponse.getData()));
             storeId = UUID.fromString(jsonNode.get("storeId").asText());
         } catch (Exception e) {
             throw new AssertionError("Store ID extraction failed", e);
@@ -149,7 +149,7 @@ public class StoreManagerTests {
         managerPermissions = new PermissionsRequest(permissions);
 
         // Owner appoints the manager with limited permissions
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -164,7 +164,7 @@ public class StoreManagerTests {
     @DisplayName("Store manager should be able to add a product (permitted operation)")
     void managerAddProductTest() {
         // Since the manager has ADD_PRODUCT permission, this should succeed
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 managerToken,
                 managerUsername,
                 storeId,
@@ -174,14 +174,14 @@ public class StoreManagerTests {
 
         Assertions.assertNotNull(addResponse, "Response should not be null");
         Assertions.assertFalse(addResponse.isError(), "Manager with ADD_PRODUCT permission should be able to add products");
-        Assertions.assertNotNull(addResponse.getJson(), "Response JSON should not be null");
+        Assertions.assertNotNull(addResponse.getData(), "Response data should not be null");
     }
 
     @Test
     @DisplayName("Store manager should be able to edit a product (permitted operation)")
     void managerEditProductTest() {
         // First, owner adds a product to the store
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -191,8 +191,9 @@ public class StoreManagerTests {
         Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
 
         // Create an updated product with the same ID
+        UUID productId = UUID.fromString(addResponse.getData());
         ProductRequest updatedProduct = new ProductRequest(
-                testProduct.getProductId(),
+                productId,
                 "Updated Product Name",
                 "Electronics",
                 "Updated product description",
@@ -200,7 +201,7 @@ public class StoreManagerTests {
         );
 
         // Manager attempts to edit the product - should succeed since they have UPDATE_PRODUCT permission
-        Response editResponse = bridge.editProductDetails(
+        Response<String> editResponse = bridge.editProductDetails(
                 managerToken,
                 managerUsername,
                 storeId,
@@ -210,14 +211,14 @@ public class StoreManagerTests {
 
         Assertions.assertNotNull(editResponse, "Response should not be null");
         Assertions.assertFalse(editResponse.isError(), "Manager with UPDATE_PRODUCT permission should be able to edit products");
-        Assertions.assertNotNull(editResponse.getJson(), "Response JSON should not be null");
+        Assertions.assertNotNull(editResponse.getData(), "Response data should not be null");
     }
 
     @Test
     @DisplayName("Store manager should not be able to remove a product (unpermitted operation)")
     void unauthorizedProductRemoval() {
         // First, owner adds a product to the store
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -226,8 +227,12 @@ public class StoreManagerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Owner should be able to add product");
 
+        // Get the product ID from the response
+        UUID productId = UUID.fromString(addResponse.getData());
+        testProduct.setProductId(productId);
+
         // Manager attempts to remove the product - should fail since they don't have REMOVE_PRODUCT permission
-        Response removeResponse = bridge.removeProductFromStore(
+        Response<String> removeResponse = bridge.removeProductFromStore(
                 managerToken,
                 managerUsername,
                 storeId,
@@ -253,11 +258,11 @@ public class StoreManagerTests {
                 "Third",
                 "User"
         );
-        Response thirdRegisterResponse = bridge.registerUser(thirdUserRequest);
+        Response<String> thirdRegisterResponse = bridge.registerUser(thirdUserRequest);
         Assertions.assertFalse(thirdRegisterResponse.isError(), "Third user registration should succeed");
 
         // Manager attempts to appoint the third user as another manager
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 managerUsername,
                 managerToken,
                 storeId,
