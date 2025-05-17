@@ -87,4 +87,14 @@ import org.apache.logging.log4j.Logger;
                             .mapToInt(Integer::intValue).sum())
                     .sum();
         }
+
+        // for testing
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<UUID, ShoppingBasket> entry : shoppingBaskets.entrySet()) {
+                sb.append("Store ID: ").append(entry.getKey()).append("\n");
+                sb.append("Products: ").append(entry.getValue().getProductsList()).append("\n");
+            }
+            return sb.toString();
+        }
 }
