@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @Component
 public class Bridge {
-    private final ObjectMapper objectMapper;
     private final UserService userService;
     private final ProductService productService;
     private final StoreService storeService;
@@ -25,8 +24,8 @@ public class Bridge {
 
 
     public Bridge() {
-        // For backward compatibility with tests
-        this.objectMapper = new ObjectMapper();
+
+
 
         // Create the repositories
         IRatingRepository ratingRepository = new InMemoryRatingRepository();
@@ -52,10 +51,10 @@ public class Bridge {
         RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);
 
         // Create application services
-        this.userService = new UserService(authentication, userAccessService, objectMapper,inventoryManagementService);
-        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService, objectMapper);
-        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService, objectMapper);
-        this.messageService = new MessageApplicationService(authentication, messageService, objectMapper);
+        this.userService = new UserService(authentication, userAccessService, inventoryManagementService);
+        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService);
+        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService);
+        this.messageService = new MessageApplicationService(authentication, messageService);
     }
 
     /** Admin Test Methods */
