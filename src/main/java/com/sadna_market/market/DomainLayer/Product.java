@@ -19,7 +19,7 @@ public class Product {
     private int ratingCount;
 
     // Constructor
-    public Product(String name, UUID storeId, String description, String category, double price, boolean isAvailable) {
+    public Product(String name, UUID storeId, String category, String description, double price, boolean isAvailable) {
         this.name = name;
         this.storeId = storeId;
         this.productId = UUID.randomUUID();
