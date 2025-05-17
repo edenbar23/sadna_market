@@ -1,6 +1,5 @@
 package com.sadna_market.market.ApplicationLayer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.MessageReplyRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.MessageRequest;
@@ -24,16 +23,12 @@ public class MessageApplicationService {
 
     private final AuthenticationBridge authentication;
     private final MessageService messageService;
-    private final ObjectMapper objectMapper;
 
     @Autowired
     public MessageApplicationService(AuthenticationBridge authentication,
-                                     MessageService messageService,
-                                     ObjectMapper objectMapper) {
+                                     MessageService messageService) {
         this.authentication = authentication;
         this.messageService = messageService;
-        this.objectMapper = objectMapper;
-        this.objectMapper.findAndRegisterModules(); // Enable Java 8 date/time modules
     }
 
     /**
@@ -44,8 +39,7 @@ public class MessageApplicationService {
      * @param request The message request containing store ID and content
      * @return Response object with success/error status and message data
      */
-    //req 3.5
-    public Response sendMessage(String username, String token, MessageRequest request) {
+    public Response<MessageDTO> sendMessage(String username, String token, MessageRequest request) {
         logger.info("Processing send message request from user: {}", username);
 
         try {
@@ -58,13 +52,11 @@ public class MessageApplicationService {
             );
 
             // For now, we'll still use the direct service method to get the message
-            // In a more complete implementation, we might use a different approach
             Message message = messageService.sendMessage(username, request.getStoreId(), request.getContent());
             MessageDTO messageDTO = new MessageDTO(message);
-            String json = objectMapper.writeValueAsString(messageDTO);
 
             logger.info("Message sent successfully by user: {}", username);
-            return Response.success(json);
+            return Response.success(messageDTO);
         } catch (Exception e) {
             logger.error("Error sending message: {}", e.getMessage(), e);
             return Response.error("Failed to send message: " + e.getMessage());
@@ -79,7 +71,7 @@ public class MessageApplicationService {
      * @param request The reply request containing message ID and reply content
      * @return Response object with success/error status
      */
-    public Response replyToMessage(String username, String token, MessageReplyRequest request) {
+    public Response<String> replyToMessage(String username, String token, MessageReplyRequest request) {
         logger.info("Processing reply to message request from user: {}", username);
 
         try {
@@ -108,7 +100,7 @@ public class MessageApplicationService {
      * @param token Authentication token
      * @return Response object with success/error status and messages data
      */
-    public Response getUserMessages(String username, String token) {
+    public Response<List<MessageDTO>> getUserMessages(String username, String token) {
         logger.info("Getting messages for user: {}", username);
 
         try {
@@ -116,10 +108,9 @@ public class MessageApplicationService {
             authentication.validateToken(username, token);
             List<Message> messages = messageService.getUserMessages(username);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-            String json = objectMapper.writeValueAsString(messageDTOs);
 
             logger.info("Retrieved {} messages for user: {}", messages.size(), username);
-            return Response.success(json);
+            return Response.success(messageDTOs);
         } catch (Exception e) {
             logger.error("Error getting user messages: {}", e.getMessage(), e);
             return Response.error("Failed to get messages: " + e.getMessage());
@@ -134,7 +125,7 @@ public class MessageApplicationService {
      * @param storeId The ID of the store
      * @return Response object with success/error status and messages data
      */
-    public Response getStoreMessages(String username, String token, UUID storeId) {
+    public Response<List<MessageDTO>> getStoreMessages(String username, String token, UUID storeId) {
         logger.info("Getting messages for store: {} requested by user: {}", storeId, username);
 
         try {
@@ -142,10 +133,9 @@ public class MessageApplicationService {
             authentication.validateToken(username, token);
             List<Message> messages = messageService.getStoreMessages(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-            String json = objectMapper.writeValueAsString(messageDTOs);
 
             logger.info("Retrieved {} messages for store: {}", messages.size(), storeId);
-            return Response.success(json);
+            return Response.success(messageDTOs);
         } catch (Exception e) {
             logger.error("Error getting store messages: {}", e.getMessage(), e);
             return Response.error("Failed to get store messages: " + e.getMessage());
@@ -160,7 +150,7 @@ public class MessageApplicationService {
      * @param storeId The ID of the store
      * @return Response object with success/error status and messages data
      */
-    public Response getUnansweredStoreMessages(String username, String token, UUID storeId) {
+    public Response<List<MessageDTO>> getUnansweredStoreMessages(String username, String token, UUID storeId) {
         logger.info("Getting unanswered messages for store: {} requested by user: {}", storeId, username);
 
         try {
@@ -168,10 +158,9 @@ public class MessageApplicationService {
             authentication.validateToken(username, token);
             List<Message> messages = messageService.getUnansweredStoreMessages(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-            String json = objectMapper.writeValueAsString(messageDTOs);
 
             logger.info("Retrieved {} unanswered messages for store: {}", messages.size(), storeId);
-            return Response.success(json);
+            return Response.success(messageDTOs);
         } catch (Exception e) {
             logger.error("Error getting unanswered store messages: {}", e.getMessage(), e);
             return Response.error("Failed to get unanswered store messages: " + e.getMessage());
@@ -186,7 +175,7 @@ public class MessageApplicationService {
      * @param storeId The ID of the store
      * @return Response object with success/error status and messages data
      */
-    public Response getUnreadStoreMessages(String username, String token, UUID storeId) {
+    public Response<List<MessageDTO>> getUnreadStoreMessages(String username, String token, UUID storeId) {
         logger.info("Getting unread messages for store: {} requested by user: {}", storeId, username);
 
         try {
@@ -194,10 +183,9 @@ public class MessageApplicationService {
             authentication.validateToken(username, token);
             List<Message> messages = messageService.getUnreadMessagesForStore(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-            String json = objectMapper.writeValueAsString(messageDTOs);
 
             logger.info("Retrieved {} unread messages for store: {}", messages.size(), storeId);
-            return Response.success(json);
+            return Response.success(messageDTOs);
         } catch (Exception e) {
             logger.error("Error getting unread store messages: {}", e.getMessage(), e);
             return Response.error("Failed to get unread store messages: " + e.getMessage());
@@ -212,7 +200,7 @@ public class MessageApplicationService {
      * @param storeId The ID of the store
      * @return Response object with success/error status and conversation data
      */
-    public Response getUserStoreConversation(String username, String token, UUID storeId) {
+    public Response<List<MessageDTO>> getUserStoreConversation(String username, String token, UUID storeId) {
         logger.info("Getting conversation between user: {} and store: {}", username, storeId);
 
         try {
@@ -220,10 +208,9 @@ public class MessageApplicationService {
             authentication.validateToken(username, token);
             List<Message> messages = messageService.getUserStoreConversation(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-            String json = objectMapper.writeValueAsString(messageDTOs);
 
             logger.info("Retrieved {} messages in conversation", messages.size());
-            return Response.success(json);
+            return Response.success(messageDTOs);
         } catch (Exception e) {
             logger.error("Error getting conversation: {}", e.getMessage(), e);
             return Response.error("Failed to get conversation: " + e.getMessage());
@@ -238,7 +225,7 @@ public class MessageApplicationService {
      * @param messageId The ID of the message to delete
      * @return Response object with success/error status
      */
-    public Response deleteMessage(String username, String token, UUID messageId) {
+    public Response<String> deleteMessage(String username, String token, UUID messageId) {
         logger.info("Processing delete message request from user: {} for message: {}", username, messageId);
 
         try {
@@ -267,7 +254,7 @@ public class MessageApplicationService {
      * @param messageId The ID of the message to mark as read
      * @return Response object with success/error status
      */
-    public Response markMessageAsRead(String username, String token, UUID messageId) {
+    public Response<String> markMessageAsRead(String username, String token, UUID messageId) {
         logger.info("Processing mark message as read request from user: {} for message: {}",
                 username, messageId);
 
@@ -297,7 +284,7 @@ public class MessageApplicationService {
      * @param storeId The ID of the store
      * @return Response object with success/error status
      */
-    public Response markAllStoreMessagesAsRead(String username, String token, UUID storeId) {
+    public Response<String> markAllStoreMessagesAsRead(String username, String token, UUID storeId) {
         logger.info("Processing mark all store messages as read request from user: {} for store: {}",
                 username, storeId);
 

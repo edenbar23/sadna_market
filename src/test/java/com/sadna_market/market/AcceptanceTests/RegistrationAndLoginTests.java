@@ -1,12 +1,8 @@
 package com.sadna_market.market.AcceptanceTests;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
-import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import org.junit.jupiter.api.*;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,11 +12,13 @@ public class RegistrationAndLoginTests {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistrationAndLoginTests.class);
     private Bridge bridge = new Bridge();
+
     @AfterEach
     void tearDown() {
         // Clear system state after each test
         bridge.clear();
     }
+
     @Test
     void registerUserTest() {
         // Create a unique username
@@ -36,12 +34,12 @@ public class RegistrationAndLoginTests {
         );
 
         // Register the user
-        Response response = bridge.registerUser(registerRequest);
+        Response<String> response = bridge.registerUser(registerRequest);
 
         // Verify response
         Assertions.assertNotNull(response, "Registration response should not be null");
         Assertions.assertFalse(response.isError(), "Registration should succeed");
-        Assertions.assertNotNull(response.getJson(), "Registration response JSON should not be null");
+        Assertions.assertNotNull(response.getData(), "Registration response data should not be null");
     }
 
     @Test
@@ -58,22 +56,22 @@ public class RegistrationAndLoginTests {
                 "Login",
                 "User"
         );
-        Response registerResponse = bridge.registerUser(registerRequest);
+        Response<String> registerResponse = bridge.registerUser(registerRequest);
         Assertions.assertFalse(registerResponse.isError(), "User registration should succeed");
 
         // Login with valid credentials
-        Response loginResponse = bridge.loginUser(testUsername, testPassword);
+        Response<String> loginResponse = bridge.loginUser(testUsername, testPassword);
 
         // Verify response
         Assertions.assertNotNull(loginResponse, "Login response should not be null");
         Assertions.assertFalse(loginResponse.isError(), "Login should succeed");
-        Assertions.assertNotNull(loginResponse.getJson(), "Login response JSON should not be null");
+        Assertions.assertNotNull(loginResponse.getData(), "Login response data should not be null");
     }
 
     @Test
     void loginUserWithInvalidCredentialsTest() {
         // Try to login with credentials that don't exist
-        Response loginResponse = bridge.loginUser(
+        Response<String> loginResponse = bridge.loginUser(
                 "nonexistentuser" + UUID.randomUUID().toString(),
                 "InvalidPassword123!"
         );
@@ -85,7 +83,7 @@ public class RegistrationAndLoginTests {
     }
 
     @Test
-    void logout(){
+    void logout() {
         // Create a unique username
         String testUsername = "logoutuser";
         String testPassword = "Password123!";
@@ -98,22 +96,21 @@ public class RegistrationAndLoginTests {
                 "Logout",
                 "User"
         );
-        Response registerResponse = bridge.registerUser(registerRequest);
+        Response<String> registerResponse = bridge.registerUser(registerRequest);
         Assertions.assertFalse(registerResponse.isError(), "User registration should succeed");
 
         // Login with valid credentials
-        Response loginResponse = bridge.loginUser(testUsername, testPassword);
+        Response<String> loginResponse = bridge.loginUser(testUsername, testPassword);
         // Extract the token from the login response
-        String testToken = loginResponse.getJson();
-
+        String testToken = loginResponse.getData();
 
         // Verify response
         Assertions.assertNotNull(loginResponse, "Login response should not be null");
         Assertions.assertFalse(loginResponse.isError(), "Login should succeed");
-        Assertions.assertNotNull(loginResponse.getJson(), "Login response JSON should not be null");
+        Assertions.assertNotNull(loginResponse.getData(), "Login response data should not be null");
 
         // Logout
-        Response logoutResponse = bridge.logout(testUsername, testToken);
+        Response<String> logoutResponse = bridge.logout(testUsername, testToken);
 
         // Verify response
         Assertions.assertNotNull(logoutResponse, "Logout response should not be null");
@@ -147,21 +144,19 @@ public class RegistrationAndLoginTests {
         bridge.registerUser(registerRequest2);
 
         // Login the first user
-        Response loginResponse = bridge.loginUser(loggedInUsername, password);
+        Response<String> loginResponse = bridge.loginUser(loggedInUsername, password);
         Assertions.assertFalse(loginResponse.isError(), "Login should succeed");
 
         // Extract the token from the logged-in user
-        String validToken = loginResponse.getJson();
+        String validToken = loginResponse.getData();
 
         // Try to logout the second user using the first user's token
-        // Did this because i wanted to use a valid token sturcture
-        Response logoutResponse = bridge.logout(notLoggedInUsername, validToken);
+        // Did this because i wanted to use a valid token structure
+        Response<String> logoutResponse = bridge.logout(notLoggedInUsername, validToken);
 
         // Verify that the logout attempt fails
         Assertions.assertNotNull(logoutResponse, "Logout response should not be null");
         Assertions.assertTrue(logoutResponse.isError(), "Logout with mismatched token should fail");
         Assertions.assertNotNull(logoutResponse.getErrorMessage(), "Error message should not be null");
     }
-
-
 }

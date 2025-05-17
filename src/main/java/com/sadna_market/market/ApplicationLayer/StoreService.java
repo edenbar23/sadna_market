@@ -1,6 +1,5 @@
 package com.sadna_market.market.ApplicationLayer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
@@ -26,15 +25,14 @@ public class StoreService {
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
     private final RatingService ratingService;
-    private final ObjectMapper objectMapper;
 
     //req 3.2
-    public Response createStore(String username, String token, StoreRequest storeRequest) {
+    public Response<StoreDTO> createStore(String username, String token, StoreRequest storeRequest) {
         logger.info("Opening new store with name: {} for founder: {}", storeRequest.getStoreName(), username);
 
         try {
             logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username,token);
+            authentication.validateToken(username, token);
 
             // Set founder username from authenticated user
             if (storeRequest.getFounderUsername() == null) {
@@ -55,10 +53,9 @@ public class StoreService {
 
             // Convert domain object to DTO for response
             StoreDTO storeDTO = convertToDTO(store);
-            String json = objectMapper.writeValueAsString(storeDTO);
 
-            logger.info("Store created successfully: {}", json);
-            return Response.success(json);
+            logger.info("Store created successfully: {}", storeDTO.getStoreId());
+            return Response.success(storeDTO);
 
         } catch (Exception e) {
             logger.error("Error creating store: {}", e.getMessage(), e);
@@ -66,12 +63,12 @@ public class StoreService {
         }
     }
 
-    public Response closeStore(String username, String token, UUID storeId) {
+    public Response<String> closeStore(String username, String token, UUID storeId) {
         logger.info("Attempting to close store with ID: {} by user: {}", storeId, username);
 
         try {
             logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username,token);
+            authentication.validateToken(username, token);
 
             storeManagementService.closeStore(username, storeId);
             return Response.success("Store closed successfully");
@@ -82,12 +79,12 @@ public class StoreService {
         }
     }
 
-    public Response reopenStore(String username, String token, UUID storeId) {
+    public Response<String> reopenStore(String username, String token, UUID storeId) {
         logger.info("Attempting to reopen store with ID: {} by user: {}", storeId, username);
 
         try {
             logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username,token);
+            authentication.validateToken(username, token);
 
             storeManagementService.reopenStore(username, storeId);
             return Response.success("Store reopened successfully");
@@ -99,7 +96,7 @@ public class StoreService {
     }
 
     //req 2.1 (b)
-    public Response getStoreInfo(UUID storeId) {
+    public Response<StoreDTO> getStoreInfo(UUID storeId) {
         logger.info("Getting store info for store ID: {}", storeId);
 
         try {
@@ -107,8 +104,7 @@ public class StoreService {
                     .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
 
             StoreDTO storeDTO = convertToDTO(store);
-            String json = objectMapper.writeValueAsString(storeDTO);
-            return Response.success(json);
+            return Response.success(storeDTO);
 
         } catch (Exception e) {
             logger.error("Error getting store info: {}", e.getMessage(), e);
@@ -116,7 +112,7 @@ public class StoreService {
         }
     }
 
-    public Response getAllStores() {
+    public Response<List<StoreDTO>> getAllStores() {
         logger.info("Getting all stores");
 
         try {
@@ -126,8 +122,7 @@ public class StoreService {
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
 
-            String json = objectMapper.writeValueAsString(storeDTOs);
-            return Response.success(json);
+            return Response.success(storeDTOs);
 
         } catch (Exception e) {
             logger.error("Error getting all stores: {}", e.getMessage(), e);
@@ -135,12 +130,12 @@ public class StoreService {
         }
     }
 
-    public Response appointStoreOwner(String appointerUsername, String token, UUID storeId, String newOwnerUsername) {
+    public Response<String> appointStoreOwner(String appointerUsername, String token, UUID storeId, String newOwnerUsername) {
         logger.info("User {} appointing {} as store owner for store {}", appointerUsername, newOwnerUsername, storeId);
 
         try {
             logger.info("Validating token for user with username: {}", appointerUsername);
-            authentication.validateToken(appointerUsername,token);
+            authentication.validateToken(appointerUsername, token);
 
             storeManagementService.appointStoreOwner(appointerUsername, storeId, newOwnerUsername);
             return Response.success("Store owner appointed successfully");
@@ -151,12 +146,12 @@ public class StoreService {
         }
     }
 
-    public Response removeStoreOwner(String removerUsername, String token, UUID storeId, String ownerToRemove) {
+    public Response<String> removeStoreOwner(String removerUsername, String token, UUID storeId, String ownerToRemove) {
         logger.info("User {} removing {} as store owner from store {}", removerUsername, ownerToRemove, storeId);
 
         try {
             logger.info("Validating token for user with username: {}", removerUsername);
-            authentication.validateToken(removerUsername,token);
+            authentication.validateToken(removerUsername, token);
 
             storeManagementService.removeStoreOwner(removerUsername, storeId, ownerToRemove);
             return Response.success("Store owner removed successfully");
@@ -167,13 +162,13 @@ public class StoreService {
         }
     }
 
-    public Response appointStoreManager(String appointerUsername, String token, UUID storeId, String newManagerUsername,
-                                        PermissionsRequest permissionsRequest) {
+    public Response<String> appointStoreManager(String appointerUsername, String token, UUID storeId, String newManagerUsername,
+                                                PermissionsRequest permissionsRequest) {
         logger.info("User {} appointing {} as store manager for store {}", appointerUsername, newManagerUsername, storeId);
 
         try {
             logger.info("Validating token for user with username: {}", appointerUsername);
-            authentication.validateToken(appointerUsername,token);
+            authentication.validateToken(appointerUsername, token);
 
             Set<Permission> permissions = permissionsRequest != null ?
                     permissionsRequest.getPermissions() : new HashSet<>();
@@ -187,12 +182,12 @@ public class StoreService {
         }
     }
 
-    public Response removeStoreManager(String removerUsername, String token, UUID storeId, String managerToRemove) {
+    public Response<String> removeStoreManager(String removerUsername, String token, UUID storeId, String managerToRemove) {
         logger.info("User {} removing {} as store manager from store {}", removerUsername, managerToRemove, storeId);
 
         try {
             logger.info("Validating token for user with username: {}", removerUsername);
-            authentication.validateToken(removerUsername,token);
+            authentication.validateToken(removerUsername, token);
 
             storeManagementService.removeStoreManager(removerUsername, storeId, managerToRemove);
             return Response.success("Store manager removed successfully");
@@ -203,13 +198,13 @@ public class StoreService {
         }
     }
 
-    public Response changePermissions(String updaterUsername, String token, UUID storeId, String managerUsername,
-                                      PermissionsRequest permissionsRequest) {
+    public Response<String> changePermissions(String updaterUsername, String token, UUID storeId, String managerUsername,
+                                              PermissionsRequest permissionsRequest) {
         logger.info("User {} updating permissions for manager {} in store {}", updaterUsername, managerUsername, storeId);
 
         try {
             logger.info("Validating token for user with username: {}", updaterUsername);
-            authentication.validateToken(updaterUsername,token);
+            authentication.validateToken(updaterUsername, token);
 
             Set<Permission> permissions = permissionsRequest != null ?
                     permissionsRequest.getPermissions() : new HashSet<>();
@@ -223,11 +218,11 @@ public class StoreService {
         }
     }
 
-    public Response leaveOwnership(String username, String token, UUID storeId) {
+    public Response<String> leaveOwnership(String username, String token, UUID storeId) {
         logger.info("User {} leaving store ownership for store {}", username, storeId);
         try {
             logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username,token);
+            authentication.validateToken(username, token);
 
             storeManagementService.leaveOwnership(username, storeId);
             return Response.success("Left ownership successfully");
@@ -237,7 +232,7 @@ public class StoreService {
         }
     }
 
-    public Response rateStore(String token, StoreRateRequest rate) {
+    public Response<StoreRatingDTO> rateStore(String token, StoreRateRequest rate) {
         try {
             logger.info("Validating token for user with username: {}", rate.getUsername());
             authentication.validateToken(rate.getUsername(), token);
@@ -254,9 +249,8 @@ public class StoreService {
 
             // Convert domain object to DTO for response
             StoreRatingDTO ratingDTO = new StoreRatingDTO(storeRating);
-            String json = objectMapper.writeValueAsString(ratingDTO);
 
-            return Response.success(json);
+            return Response.success(ratingDTO);
         } catch (Exception e) {
             logger.error("Error rating store: {}", e.getMessage(), e);
             return Response.error("Error rating store: " + e.getMessage());

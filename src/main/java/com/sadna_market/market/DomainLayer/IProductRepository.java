@@ -11,6 +11,7 @@ public interface IProductRepository {
     List<Optional<Product>> filterByCategory(String category);
     List<Optional<Product>> filterByPriceRange(double minPrice, double maxPrice);
     List<Optional<Product>> filterByRate(double minRate, double maxRate);
+    List<Optional<Product>> findAll();
 
     UUID addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable);
 

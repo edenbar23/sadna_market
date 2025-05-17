@@ -57,7 +57,7 @@ public class StoreOwnerTests {
         setupStore();
 
         // Set up product data for testing
-        //setupProducts();
+        setupProducts();
     }
 
     @AfterEach
@@ -77,7 +77,7 @@ public class StoreOwnerTests {
                 "Store",
                 "Owner"
         );
-        Response ownerRegisterResponse = bridge.registerUser(ownerRequest);
+        Response<String> ownerRegisterResponse = bridge.registerUser(ownerRequest);
         Assertions.assertFalse(ownerRegisterResponse.isError(), "Store owner registration should succeed");
 
         // Create unauthorized user
@@ -90,7 +90,7 @@ public class StoreOwnerTests {
                 "Unauthorized",
                 "User"
         );
-        Response unauthorizedRegisterResponse = bridge.registerUser(unauthorizedRequest);
+        Response<String> unauthorizedRegisterResponse = bridge.registerUser(unauthorizedRequest);
         Assertions.assertFalse(unauthorizedRegisterResponse.isError(), "Unauthorized user registration should succeed");
 
         // Create manager user
@@ -103,21 +103,21 @@ public class StoreOwnerTests {
                 "Store",
                 "Manager"
         );
-        Response managerRegisterResponse = bridge.registerUser(managerRequest);
+        Response<String> managerRegisterResponse = bridge.registerUser(managerRequest);
         Assertions.assertFalse(managerRegisterResponse.isError(), "Manager user registration should succeed");
 
         // Login all users to get their tokens
-        Response ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
+        Response<String> ownerLoginResponse = bridge.loginUser(ownerUsername, ownerPassword);
         Assertions.assertFalse(ownerLoginResponse.isError(), "Owner login should succeed");
-        ownerToken = ownerLoginResponse.getJson();
+        ownerToken = ownerLoginResponse.getData();
 
-        Response unauthorizedLoginResponse = bridge.loginUser(unauthorizedUsername, unauthorizedPassword);
+        Response<String> unauthorizedLoginResponse = bridge.loginUser(unauthorizedUsername, unauthorizedPassword);
         Assertions.assertFalse(unauthorizedLoginResponse.isError(), "Unauthorized user login should succeed");
-        unauthorizedToken = unauthorizedLoginResponse.getJson();
+        unauthorizedToken = unauthorizedLoginResponse.getData();
 
-        Response managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
+        Response<String> managerLoginResponse = bridge.loginUser(managerUsername, managerPassword);
         Assertions.assertFalse(managerLoginResponse.isError(), "Manager login should succeed");
-        managerToken = managerLoginResponse.getJson();
+        managerToken = managerLoginResponse.getData();
 
         // Create manager permissions
         Set<Permission> permissions = new HashSet<>();
@@ -140,7 +140,7 @@ public class StoreOwnerTests {
                 ownerUsername
         );
 
-        Response createStoreResponse = bridge.createStore(
+        Response<?> createStoreResponse = bridge.createStore(
                 ownerUsername,
                 ownerToken,
                 newStore
@@ -149,10 +149,9 @@ public class StoreOwnerTests {
 
         // Extract the store ID from the response
         try {
-            JsonNode jsonNode = objectMapper.readTree(createStoreResponse.getJson());
+            JsonNode jsonNode = objectMapper.readTree(objectMapper.writeValueAsString(createStoreResponse.getData()));
             storeId = UUID.fromString(jsonNode.get("storeId").asText());
         } catch (Exception e) {
-            storeId = UUID.randomUUID();
             throw new AssertionError("Store ID extraction failed", e);
         }
     }
@@ -186,17 +185,17 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Store owner should be able to add a product to their store")
     void addProductToStoreTest() {
-        Response response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, validProduct, PRODUCT_QUANTITY);
+        Response<String> response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, validProduct, PRODUCT_QUANTITY);
 
         Assertions.assertNotNull(response, "Response should not be null");
         Assertions.assertFalse(response.isError(), "Product addition should succeed");
-        Assertions.assertNotNull(response.getJson(), "Response JSON should not be null");
+        Assertions.assertNotNull(response.getData(), "Response data should not be null");
     }
 
     @Test
     @DisplayName("Store owner should receive an error when adding a product with invalid data")
     void addInvalidProductToStoreTest() {
-        Response response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, invalidProduct, PRODUCT_QUANTITY);
+        Response<String> response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, invalidProduct, PRODUCT_QUANTITY);
 
         Assertions.assertNotNull(response, "Response should not be null");
         Assertions.assertTrue(response.isError(), "Response should indicate an error for invalid product data");
@@ -206,7 +205,7 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Unauthorized user should not be able to add a product to the store")
     void unauthorizedProductAdditionTest() {
-        Response response = bridge.addProductToStore(
+        Response<String> response = bridge.addProductToStore(
                 unauthorizedToken,
                 unauthorizedUsername,
                 storeId,
@@ -223,7 +222,7 @@ public class StoreOwnerTests {
     @DisplayName("Store owner should be able to edit product details")
     void editProductDetailsTest() {
         // First add a product to edit
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -232,9 +231,12 @@ public class StoreOwnerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Adding product for edit test should succeed");
 
+        // Get the product ID from the response
+        UUID productId = UUID.fromString(addResponse.getData());
+
         // Create modified product with same ID
         ProductRequest updatedProduct = new ProductRequest(
-                thirdTestProduct.getProductId(),
+                productId,
                 "Updated Product Name",
                 "Home Electronics",
                 "Updated high-quality description",
@@ -242,7 +244,7 @@ public class StoreOwnerTests {
         );
 
         // Edit the product
-        Response editResponse = bridge.editProductDetails(
+        Response<String> editResponse = bridge.editProductDetails(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -252,14 +254,14 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(editResponse, "Edit response should not be null");
         Assertions.assertFalse(editResponse.isError(), "Product edit should succeed");
-        Assertions.assertNotNull(editResponse.getJson(), "Edit response JSON should not be null");
+        Assertions.assertNotNull(editResponse.getData(), "Edit response data should not be null");
     }
 
     @Test
     @DisplayName("Store owner should receive an error when trying to edit a product with invalid data")
     void invalidProductEditTest() {
         // First add a product to edit
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -268,9 +270,12 @@ public class StoreOwnerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Adding product for edit test should succeed");
 
+        // Get the product ID
+        UUID productId = UUID.fromString(addResponse.getData());
+
         // Create invalid product edit with negative price
         ProductRequest invalidEditProduct = new ProductRequest(
-                thirdTestProduct.getProductId(),
+                productId,
                 "Invalid Update",
                 "Electronics",
                 "Product with invalid price",
@@ -278,7 +283,7 @@ public class StoreOwnerTests {
         );
 
         // Try to edit with invalid data
-        Response editResponse = bridge.editProductDetails(
+        Response<String> editResponse = bridge.editProductDetails(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -295,7 +300,7 @@ public class StoreOwnerTests {
     @DisplayName("Unauthorized user should not be able to edit product details")
     void unauthorizedProductEditTest() {
         // First add a product to edit
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -304,9 +309,12 @@ public class StoreOwnerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Adding product for edit test should succeed");
 
+        // Get the product ID
+        UUID productId = UUID.fromString(addResponse.getData());
+
         // Create valid edit request
         ProductRequest validEditRequest = new ProductRequest(
-                thirdTestProduct.getProductId(),
+                productId,
                 "Unauthorized Edit Attempt",
                 "Electronics",
                 "Attempt to edit by unauthorized user",
@@ -314,7 +322,7 @@ public class StoreOwnerTests {
         );
 
         // Try to edit as unauthorized user
-        Response editResponse = bridge.editProductDetails(
+        Response<String> editResponse = bridge.editProductDetails(
                 unauthorizedToken,
                 unauthorizedUsername,
                 storeId,
@@ -331,7 +339,7 @@ public class StoreOwnerTests {
     @DisplayName("Store owner should be able to remove a product from their store")
     void removeProductFromStoreTest() {
         // First add a product to remove
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -340,8 +348,12 @@ public class StoreOwnerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Adding product for remove test should succeed");
 
+        // Get the product ID
+        UUID productId = UUID.fromString(addResponse.getData());
+        thirdTestProduct.setProductId(productId);
+
         // Remove the product
-        Response removeResponse = bridge.removeProductFromStore(
+        Response<String> removeResponse = bridge.removeProductFromStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -350,7 +362,7 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(removeResponse, "Remove response should not be null");
         Assertions.assertFalse(removeResponse.isError(), "Product removal should succeed");
-        Assertions.assertNotNull(removeResponse.getJson(), "Remove response JSON should not be null");
+        Assertions.assertNotNull(removeResponse.getData(), "Remove response data should not be null");
     }
 
     @Test
@@ -364,7 +376,7 @@ public class StoreOwnerTests {
                 199.99
         );
 
-        Response removeResponse = bridge.removeProductFromStore(
+        Response<String> removeResponse = bridge.removeProductFromStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -380,7 +392,7 @@ public class StoreOwnerTests {
     @DisplayName("Unauthorized user should not be able to remove a product")
     void unauthorizedProductRemovalTest() {
         // First add a product to remove
-        Response addResponse = bridge.addProductToStore(
+        Response<String> addResponse = bridge.addProductToStore(
                 ownerToken,
                 ownerUsername,
                 storeId,
@@ -389,8 +401,12 @@ public class StoreOwnerTests {
         );
         Assertions.assertFalse(addResponse.isError(), "Adding product for remove test should succeed");
 
+        // Get the product ID
+        UUID productId = UUID.fromString(addResponse.getData());
+        thirdTestProduct.setProductId(productId);
+
         // Try to remove as unauthorized user
-        Response removeResponse = bridge.removeProductFromStore(
+        Response<String> removeResponse = bridge.removeProductFromStore(
                 unauthorizedToken,
                 unauthorizedUsername,
                 storeId,
@@ -405,7 +421,7 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Store owner should be able to appoint a store manager with specific permissions")
     void appointManagerTest() {
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -415,14 +431,14 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(appointResponse, "Appoint manager response should not be null");
         Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
-        Assertions.assertNotNull(appointResponse.getJson(), "Appoint manager response JSON should not be null");
+        Assertions.assertNotNull(appointResponse.getData(), "Appoint manager response data should not be null");
     }
 
     @Test
     @DisplayName("Store owner should receive an error when appointing someone who is already a manager")
     void appointExistingManagerTest() {
         // First appoint the manager
-        Response firstAppointResponse = bridge.appointManager(
+        Response<String> firstAppointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -432,7 +448,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(firstAppointResponse.isError(), "First manager appointment should succeed");
 
         // Try to appoint the same manager again
-        Response secondAppointResponse = bridge.appointManager(
+        Response<String> secondAppointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -449,7 +465,7 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Unauthorized user should not be able to appoint a manager")
     void unauthorizedManagerAppointmentTest() {
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId,
@@ -467,7 +483,7 @@ public class StoreOwnerTests {
     @DisplayName("Store owner should be able to edit manager permissions")
     void editManagerPermissionsTest() {
         // First appoint the manager
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -488,7 +504,7 @@ public class StoreOwnerTests {
         PermissionsRequest updatedPermissionsRequest = new PermissionsRequest(updatedPermissions);
 
         // Edit manager permissions
-        Response editPermissionsResponse = bridge.editManagerPermissions(
+        Response<String> editPermissionsResponse = bridge.editManagerPermissions(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -498,7 +514,7 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(editPermissionsResponse, "Edit permissions response should not be null");
         Assertions.assertFalse(editPermissionsResponse.isError(), "Updating manager permissions should succeed");
-        Assertions.assertNotNull(editPermissionsResponse.getJson(), "Edit permissions response JSON should not be null");
+        Assertions.assertNotNull(editPermissionsResponse.getData(), "Edit permissions response data should not be null");
     }
 
     @Test
@@ -506,7 +522,7 @@ public class StoreOwnerTests {
     void editNonExistentManagerPermissionsTest() {
         String nonExistentManager = "nonexistent" + UUID.randomUUID().toString();
 
-        Response editResponse = bridge.editManagerPermissions(
+        Response<String> editResponse = bridge.editManagerPermissions(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -524,7 +540,7 @@ public class StoreOwnerTests {
     @DisplayName("Unauthorized user should not be able to edit manager permissions")
     void unauthorizedManagerPermissionEditTest() {
         // First appoint the manager
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -534,7 +550,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
 
         // Try to edit permissions as unauthorized user
-        Response editResponse = bridge.editManagerPermissions(
+        Response<String> editResponse = bridge.editManagerPermissions(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId,
@@ -552,7 +568,7 @@ public class StoreOwnerTests {
     @DisplayName("Store owner should be able to remove a store manager")
     void removeManagerTest() {
         // First appoint the manager
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -562,7 +578,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
 
         // Remove the manager
-        Response removeResponse = bridge.removeManager(
+        Response<String> removeResponse = bridge.removeManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -571,7 +587,7 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(removeResponse, "Remove manager response should not be null");
         Assertions.assertFalse(removeResponse.isError(), "Manager removal should succeed");
-        Assertions.assertNotNull(removeResponse.getJson(), "Remove manager response JSON should not be null");
+        Assertions.assertNotNull(removeResponse.getData(), "Remove manager response data should not be null");
     }
 
     @Test
@@ -579,7 +595,7 @@ public class StoreOwnerTests {
     void removeNonExistentManagerTest() {
         String nonExistentManager = "nonexistent" + UUID.randomUUID().toString();
 
-        Response removeResponse = bridge.removeManager(
+        Response<String> removeResponse = bridge.removeManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -596,7 +612,7 @@ public class StoreOwnerTests {
     @DisplayName("Unauthorized user should not be able to remove a manager")
     void unauthorizedManagerRemovalTest() {
         // First appoint the manager
-        Response appointResponse = bridge.appointManager(
+        Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -606,7 +622,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(appointResponse.isError(), "Manager appointment should succeed");
 
         // Try to remove manager as unauthorized user
-        Response removeResponse = bridge.removeManager(
+        Response<String> removeResponse = bridge.removeManager(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId,
@@ -622,7 +638,7 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Store owner should be able to close their store")
     void closeStoreTest() {
-        Response closeResponse = bridge.closeStore(
+        Response<String> closeResponse = bridge.closeStore(
                 ownerUsername,
                 ownerToken,
                 storeId
@@ -630,7 +646,7 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(closeResponse, "Close store response should not be null");
         Assertions.assertFalse(closeResponse.isError(), "Store closure should succeed");
-        Assertions.assertNotNull(closeResponse.getJson(), "Close store response JSON should not be null");
+        Assertions.assertNotNull(closeResponse.getData(), "Close store response data should not be null");
     }
 
     @Test
@@ -638,7 +654,7 @@ public class StoreOwnerTests {
     void closeNonExistentStoreTest() {
         UUID nonExistentStoreId = UUID.randomUUID();
 
-        Response closeResponse = bridge.closeStore(
+        Response<String> closeResponse = bridge.closeStore(
                 ownerUsername,
                 ownerToken,
                 nonExistentStoreId
@@ -653,7 +669,7 @@ public class StoreOwnerTests {
     @Test
     @DisplayName("Unauthorized user should not be able to close a store")
     void unauthorizedStoreClosureTest() {
-        Response closeResponse = bridge.closeStore(
+        Response<String> closeResponse = bridge.closeStore(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId
@@ -669,7 +685,7 @@ public class StoreOwnerTests {
     @DisplayName("Store owner should be able to reopen a closed store")
     void reopenStoreTest() {
         // First close the store
-        Response closeResponse = bridge.closeStore(
+        Response<String> closeResponse = bridge.closeStore(
                 ownerUsername,
                 ownerToken,
                 storeId
@@ -677,7 +693,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(closeResponse.isError(), "Store closure should succeed");
 
         // Reopen the store
-        Response reopenResponse = bridge.reopenStore(
+        Response<String> reopenResponse = bridge.reopenStore(
                 ownerUsername,
                 ownerToken,
                 storeId
@@ -685,7 +701,7 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(reopenResponse, "Reopen store response should not be null");
         Assertions.assertFalse(reopenResponse.isError(), "Store reopening should succeed");
-        Assertions.assertNotNull(reopenResponse.getJson(), "Reopen store response JSON should not be null");
+        Assertions.assertNotNull(reopenResponse.getData(), "Reopen store response data should not be null");
     }
 
     @Test
@@ -693,7 +709,7 @@ public class StoreOwnerTests {
     void reopenNonExistentStoreTest() {
         UUID nonExistentStoreId = UUID.randomUUID();
 
-        Response reopenResponse = bridge.reopenStore(
+        Response<String> reopenResponse = bridge.reopenStore(
                 ownerUsername,
                 ownerToken,
                 nonExistentStoreId
@@ -709,7 +725,7 @@ public class StoreOwnerTests {
     @DisplayName("Unauthorized user should not be able to reopen a store")
     void unauthorizedStoreReopeningTest() {
         // First close the store
-        Response closeResponse = bridge.closeStore(
+        Response<String> closeResponse = bridge.closeStore(
                 ownerUsername,
                 ownerToken,
                 storeId
@@ -717,7 +733,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(closeResponse.isError(), "Store closure should succeed");
 
         // Try to reopen as unauthorized user
-        Response reopenResponse = bridge.reopenStore(
+        Response<String> reopenResponse = bridge.reopenStore(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId
@@ -742,16 +758,16 @@ public class StoreOwnerTests {
                 "New",
                 "Owner"
         );
-        Response registerResponse = bridge.registerUser(newOwnerRequest);
+        Response<String> registerResponse = bridge.registerUser(newOwnerRequest);
         Assertions.assertFalse(registerResponse.isError(), "New owner registration should succeed");
 
         // Login the new owner
-        Response loginResponse = bridge.loginUser(newOwnerUsername, newOwnerPassword);
+        Response<String> loginResponse = bridge.loginUser(newOwnerUsername, newOwnerPassword);
         Assertions.assertFalse(loginResponse.isError(), "New owner login should succeed");
-        String newOwnerToken = loginResponse.getJson();
+        String newOwnerToken = loginResponse.getData();
 
         // Appoint the new owner
-        Response appointResponse = bridge.appointOwner(
+        Response<String> appointResponse = bridge.appointOwner(
                 ownerUsername,
                 ownerToken,
                 storeId,
@@ -760,7 +776,7 @@ public class StoreOwnerTests {
         Assertions.assertFalse(appointResponse.isError(), "Owner appointment should succeed");
 
         // New owner gives up ownership
-        Response giveUpResponse = bridge.giveUpOwnerShip(
+        Response<String> giveUpResponse = bridge.giveUpOwnerShip(
                 newOwnerUsername,
                 newOwnerToken,
                 storeId
@@ -768,13 +784,13 @@ public class StoreOwnerTests {
 
         Assertions.assertNotNull(giveUpResponse, "Give up ownership response should not be null");
         Assertions.assertFalse(giveUpResponse.isError(), "Giving up ownership should succeed");
-        Assertions.assertNotNull(giveUpResponse.getJson(), "Give up ownership response JSON should not be null");
+        Assertions.assertNotNull(giveUpResponse.getData(), "Give up ownership response data should not be null");
     }
 
     @Test
     @DisplayName("Non-owner should not be able to give up ownership")
     void nonOwnerGiveUpOwnershipTest() {
-        Response giveUpResponse = bridge.giveUpOwnerShip(
+        Response<String> giveUpResponse = bridge.giveUpOwnerShip(
                 unauthorizedUsername,
                 unauthorizedToken,
                 storeId
