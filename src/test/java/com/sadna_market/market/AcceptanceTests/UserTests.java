@@ -124,8 +124,8 @@ public class UserTests {
         ProductRequest productRequest = new ProductRequest(
                 null, // No product ID for new product
                 PRODUCT_NAME,
-                PRODUCT_CATEGORY,
                 PRODUCT_DESCRIPTION,
+                PRODUCT_CATEGORY,
                 PRODUCT_PRICE
         );
 
@@ -413,7 +413,7 @@ public class UserTests {
         CreditCardDTO creditCard = new CreditCardDTO(
                 "John Doe",
                 "4111111111111111",
-                "15/25",
+                "12/25",
                 "123"
         );
 
@@ -667,7 +667,7 @@ public class UserTests {
         // Create a rating request for a non-existent product
         int rating = 5;
         ProductRateRequest rateRequest = new ProductRateRequest(
-                productId,
+                nonExistentProductId,
                 testUsername,
                 storeId,
                 rating

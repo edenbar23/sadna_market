@@ -48,12 +48,25 @@ public class CartRequest {
     }
 
     public void removeFromCartRequest(UUID storeId, UUID productId) {
-        if (baskets.containsKey(storeId)) {
-            Map<UUID, Integer> storeBasket = baskets.get(storeId);
-            storeBasket.remove(productId);
-            if (storeBasket.isEmpty()) {
-                baskets.remove(storeId);
-            }
+        // Check if the store exists in the cart
+        if (!baskets.containsKey(storeId)) {
+            throw new IllegalArgumentException("Store with ID " + storeId + " not found in cart");
+        }
+
+        // Get the store basket
+        Map<UUID, Integer> storeBasket = baskets.get(storeId);
+
+        // Check if the product exists in the store basket
+        if (!storeBasket.containsKey(productId)) {
+            throw new IllegalArgumentException("Product with ID " + productId + " not found in store basket");
+        }
+
+        // Remove the product
+        storeBasket.remove(productId);
+
+        // If the store basket is now empty, remove it too
+        if (storeBasket.isEmpty()) {
+            baskets.remove(storeId);
         }
     }
 }

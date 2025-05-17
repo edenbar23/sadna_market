@@ -55,7 +55,7 @@ public class ProductService {
                     request.getMinRank(),
                     request.getMaxRank()
             );
-
+            logger.info("products found: {}", result.toString());
             // Filter out empty Optionals and extract the products
             List<Product> products = result.stream()
                     .filter(Optional::isPresent)

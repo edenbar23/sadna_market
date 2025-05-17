@@ -83,11 +83,13 @@ public class InMemoryAuthRepository implements IAuthRepository {
         logger.info("Auth repository cleared");
     }
 
-    private synchronized boolean hasMember(String username) {
+    public synchronized boolean hasMember(String username) {
         return username2Password.containsKey(username);
     }
 
     private boolean checkPassword(String userName, String password) {
         return PasswordEncryptor.verifyPassword(password, username2Password.get(userName));
     }
+
+
 }
