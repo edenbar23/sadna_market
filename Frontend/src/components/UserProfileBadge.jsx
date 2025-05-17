@@ -8,7 +8,7 @@ function UserProfileBadge({ user }) {
         alt="Profile"
         className="profile-pic"
       />
-      <span>{user ? user.name : "Guest"}</span>
+      <span>{user ? user.username : "Guest"}</span>
     </div>
   );
 }

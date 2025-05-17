@@ -20,7 +20,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem; /* optional spacing */
+    /*padding: 1rem; /* optional spacing */
     background-color: #f9f9f9; /* optional background */
     border-bottom: 1px solid #eaeaea; /* optional border */
     position: relative; /* For absolute positioning of children */

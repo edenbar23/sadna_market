@@ -6,13 +6,17 @@ import { Link } from "react-router-dom";
 import LoginBanner from "./LoginBanner"; 
 import RegisterBanner from "./RegisterBanner"; 
 import { fetchUserStores } from "../api/user";
+import AdminControls from "./AdminControls";
+import { useNavigate } from "react-router-dom";
+
+
 
 
 function HeaderBar({ user, onLogout, onLogin }) {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [userStores, setUserStores] = useState([]);
-
+  const navigate = useNavigate();
   useEffect(() => {
     if (user) {
       fetchUserStores(user.username).then(setUserStores).catch(console.error);
@@ -24,6 +28,9 @@ function HeaderBar({ user, onLogout, onLogin }) {
       <header className="header">
         {/* Left Side */}
         <UserProfileBadge user={user} />
+        {/* Admin Controls - only for admin users */}
+        {user?.role === "admin" && <AdminControls />}
+        
         {user && (
             userStores.length > 0 ? (
               <Link to="/my-stores">
@@ -54,7 +61,10 @@ function HeaderBar({ user, onLogout, onLogin }) {
               <Link to="/orders">
                 <button className="button">Orders</button>
               </Link>
-              <button className="button" onClick={onLogout}>Logout</button>
+              <button className="button" onClick={() => {
+    onLogout();        // Clear user session
+    navigate("/");     // Redirect to homepage
+  }}>Logout</button>
             </>
           ) : (
             <>
