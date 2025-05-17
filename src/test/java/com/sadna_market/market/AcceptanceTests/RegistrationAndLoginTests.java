@@ -120,5 +120,48 @@ public class RegistrationAndLoginTests {
         Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
     }
 
+    @Test
+    void invalidLogout() {
+        // Create two users
+        String loggedInUsername = "loggedInUser";
+        String notLoggedInUsername = "notLoggedInUser";
+        String password = "Password123!";
+
+        // Register both users
+        RegisterRequest registerRequest1 = new RegisterRequest(
+                loggedInUsername,
+                password,
+                loggedInUsername + "@example.com",
+                "Logged",
+                "User"
+        );
+        RegisterRequest registerRequest2 = new RegisterRequest(
+                notLoggedInUsername,
+                password,
+                notLoggedInUsername + "@example.com",
+                "NotLogged",
+                "User"
+        );
+
+        bridge.registerUser(registerRequest1);
+        bridge.registerUser(registerRequest2);
+
+        // Login the first user
+        Response loginResponse = bridge.loginUser(loggedInUsername, password);
+        Assertions.assertFalse(loginResponse.isError(), "Login should succeed");
+
+        // Extract the token from the logged-in user
+        String validToken = loginResponse.getJson();
+
+        // Try to logout the second user using the first user's token
+        // Did this because i wanted to use a valid token sturcture
+        Response logoutResponse = bridge.logout(notLoggedInUsername, validToken);
+
+        // Verify that the logout attempt fails
+        Assertions.assertNotNull(logoutResponse, "Logout response should not be null");
+        Assertions.assertTrue(logoutResponse.isError(), "Logout with mismatched token should fail");
+        Assertions.assertNotNull(logoutResponse.getErrorMessage(), "Error message should not be null");
+    }
+
 
 }

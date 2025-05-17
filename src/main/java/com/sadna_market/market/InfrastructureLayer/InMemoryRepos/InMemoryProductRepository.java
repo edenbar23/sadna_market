@@ -69,7 +69,6 @@ public class InMemoryProductRepository implements IProductRepository {
 
     @Override
     public UUID addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
-        logger.debug("Adding new product");
 
         // Check if a product with the same name already exists
         Optional<Product> existingProduct = productStorage.values().stream()
@@ -251,33 +250,37 @@ public class InMemoryProductRepository implements IProductRepository {
                     .filter(product -> product.getName().toLowerCase().contains(name.toLowerCase()))
                     .map(Product::getProductId)
                     .collect(Collectors.toSet());
+            logger.info("Filtered by name IDs: {}", nameIds);
             resultIds.retainAll(nameIds);
         }
 
+
         if (category != null && !category.isEmpty()) {
             Set<UUID> categoryIds = productStorage.values().stream()
-                    .filter(product -> product.getCategory().equalsIgnoreCase(category))
+                    .filter(product -> product.getCategory().toLowerCase().contains(category.toLowerCase()))
                     .map(Product::getProductId)
                     .collect(Collectors.toSet());
+            logger.info("Filtered by category IDs: {}", categoryIds);
             resultIds.retainAll(categoryIds);
         }
 
-        if (minPrice != null && maxPrice != null) {
+        if (minPrice != -1.0 && maxPrice != -1.0) {
             Set<UUID> priceIds = productStorage.values().stream()
                     .filter(product -> product.getPrice() >= minPrice && product.getPrice() <= maxPrice)
                     .map(Product::getProductId)
                     .collect(Collectors.toSet());
+            logger.info("Filtered by price IDs: {}", priceIds);
             resultIds.retainAll(priceIds);
         }
 
-        if (minRate != null && maxRate != null) {
+        if (minRate != -1.0 && maxRate != -1.0) {
             Set<UUID> rateIds = productStorage.values().stream()
                     .filter(product -> product.getRate() >= minRate && product.getRate() <= maxRate)
                     .map(Product::getProductId)
                     .collect(Collectors.toSet());
+            logger.info("Filtered by rate IDs: {}", rateIds);
             resultIds.retainAll(rateIds);
         }
-
         return getProductsByIds(resultIds);
     }
 

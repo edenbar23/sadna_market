@@ -170,8 +170,10 @@ public class UserService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username,token);
+            authentication.logout(username);
             logger.info("Logging out user with username: {}", username);
             userAccessService.logoutUser(username);
+
             return Response.success("User logged out successfully");
         } catch (Exception e) {
             logger.error("Error logging out user: {}", e.getMessage());

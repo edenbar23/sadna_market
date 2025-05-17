@@ -85,6 +85,7 @@ public class UserAccessService {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
+            checkIfLoggedIn(username);
             // Invalidate the user's session (implementation depends on session management)
             user.logout();
             userRepository.update(user);
@@ -130,6 +131,7 @@ public class UserAccessService {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
+            checkIfLoggedIn(username);
             // Check if the old password matches
             if (!user.getPassword().equals(oldPassword)) {
                 logger.error("Old password does not match for user: {}", username);
@@ -153,6 +155,7 @@ public class UserAccessService {
 
     public boolean deleteUser(String adminUser, String userToDelete) {
         validateAdmin(adminUser);
+        checkIfLoggedIn(adminUser);
         if(userToDelete.equals(adminUser)) {
             throw new IllegalArgumentException("Admin can't delete himself!");
         }
@@ -184,10 +187,12 @@ public class UserAccessService {
     public Cart addToCart(String username, UUID storeId, UUID productId, int quantity) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            checkIfLoggedIn(username);
             if(storeRepository.hasProductInStock(storeId, productId, quantity)) {
                 Cart updatedCart = user.addToCart(storeId, productId, quantity);
                 userRepository.update(user);
                 logger.info("Product added to cart successfully for user: {}", username);
+                logger.info("Current Cart: {}", updatedCart.toString());
                 return updatedCart;
             }
             else throw new IllegalArgumentException("Store does not have product in stock");
@@ -201,6 +206,11 @@ public class UserAccessService {
     public Cart removeFromCart(String username, UUID storeId, UUID productId) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            checkIfLoggedIn(username);
+            // find product in store
+            if (!storeRepository.hasProductInStock(storeId, productId, 1)) {
+                throw new IllegalArgumentException("Store does not have product in stock");
+            }
             Cart updatedCart = user.removeFromCart(storeId, productId);
             logger.info("Successfully removed from cart for user: {}", username);
             userRepository.update(user);
@@ -214,7 +224,15 @@ public class UserAccessService {
 
     public Cart updateCart(String username, UUID storeId, UUID productId, int quantity) {
         try {
+            if (quantity <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than 0");
+            }
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            // find product in store
+            if (!storeRepository.hasProductInStock(storeId, productId, quantity)) {
+                throw new IllegalArgumentException("Store does not have product in stock");
+            }
+            checkIfLoggedIn(username);
             Cart updatedCart = user.updateCart(storeId, productId, quantity);
             userRepository.update(user);
             logger.info("Successfully updated cart for user: {}", username);
@@ -229,6 +247,7 @@ public class UserAccessService {
     public Cart getCart(String username) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            checkIfLoggedIn(username);
             return user.getCart();
         }
         catch (Exception e) {
@@ -239,11 +258,13 @@ public class UserAccessService {
 
     public List<UUID> getOrdersHistory(String username) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        checkIfLoggedIn(username);
         return user.getOrdersHistory();
     }
 
     public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        checkIfLoggedIn(username);
         // Implementation logic for saving review
         logger.info("Saved review for product {} by user {}", productId, username);
     }
@@ -273,8 +294,11 @@ public class UserAccessService {
         try {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("user not found!"));
-            Cart cart = user.getCart();
 
+            checkIfLoggedIn(username);
+            Cart cart = user.getCart();
+            System.out.println("printing cart.toString()");
+            System.out.println(cart.toString());
             if (cart.isEmpty()) {
                 throw new IllegalArgumentException("Cart is empty");
             }
@@ -294,6 +318,7 @@ public class UserAccessService {
 
     public void saveRate(String username, UUID storeId, UUID productId, int rating) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        checkIfLoggedIn(username);
         // Implementation for saving product rating
         logger.info("Saved rating {} for product {} by user {}", rating, productId, username);
     }
@@ -301,7 +326,7 @@ public class UserAccessService {
     public void reportViolation(String username, UUID storeId, UUID productId, String comment) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("user not found!"));
-
+        checkIfLoggedIn(username);
         // Create the report first
         Report report = new Report(username, comment, storeId, productId);
         user.addReport(report.getReportId());
@@ -318,6 +343,7 @@ public class UserAccessService {
     public User returnInfo(String username) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            checkIfLoggedIn(username);
             return user;
         } catch (Exception e) {
             logger.error("Failed to get user info: {}", username);
@@ -328,6 +354,7 @@ public class UserAccessService {
     public User changeUserInfo(String username, String userName, String password, String email, String firstName, String lastName) {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            checkIfLoggedIn(username);
             if (password != null) {
                 user.setPassword(password);
             }
@@ -381,6 +408,7 @@ public class UserAccessService {
 
     public List<Report> getViolationReports(String admin) {
         validateAdmin(admin);
+        checkIfLoggedIn(admin);
         List<Report> reports = reportRepository.getAllReports();
         if (reports.isEmpty()) {
             logger.info("No violation reports found");
@@ -391,16 +419,19 @@ public class UserAccessService {
 
     public double getTransactionsRatePerHour(String admin) {
         validateAdmin(admin);
+        checkIfLoggedIn(admin);
         return cleanupAndCount(transactionTimestamps);
     }
 
     public double getSubscriptionsRatePerHour(String admin) {
         validateAdmin(admin);
+        checkIfLoggedIn(admin);
         return cleanupAndCount(subscriptionTimestamps);
     }
 
     public void replyViolationReport(String admin, UUID reportId, String user, String message) {
         validateAdmin(admin);
+        checkIfLoggedIn(admin);
         // Publish a message for the report reply instead of direct call
         DomainEventPublisher.publish(
                 new ViolationReplyEvent(admin, reportId, user, message)
@@ -410,6 +441,7 @@ public class UserAccessService {
 
     public void sendMessageToUser(String admin, String addressee, String message) {
         validateAdmin(admin);
+        checkIfLoggedIn(admin);
         // Publish direct message event instead of direct call
         DomainEventPublisher.publish(
                 new DirectMessageEvent(admin, addressee, message)
@@ -485,5 +517,12 @@ public class UserAccessService {
         reportRepository.clear();
         userRepository.clear();
         storeRepository.clear();
+    }
+
+    private void checkIfLoggedIn(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        if (!user.isLoggedIn()) {
+            throw new IllegalArgumentException("User is not logged in");
+        }
     }
 }

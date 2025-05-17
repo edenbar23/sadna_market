@@ -5,6 +5,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 @Component
 public class AuthenticationBridge {
 
@@ -38,6 +41,7 @@ public class AuthenticationBridge {
     }
 
     public String checkSessionToken(String jwt) {
+
         if (!tokenService.validateToken(jwt)) {
             logger.info("Invalid token");
             throw new IllegalArgumentException("Invalid token");
@@ -50,7 +54,11 @@ public class AuthenticationBridge {
 
     public void validateToken(String username, String jwt) {
         logger.info("Validating token for user: {}", username);
-
+        // Check if the user exists
+        if (!authRepository.hasMember(username)) {
+            logger.error("User does not exist: {}", username);
+            throw new NoSuchElementException("User does not exist");
+        }
         // First check if the token is valid
         if (!tokenService.validateToken(jwt)) {
             logger.error("Invalid token");
@@ -67,8 +75,14 @@ public class AuthenticationBridge {
         }
     }
 
+    public void logout(String username) {
+        logger.info("Logging out user: {}", username);
+        authRepository.removeUser(username);
+    }
+
     public void clear() {
         authRepository.clear();
         logger.info("Authentication bridge cleared");
     }
+
 }
