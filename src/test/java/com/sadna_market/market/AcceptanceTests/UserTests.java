@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.DTOs.CartDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
@@ -736,5 +737,65 @@ public class UserTests {
         Assertions.assertNotNull(historyResponse, "Order history response should not be null");
         Assertions.assertTrue(historyResponse.isError(), "Retrieving order history while logged out should fail");
         Assertions.assertNotNull(historyResponse.getErrorMessage(), "Response should contain error message");
+    }
+
+    @Test
+    void successfulMessageSendTest() {
+        // Create a message request
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        // Send the message
+        Response<MessageDTO> response = bridge.sendMessage(testUsername, testToken, messageRequest);
+
+        // Verify the response
+        Assertions.assertNotNull(response, "Response should not be null");
+        Assertions.assertFalse(response.isError(), "Message sending should succeed");
+        Assertions.assertNotNull(response.getData(), "Response should contain message data");
+
+    }
+
+    @Test
+    void sendMessageToNonExistingStoreTest() {
+        // Generate a random UUID for a non-existent store
+        UUID nonExistentStoreId = UUID.randomUUID();
+
+        // Create a message request to a non-existent store
+        MessageRequest messageRequest = new MessageRequest(
+                nonExistentStoreId,
+                "This message is going to a non-existent store."
+        );
+
+        // Attempt to send the message
+        Response<MessageDTO> response = bridge.sendMessage(testUsername, testToken, messageRequest);
+
+        // Verify the response indicates an error
+        Assertions.assertNotNull(response, "Response should not be null");
+        Assertions.assertTrue(response.isError(), "Sending message to non-existent store should fail");
+        Assertions.assertNotNull(response.getErrorMessage(), "Response should contain error message");
+    }
+
+    @Test
+    void loggedOutUserMessageSendTest() {
+        // First, log out the user
+        Response<String> logoutResponse = bridge.logout(testUsername, testToken);
+        Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
+
+        // Create a message request
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "This message is being sent while logged out."
+        );
+
+        // Attempt to send the message while logged out
+        Response<MessageDTO> response = bridge.sendMessage(testUsername, testToken, messageRequest);
+
+        // Verify the response indicates an error
+        Assertions.assertNotNull(response, "Response should not be null");
+        Assertions.assertTrue(response.isError(), "Sending message while logged out should fail");
+        Assertions.assertNotNull(response.getErrorMessage(), "Response should contain error message");
+
     }
 }
