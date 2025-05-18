@@ -3,15 +3,14 @@ package com.sadna_market.market.AcceptanceTests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
-import com.sadna_market.market.ApplicationLayer.Requests.PermissionsRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
-import com.sadna_market.market.ApplicationLayer.Requests.StoreRequest;
+import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
+import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.Permission;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -800,5 +799,233 @@ public class StoreOwnerTests {
         Assertions.assertTrue(giveUpResponse.isError(),
                 "Response should indicate an error when non-owner tries to give up ownership");
         Assertions.assertNotNull(giveUpResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+    @Test
+    void successfulMessageReplyTest() {
+        // First, create a message to reply to
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        // Send the message as unauthorized user (customer)
+        Response<MessageDTO> sendResponse = bridge.sendMessage(
+                unauthorizedUsername,
+                unauthorizedToken,
+                messageRequest
+        );
+        Assertions.assertFalse(sendResponse.isError(), "Message sending should succeed");
+
+        // Get the message ID
+        UUID messageId = sendResponse.getData().getMessageId();
+
+        // Create a reply request
+        MessageReplyRequest replyRequest = new MessageReplyRequest(
+                messageId,
+                "Thank you for your inquiry. How can I help you?"
+        );
+
+        // Reply to the message as store owner
+        Response<String> replyResponse = bridge.replyToMessage(
+                ownerUsername,
+                ownerToken,
+                replyRequest
+        );
+
+        // Verify response
+        Assertions.assertNotNull(replyResponse, "Reply response should not be null");
+        Assertions.assertFalse(replyResponse.isError(), "Message reply should succeed");
+        Assertions.assertNotNull(replyResponse.getData(), "Reply response data should not be null");
+    }
+
+    @Test
+    void unauthorizedUserMessageReplyTest() {
+        // First, create a message to reply to
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        // Send the message as one unauthorized user
+        Response<MessageDTO> sendResponse = bridge.sendMessage(
+                unauthorizedUsername,
+                unauthorizedToken,
+                messageRequest
+        );
+        Assertions.assertFalse(sendResponse.isError(), "Message sending should succeed");
+
+        // Get the message ID
+        UUID messageId = sendResponse.getData().getMessageId();
+
+        // Create a reply request
+        MessageReplyRequest replyRequest = new MessageReplyRequest(
+                messageId,
+                "I'm trying to reply but I'm not the store owner."
+        );
+
+        // Try to reply to the message as another unauthorized user
+        Response<String> replyResponse = bridge.replyToMessage(
+                managerUsername,  // Manager isn't appointed to this store yet
+                managerToken,
+                replyRequest
+        );
+
+        // Verify response indicates an error
+        Assertions.assertNotNull(replyResponse, "Response should not be null");
+        Assertions.assertTrue(replyResponse.isError(),
+                "Response should indicate an error for unauthorized message reply");
+        Assertions.assertNotNull(replyResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+    @Test
+    void loggedOutUserMessageReplyTest() {
+        // First, create a message to reply to
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        // Send the message as unauthorized user
+        Response<MessageDTO> sendResponse = bridge.sendMessage(
+                unauthorizedUsername,
+                unauthorizedToken,
+                messageRequest
+        );
+        Assertions.assertFalse(sendResponse.isError(), "Message sending should succeed");
+
+        // Get the message ID
+        UUID messageId = sendResponse.getData().getMessageId();
+
+        // Log out the owner
+        Response<String> logoutResponse = bridge.logout(ownerUsername, ownerToken);
+        Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
+
+        // Create a reply request
+        MessageReplyRequest replyRequest = new MessageReplyRequest(
+                messageId,
+                "I'm trying to reply but I'm logged out."
+        );
+
+        // Try to reply to the message while logged out
+        Response<String> replyResponse = bridge.replyToMessage(
+                ownerUsername,
+                ownerToken,  // This token is now invalid
+                replyRequest
+        );
+
+        // Verify response indicates an error
+        Assertions.assertNotNull(replyResponse, "Response should not be null");
+        Assertions.assertTrue(replyResponse.isError(),
+                "Response should indicate an error for logged out user");
+        Assertions.assertNotNull(replyResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+    @Test
+    void successfulGetUserMessagesTest() {
+        // First, send a message to create some data
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        Response<MessageDTO> sendResponse = bridge.sendMessage(
+                unauthorizedUsername,
+                unauthorizedToken,
+                messageRequest
+        );
+        Assertions.assertFalse(sendResponse.isError(), "Message sending should succeed");
+
+        // Get the user's messages
+        Response<List<MessageDTO>> messagesResponse = bridge.getUserMessages(
+                unauthorizedUsername,
+                unauthorizedToken
+        );
+
+        // Verify response
+        Assertions.assertNotNull(messagesResponse, "Get messages response should not be null");
+        Assertions.assertFalse(messagesResponse.isError(), "Getting user messages should succeed");
+        Assertions.assertNotNull(messagesResponse.getData(), "Messages response data should not be null");
+
+        // Verify that the messages list contains at least the message we sent
+        List<MessageDTO> messages = messagesResponse.getData();
+        Assertions.assertFalse(messages.isEmpty(), "Messages list should not be empty");
+
+        // Find our specific message
+        boolean messageFound = false;
+        for (MessageDTO message : messages) {
+            if (message.getStoreId().equals(storeId) &&
+                    message.getContent().equals("Hello, I have a question about your products.")) {
+                messageFound = true;
+                break;
+            }
+        }
+
+        Assertions.assertTrue(messageFound, "The sent message should be found in the user's messages");
+    }
+
+    @Test
+    void unauthorizedUserGetMessagesTest() {
+        // Create another user who hasn't sent any messages
+        String anotherUsername = "anotheruser";
+        String anotherPassword = "Another123!";
+        RegisterRequest anotherRequest = new RegisterRequest(
+                anotherUsername,
+                anotherPassword,
+                anotherUsername + "@example.com",
+                "Another",
+                "User"
+        );
+        Response<String> registerResponse = bridge.registerUser(anotherRequest);
+        Assertions.assertFalse(registerResponse.isError(), "Another user registration should succeed");
+
+        // Login the new user
+        Response<String> loginResponse = bridge.loginUser(anotherUsername, anotherPassword);
+        Assertions.assertFalse(loginResponse.isError(), "Another user login should succeed");
+        String anotherToken = loginResponse.getData();
+
+        // Try to get messages for a different user
+        Response<List<MessageDTO>> messagesResponse = bridge.getUserMessages(
+                unauthorizedUsername,  // Trying to get messages for a different user
+                anotherToken          // Using another user's token
+        );
+
+        // Verify response indicates an error
+        Assertions.assertNotNull(messagesResponse, "Response should not be null");
+        Assertions.assertTrue(messagesResponse.isError(),
+                "Response should indicate an error for unauthorized access");
+        Assertions.assertNotNull(messagesResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+    @Test
+    void loggedOutUserGetMessagesTest() {
+        // First, send a message to create some data
+        MessageRequest messageRequest = new MessageRequest(
+                storeId,
+                "Hello, I have a question about your products."
+        );
+
+        Response<MessageDTO> sendResponse = bridge.sendMessage(
+                unauthorizedUsername,
+                unauthorizedToken,
+                messageRequest
+        );
+        Assertions.assertFalse(sendResponse.isError(), "Message sending should succeed");
+
+        // Log out the user
+        Response<String> logoutResponse = bridge.logout(unauthorizedUsername, unauthorizedToken);
+        Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
+
+        // Try to get messages while logged out
+        Response<List<MessageDTO>> messagesResponse = bridge.getUserMessages(
+                unauthorizedUsername,
+                unauthorizedToken  // This token is now invalid
+        );
+
+        // Verify response indicates an error
+        Assertions.assertNotNull(messagesResponse, "Response should not be null");
+        Assertions.assertTrue(messagesResponse.isError(),
+                "Response should indicate an error for logged out user");
+        Assertions.assertNotNull(messagesResponse.getErrorMessage(), "Error message should not be null");
     }
 }
