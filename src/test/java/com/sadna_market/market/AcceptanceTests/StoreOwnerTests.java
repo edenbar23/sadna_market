@@ -183,7 +183,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to add a product to their store")
+    //@DisplayName("Store owner should be able to add a product to their store")
     void addProductToStoreTest() {
         Response<String> response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, validProduct, PRODUCT_QUANTITY);
 
@@ -193,7 +193,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when adding a product with invalid data")
+    //@DisplayName("Store owner should receive an error when adding a product with invalid data")
     void addInvalidProductToStoreTest() {
         Response<String> response = bridge.addProductToStore(ownerToken, ownerUsername, storeId, invalidProduct, PRODUCT_QUANTITY);
 
@@ -203,7 +203,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to add a product to the store")
+    //@DisplayName("Unauthorized user should not be able to add a product to the store")
     void unauthorizedProductAdditionTest() {
         Response<String> response = bridge.addProductToStore(
                 unauthorizedToken,
@@ -219,7 +219,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to edit product details")
+    //@DisplayName("Store owner should be able to edit product details")
     void editProductDetailsTest() {
         // First add a product to edit
         Response<String> addResponse = bridge.addProductToStore(
@@ -258,7 +258,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when trying to edit a product with invalid data")
+    //@DisplayName("Store owner should receive an error when trying to edit a product with invalid data")
     void invalidProductEditTest() {
         // First add a product to edit
         Response<String> addResponse = bridge.addProductToStore(
@@ -297,7 +297,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to edit product details")
+    //@DisplayName("Unauthorized user should not be able to edit product details")
     void unauthorizedProductEditTest() {
         // First add a product to edit
         Response<String> addResponse = bridge.addProductToStore(
@@ -336,7 +336,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to remove a product from their store")
+    //@DisplayName("Store owner should be able to remove a product from their store")
     void removeProductFromStoreTest() {
         // First add a product to remove
         Response<String> addResponse = bridge.addProductToStore(
@@ -366,7 +366,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when removing a non-existent product")
+    //@DisplayName("Store owner should receive an error when removing a non-existent product")
     void removeNonExistentProductTest() {
         ProductRequest nonExistentProduct = new ProductRequest(
                 UUID.randomUUID(),
@@ -389,7 +389,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to remove a product")
+    //@DisplayName("Unauthorized user should not be able to remove a product")
     void unauthorizedProductRemovalTest() {
         // First add a product to remove
         Response<String> addResponse = bridge.addProductToStore(
@@ -419,7 +419,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to appoint a store manager with specific permissions")
+    //@DisplayName("Store owner should be able to appoint a store manager with specific permissions")
     void appointManagerTest() {
         Response<String> appointResponse = bridge.appointManager(
                 ownerUsername,
@@ -435,7 +435,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when appointing someone who is already a manager")
+    //@DisplayName("Store owner should receive an error when appointing someone who is already a manager")
     void appointExistingManagerTest() {
         // First appoint the manager
         Response<String> firstAppointResponse = bridge.appointManager(
@@ -463,7 +463,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to appoint a manager")
+    //@DisplayName("Unauthorized user should not be able to appoint a manager")
     void unauthorizedManagerAppointmentTest() {
         Response<String> appointResponse = bridge.appointManager(
                 unauthorizedUsername,
@@ -480,7 +480,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to edit manager permissions")
+    //@DisplayName("Store owner should be able to edit manager permissions")
     void editManagerPermissionsTest() {
         // First appoint the manager
         Response<String> appointResponse = bridge.appointManager(
@@ -518,7 +518,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when editing permissions for a non-existent manager")
+    //@DisplayName("Store owner should receive an error when editing permissions for a non-existent manager")
     void editNonExistentManagerPermissionsTest() {
         String nonExistentManager = "nonexistent" + UUID.randomUUID().toString();
 
@@ -537,7 +537,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to edit manager permissions")
+    //@DisplayName("Unauthorized user should not be able to edit manager permissions")
     void unauthorizedManagerPermissionEditTest() {
         // First appoint the manager
         Response<String> appointResponse = bridge.appointManager(
@@ -565,7 +565,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to remove a store manager")
+    //@DisplayName("Store owner should be able to remove a store manager")
     void removeManagerTest() {
         // First appoint the manager
         Response<String> appointResponse = bridge.appointManager(
@@ -591,7 +591,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when removing a non-existent manager")
+    //@DisplayName("Store owner should receive an error when removing a non-existent manager")
     void removeNonExistentManagerTest() {
         String nonExistentManager = "nonexistent" + UUID.randomUUID().toString();
 
@@ -609,7 +609,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to remove a manager")
+    //@DisplayName("Unauthorized user should not be able to remove a manager")
     void unauthorizedManagerRemovalTest() {
         // First appoint the manager
         Response<String> appointResponse = bridge.appointManager(
@@ -636,7 +636,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to close their store")
+    //@DisplayName("Store owner should be able to close their store")
     void closeStoreTest() {
         Response<String> closeResponse = bridge.closeStore(
                 ownerUsername,
@@ -650,7 +650,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when closing a non-existent store")
+    //@DisplayName("Store owner should receive an error when closing a non-existent store")
     void closeNonExistentStoreTest() {
         UUID nonExistentStoreId = UUID.randomUUID();
 
@@ -667,7 +667,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to close a store")
+    //@DisplayName("Unauthorized user should not be able to close a store")
     void unauthorizedStoreClosureTest() {
         Response<String> closeResponse = bridge.closeStore(
                 unauthorizedUsername,
@@ -682,7 +682,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should be able to reopen a closed store")
+    //@DisplayName("Store owner should be able to reopen a closed store")
     void reopenStoreTest() {
         // First close the store
         Response<String> closeResponse = bridge.closeStore(
@@ -705,7 +705,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Store owner should receive an error when reopening a non-existent store")
+    //@DisplayName("Store owner should receive an error when reopening a non-existent store")
     void reopenNonExistentStoreTest() {
         UUID nonExistentStoreId = UUID.randomUUID();
 
@@ -722,7 +722,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Unauthorized user should not be able to reopen a store")
+    //@DisplayName("Unauthorized user should not be able to reopen a store")
     void unauthorizedStoreReopeningTest() {
         // First close the store
         Response<String> closeResponse = bridge.closeStore(
@@ -746,10 +746,10 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Appointed store owner should be able to give up ownership")
+    //@DisplayName("Appointed store owner should be able to give up ownership")
     void giveUpOwnershipTest() {
         // Create a new owner to appoint
-        String newOwnerUsername = "newowner_" + System.currentTimeMillis();
+        String newOwnerUsername = "newowner";
         String newOwnerPassword = "NewOwner123!";
         RegisterRequest newOwnerRequest = new RegisterRequest(
                 newOwnerUsername,
@@ -788,7 +788,7 @@ public class StoreOwnerTests {
     }
 
     @Test
-    @DisplayName("Non-owner should not be able to give up ownership")
+    //@DisplayName("Non-owner should not be able to give up ownership")
     void nonOwnerGiveUpOwnershipTest() {
         Response<String> giveUpResponse = bridge.giveUpOwnerShip(
                 unauthorizedUsername,

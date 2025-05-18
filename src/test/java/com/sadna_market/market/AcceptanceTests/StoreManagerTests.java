@@ -161,7 +161,7 @@ public class StoreManagerTests {
     }
 
     @Test
-    @DisplayName("Store manager should be able to add a product (permitted operation)")
+    //@DisplayName("Store manager should be able to add a product (permitted operation)")
     void managerAddProductTest() {
         // Since the manager has ADD_PRODUCT permission, this should succeed
         Response<String> addResponse = bridge.addProductToStore(
@@ -178,7 +178,7 @@ public class StoreManagerTests {
     }
 
     @Test
-    @DisplayName("Store manager should be able to edit a product (permitted operation)")
+    //@DisplayName("Store manager should be able to edit a product (permitted operation)")
     void managerEditProductTest() {
         // First, owner adds a product to the store
         Response<String> addResponse = bridge.addProductToStore(
@@ -215,7 +215,7 @@ public class StoreManagerTests {
     }
 
     @Test
-    @DisplayName("Store manager should not be able to remove a product (unpermitted operation)")
+    //@DisplayName("Store manager should not be able to remove a product (unpermitted operation)")
     void unauthorizedProductRemoval() {
         // First, owner adds a product to the store
         Response<String> addResponse = bridge.addProductToStore(
@@ -246,7 +246,7 @@ public class StoreManagerTests {
     }
 
     @Test
-    @DisplayName("Store manager should not be able to appoint another manager (unpermitted operation)")
+    //@DisplayName("Store manager should not be able to appoint another manager (unpermitted operation)")
     void unauthorizedAppointmentTest() {
         // Create a third user who would be appointed as manager
         String thirdUsername = "thirduser_" + System.currentTimeMillis();
