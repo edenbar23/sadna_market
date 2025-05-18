@@ -47,7 +47,12 @@ export const mockUsers = [
   
       orders: [],
       messages: [],
-    },
+  },
+  {
+    username: "admin",
+    role: "admin",
+    
+    }
   ];
   
   

@@ -1193,3 +1193,26 @@ h2 {
 .btn-decline:hover {
   background-color: #dc2626;
 }
+
+
+.admin-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.admin-button {
+  background-color: #1f2937; /* dark gray */
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.admin-button:hover {
+  background-color: #374151; /* slightly lighter gray */
+}
