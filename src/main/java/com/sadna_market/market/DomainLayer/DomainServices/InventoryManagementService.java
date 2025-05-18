@@ -40,6 +40,10 @@ public class InventoryManagementService {
             throw new IllegalArgumentException("Quantity cannot be negative");
         }
 
+        if (price < 0){
+            throw new IllegalArgumentException("Price cannot be negative");
+        }
+
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
 
@@ -141,6 +145,9 @@ public class InventoryManagementService {
 
         if (productId == null) {
             throw new IllegalArgumentException("Product ID cannot be null");
+        }
+        if (price < 0){
+            throw new IllegalArgumentException("Price cannot be negative");
         }
 
         Store store = storeRepository.findById(storeId)

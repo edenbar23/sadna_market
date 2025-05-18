@@ -446,9 +446,14 @@ public class StoreManagementService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
 
-        if (!store.isFounder(username)) {
-            logger.error("User '{}' is not the founder of store '{}'", username, storeId);
+        if (store.isFounder(username)) {
+            logger.error("User '{}' is  the founder of store, so he cannot give up his ownership '{}'", username, storeId);
             throw new InsufficientPermissionsException("User is not the founder of the store: " + storeId);
+        }
+
+        if (!store.isStoreOwner(username)){
+            logger.error("User '{}' is not a store manager", username);
+            throw new InsufficientPermissionsException("User is not a store manager of the store: " + storeId);
         }
 
         if (store.getOwnerUsernames().size() <= 1) {
