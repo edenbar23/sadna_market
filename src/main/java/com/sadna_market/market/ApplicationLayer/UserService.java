@@ -9,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
+import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
@@ -27,14 +28,16 @@ public class UserService {
     private final AuthenticationBridge authentication;
     private final UserAccessService userAccessService;
     private final InventoryManagementService inventoryManagementService;
+    private final OrderProcessingService orderProcessingService;
 
     @Autowired
     public UserService(AuthenticationBridge authentication,
                        UserAccessService userAccessService,
-                       InventoryManagementService inventoryManagementService) {
+                       InventoryManagementService inventoryManagementService, OrderProcessingService orderProcessingService) {
         this.authentication = authentication;
         this.userAccessService = userAccessService;
         this.inventoryManagementService = inventoryManagementService;
+        this.orderProcessingService = orderProcessingService;
     }
 
     //Guest functions here:

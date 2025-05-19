@@ -302,7 +302,9 @@ public class InMemoryOrderRepository implements IOrderRepository {
     public boolean hasUserPurchasedProduct(String username, UUID productId) {
         logger.info("Checking if user {} has purchased product {}", username, productId);
         List<Order> orders = findOrdersByUser(username);
+        logger.info("Found {} orders for user {}", orders.size(), username);
         for (Order order : orders) {
+            logger.info("Checking order {} with status {}", order.getOrderId(), order.getStatus());
             if (order.getProductsMap().containsKey(productId) && order.getStatus() == OrderStatus.PAID) {
                 logger.info("User {} has purchased product {}", username, productId);
                 return true;
