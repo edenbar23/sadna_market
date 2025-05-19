@@ -294,7 +294,7 @@ public class UserAccessService {
         try {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("user not found!"));
-
+            logger.info("User found: {}", user.getUserName());
             checkIfLoggedIn(username);
             Cart cart = user.getCart();
             System.out.println("printing cart.toString()");

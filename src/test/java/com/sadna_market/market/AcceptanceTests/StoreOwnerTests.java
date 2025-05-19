@@ -7,6 +7,7 @@ import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.Permission;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashSet;
@@ -16,7 +17,8 @@ import java.util.UUID;
 
 @SpringBootTest
 public class StoreOwnerTests {
-    private final static Bridge bridge = new Bridge();
+    @Autowired
+    private Bridge bridge;
     ObjectMapper objectMapper = new ObjectMapper();
 
     // Test data that will be used across tests
