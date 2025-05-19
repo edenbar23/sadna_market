@@ -57,7 +57,7 @@ public class OrderProcessingService {
                 orders = processGuestPurchase(event.getCart(), event.getPaymentMethod());
             } else {
                 orders = processPurchase(event.getUsername(), event.getCart(), event.getPaymentMethod());
-
+                logger.info("Successfully processed purchase for user {}", event.getUsername());
                 // Clear the user's cart if registered user
                 User user = userRepository.findByUsername(event.getUsername())
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));

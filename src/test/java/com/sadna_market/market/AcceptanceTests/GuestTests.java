@@ -7,6 +7,7 @@ import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,8 @@ import java.util.UUID;
 
 @SpringBootTest
 public class GuestTests {
-    private Bridge bridge = new Bridge();
+    @Autowired
+    private Bridge bridge;
     ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(GuestTests.class);
     // Test data
