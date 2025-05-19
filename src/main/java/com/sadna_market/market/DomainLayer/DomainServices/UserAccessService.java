@@ -262,7 +262,7 @@ public class UserAccessService {
         return user.getOrdersHistory();
     }
 
-    public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
+    public void saveReview(String username, UUID storeId, UUID productId, String reviewText) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
         checkIfLoggedIn(username);
         // Implementation logic for saving review

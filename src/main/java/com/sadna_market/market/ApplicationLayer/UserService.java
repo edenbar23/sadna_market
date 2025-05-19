@@ -246,7 +246,7 @@ public class UserService {
             logger.info("Validating token for user with username: {}", review.getUsername());
             authentication.validateToken(review.getUsername(), token);
             logger.info("Saving review for product with ID: {}", review.getProductId());
-            userAccessService.saveReview(review.getUsername(), review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
+            userAccessService.saveReview(review.getUsername(), review.getStoreId(), review.getProductId(), review.getReviewText());
             logger.info("Review saved successfully");
             return Response.success("Review saved successfully");
         } catch (Exception e) {

@@ -27,5 +27,15 @@ public interface IRatingRepository {
 
     boolean deleteStoreRating(UUID ratingId);
 
+    // product review methods
+    ProductReview saveProductReview(ProductReview review);
+    Optional<ProductReview> findProductReviewById(UUID reviewId);
+    List<ProductReview> findProductReviewsByProduct(UUID productId);
+    List<ProductReview> findProductReviewsByUser(String username);
+    List<ProductReview> findProductReviewsByStore(UUID storeId);
+    Optional<ProductReview> findProductReviewByUserAndProduct(String username, UUID productId);
+    boolean deleteProductReview(UUID reviewId);
+    int getProductReviewCount(UUID productId);
+
     void clear();
 }
