@@ -76,6 +76,7 @@ public class OrderProcessingService {
             }
         } catch (Exception e) {
             logger.error("Error processing checkout: {}", e.getMessage(), e);
+            throw new RuntimeException("Checkout failed: " + e.getMessage(), e);
             // Could publish a CheckoutFailedEvent here
         }
     }

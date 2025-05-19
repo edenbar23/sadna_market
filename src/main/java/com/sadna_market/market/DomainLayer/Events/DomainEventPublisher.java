@@ -74,6 +74,7 @@ public class DomainEventPublisher {
                 } catch (Exception e) {
                     logger.error("Error in event handler for event type {}: {}", event.getClass().getSimpleName(), e.getMessage(), e);
                     // Continue with other handlers despite errors
+                    throw new RuntimeException("Error in event handler", e);
                 }
             }
         }
