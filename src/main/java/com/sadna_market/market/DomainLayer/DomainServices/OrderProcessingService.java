@@ -185,6 +185,7 @@ public class OrderProcessingService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
 
+
         // Validate store is active
         if (!store.isActive()) {
             throw new IllegalStateException("Cannot purchase from inactive store: " + store.getName());
@@ -242,9 +243,16 @@ public class OrderProcessingService {
         store.addOrder(orderId);
         storeRepository.save(store);
 
-        // Return the created order
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalStateException("Order creation failed"));
+        // Return the created order and save in user order history
+        if (orderRepository.findById(orderId).isPresent()) {
+            Optional<User> user = userRepository.findByUsername(username);
+            if(user.isPresent()) {
+                user.get().addOrderToHistory(orderId);
+                userRepository.update(user.get());
+            }
+            return orderRepository.findById(orderId).get();
+        }
+        throw new IllegalStateException("Order not found: " + orderId);
     }
 
     private Order processGuestBasketCommon(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
@@ -313,6 +321,7 @@ public class OrderProcessingService {
         // Return the created order
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalStateException("Order creation failed"));
+
     }
 
     private double calculateTotalPrice(Map<UUID, Integer> items) {
