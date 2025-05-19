@@ -121,5 +121,5 @@ public class ConcretePaymentVisitor implements PaymentVisitor {
         return true; // simulate success
     }
 }
-///
+
 
