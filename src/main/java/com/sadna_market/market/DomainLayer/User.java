@@ -103,6 +103,8 @@ public class User extends IUser {
     }
 
     public List<UUID> getOrdersHistory() {
+        logger.info("Fetching order history for user {}", userName);
+        logger.info("Order history: {}", ordersHistory);
         return new ArrayList<>(ordersHistory);
     }
 

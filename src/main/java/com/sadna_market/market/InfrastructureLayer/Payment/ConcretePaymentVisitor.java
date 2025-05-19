@@ -24,39 +24,40 @@ public class ConcretePaymentVisitor implements PaymentVisitor {
         if (!isValidExpiryDate(card.expiryDate)) {
             throw new IllegalArgumentException("Card validation failed: Invalid or expired expiry date");
         }
+        return api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount); // validation passed
 
 
-        try {
-            String prefix = card.getCardPrefix();
-            URL url = new URL("https://lookup.binlist.net/" + prefix);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode != 200) {
-                //System.out.println("Card validation failed: bad response");
-                throw new IllegalArgumentException("Card validation failed: invalid card number");
-
-            }
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
-
-            // Simple check: just print info
-            //System.out.println("Binlist response: " + response.toString());
-
-            System.out.println("approved");
-            // Optional: parse and act on the JSON using org.json or manual parsing
-
-            return api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount); // validation passed
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Card validation failed: invalid card number");
-        }
+//        try {
+//            String prefix = card.getCardPrefix();
+//            URL url = new URL("https://lookup.binlist.net/" + prefix);
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            conn.setRequestMethod("GET");
+//
+//            int responseCode = conn.getResponseCode();
+//            if (responseCode != 200) {
+//                //System.out.println("Card validation failed: bad response");
+//                throw new IllegalArgumentException("Card validation failed: invalid card number");
+//
+//            }
+//
+//            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//            String inputLine;
+//            StringBuilder response = new StringBuilder();
+//            while ((inputLine = in.readLine()) != null) {
+//                response.append(inputLine);
+//            }
+//            in.close();
+//
+//            // Simple check: just print info
+//            //System.out.println("Binlist response: " + response.toString());
+//
+//            System.out.println("approved");
+//            // Optional: parse and act on the JSON using org.json or manual parsing
+//
+//            return api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount); // validation passed
+//        } catch (Exception e) {
+//            throw new IllegalArgumentException("Card validation failed: invalid card number");
+//        }
     }
 
     /**
