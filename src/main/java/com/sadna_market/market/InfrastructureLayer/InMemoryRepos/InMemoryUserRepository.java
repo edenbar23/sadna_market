@@ -33,7 +33,7 @@ public class InMemoryUserRepository implements IUserRepository {
             return Optional.empty();
         }
 
-        logger.debug("Finding user by username: {}", username);
+        logger.info("Finding user by username: {}", username);
         return Optional.ofNullable(users.get(username));
     }
 

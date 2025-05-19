@@ -2,6 +2,7 @@ package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
 import com.sadna_market.market.DomainLayer.IRatingRepository;
 import com.sadna_market.market.DomainLayer.ProductRating;
+import com.sadna_market.market.DomainLayer.ProductReview;
 import com.sadna_market.market.DomainLayer.StoreRating;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ public class InMemoryRatingRepository implements IRatingRepository {
 
     private final Map<UUID, ProductRating> productRatings = new ConcurrentHashMap<>();
     private final Map<UUID, StoreRating> storeRatings = new ConcurrentHashMap<>();
+    private final Map<UUID, ProductReview> productReviews = new ConcurrentHashMap<>();
 
     // Product rating methods
     @Override
@@ -254,11 +256,117 @@ public class InMemoryRatingRepository implements IRatingRepository {
         }
     }
 
+    // Product review methods
+    @Override
+    public ProductReview saveProductReview(ProductReview review) {
+        if (review == null) {
+            logger.error("Attempt to save null product review");
+            throw new IllegalArgumentException("Product review cannot be null");
+        }
+
+        logger.debug("Saving product review: {}", review.getReviewId());
+        productReviews.put(review.getReviewId(), review);
+        logger.info("Product review saved: {}", review.getReviewId());
+        return review;
+    }
+
+    @Override
+    public Optional<ProductReview> findProductReviewById(UUID reviewId) {
+        if (reviewId == null) {
+            logger.warn("Attempt to find product review with null ID");
+            return Optional.empty();
+        }
+
+        logger.debug("Finding product review by ID: {}", reviewId);
+        return Optional.ofNullable(productReviews.get(reviewId));
+    }
+
+    @Override
+    public List<ProductReview> findProductReviewsByProduct(UUID productId) {
+        if (productId == null) {
+            logger.warn("Attempt to find product reviews with null product ID");
+            return Collections.emptyList();
+        }
+
+        logger.debug("Finding product reviews by product: {}", productId);
+        return productReviews.values().stream()
+                .filter(review -> review.getProductId().equals(productId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductReview> findProductReviewsByUser(String username) {
+        if (username == null || username.isEmpty()) {
+            logger.warn("Attempt to find product reviews with null/empty username");
+            return Collections.emptyList();
+        }
+
+        logger.debug("Finding product reviews by user: {}", username);
+        return productReviews.values().stream()
+                .filter(review -> review.getUsername().equals(username))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductReview> findProductReviewsByStore(UUID storeId) {
+        if (storeId == null) {
+            logger.warn("Attempt to find product reviews with null store ID");
+            return Collections.emptyList();
+        }
+
+        logger.debug("Finding product reviews by store: {}", storeId);
+        return productReviews.values().stream()
+                .filter(review -> review.getStoreId().equals(storeId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<ProductReview> findProductReviewByUserAndProduct(String username, UUID productId) {
+        if (username == null || username.isEmpty() || productId == null) {
+            logger.warn("Attempt to find product review with null/empty username or null product ID");
+            return Optional.empty();
+        }
+
+        logger.debug("Finding product review by user: {} and product: {}", username, productId);
+        return productReviews.values().stream()
+                .filter(review -> review.getUsername().equals(username) && review.getProductId().equals(productId))
+                .findFirst();
+    }
+
+    @Override
+    public boolean deleteProductReview(UUID reviewId) {
+        if (reviewId == null) {
+            logger.warn("Attempt to delete product review with null ID");
+            return false;
+        }
+
+        logger.debug("Deleting product review by ID: {}", reviewId);
+        ProductReview removed = productReviews.remove(reviewId);
+
+        if (removed != null) {
+            logger.info("Successfully deleted product review: {}", reviewId);
+            return true;
+        } else {
+            logger.warn("Product review not found for deletion: {}", reviewId);
+            return false;
+        }
+    }
+
+    @Override
+    public int getProductReviewCount(UUID productId) {
+        if (productId == null) {
+            logger.warn("Attempt to get product review count with null product ID");
+            return 0;
+        }
+
+        return findProductReviewsByProduct(productId).size();
+    }
 
     @Override
     public void clear() {
         productRatings.clear();
         storeRatings.clear();
+        productReviews.clear();
         logger.info("Rating repository cleared");
     }
 

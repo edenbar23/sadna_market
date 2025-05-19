@@ -45,7 +45,7 @@ public class Bridge {
         StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository, messageRepository);
         InventoryManagementService inventoryManagementService = new InventoryManagementService(storeRepository, productRepository, userRepository);
         MessageService messageService = new MessageService(messageRepository, storeRepository, userRepository);
-        RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);
+        RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository,orderRepository);
 
         // Create application services
         this.userService = new UserService(authentication, userAccessService, inventoryManagementService);
@@ -129,6 +129,10 @@ public class Bridge {
 
     public Response<ProductRatingDTO> rateProduct(String token, ProductRateRequest request){
         return productService.rateProduct(token, request);
+    }
+
+    public Response<ProductReviewDTO> reviewProduct(String username, String token, ProductReviewRequest request){
+        return productService.reviewProduct(username, token, request);
     }
 
     public Response<List<UUID>> getOrdersHistory(String userName, String token){

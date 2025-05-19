@@ -136,4 +136,8 @@ public interface IOrderRepository {
     List<Order> getStorePurchaseHistory(UUID storeId);
 
     void clear();
+
+    List<Order> findOrdersByUser(String username);
+
+    boolean hasUserPurchasedProduct(String username, UUID productId);
 }
