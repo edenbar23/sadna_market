@@ -33,7 +33,7 @@ export default function CartPage() {
       return {
         ...store,
         products: store.products.map((product) =>
-          product.id === productId ? { ...product, quantity: newQuantity } : product
+          product.productId === productId ? { ...product, quantity: newQuantity } : product
         ),
       };
     });
@@ -45,7 +45,7 @@ export default function CartPage() {
       if (store.storeName !== storeName) return store;
       return {
         ...store,
-        products: store.products.filter((product) => product.id !== productId),
+        products: store.products.filter((product) => product.productId !== productId),
       };
     });
     setCart(updatedCart);

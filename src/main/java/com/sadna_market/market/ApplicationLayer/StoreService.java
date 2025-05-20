@@ -261,6 +261,8 @@ public class StoreService {
                     rate.getRate(),
                     rate.getComment());
 
+            storeRepository.addStoreRating(rate.getStoreId(), rate.getRate());
+
             // Convert domain object to DTO for response
             StoreRatingDTO ratingDTO = new StoreRatingDTO(storeRating);
 
@@ -270,6 +272,21 @@ public class StoreService {
             return Response.error("Error rating store: " + e.getMessage());
         }
     }
+
+    public Response<Boolean> getStoreStatus(UUID storeId) {
+        logger.info("Getting status for store with ID: {}", storeId);
+
+        try {
+            Store store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new RuntimeException("Store not found"));
+            boolean isActive = store.isActive();
+            return Response.success(isActive);
+        } catch (Exception e) {
+            logger.error("Error getting store status: {}", e.getMessage(), e);
+            return Response.error("Failed to get store status: " + e.getMessage());
+        }
+    }
+    
 
     private StoreDTO convertToDTO(Store store) {
         return new StoreDTO(
@@ -295,4 +312,6 @@ public class StoreService {
     public void clear() {
         storeRepository.clear();
     }
+
+
 }

@@ -18,10 +18,10 @@ export default function StoreCart({ store, onQuantityChange, onRemoveProduct }) 
       <div className="product-list">
         {products.map((product) => (
           <ProductRow
-            key={product.id}
+            key={product.productId}
             product={product}
-            onQuantityChange={(newQty) => onQuantityChange(storeName, product.id, newQty)}
-            onRemove={() => onRemoveProduct(storeName, product.id)}
+            onQuantityChange={(newQty) => onQuantityChange(storeName, product.productId, newQty)}
+            onRemove={() => onRemoveProduct(storeName, product.productId)}
           />
         ))}
         <button className="checkout-store-btn">Checkout Store</button>
