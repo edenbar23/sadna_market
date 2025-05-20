@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext";
 import { useStoreManagement } from "@/hooks/index.js";
 import { useProductOperations } from "@/hooks/index.js";
 import { useStoreOperations } from "@/hooks/index.js";
@@ -9,9 +10,10 @@ import EditProductModal from "../components/EditProductModal";
 import AppointUserModal from "../components/AppointUserModal";
 import StoreMessagesList from "../components/StoreMessagesList";
 
-export default function StoreManagePage({ user }) {
+export default function StoreManagePage() {
     const { storeId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuthContext();
 
     // Use store management hook to get store data
     const {
@@ -51,6 +53,29 @@ export default function StoreManagePage({ user }) {
     const [showAppointUserModal, setShowAppointUserModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [appointmentType, setAppointmentType] = useState("owner"); // "owner" or "manager"
+
+    // Transform ownerUsernames and managerUsernames into personnel array
+    const getPersonnel = () => {
+        if (!store) return [];
+
+        const personnel = [];
+
+        // Add owners to personnel
+        if (store.ownerUsernames && Array.isArray(store.ownerUsernames)) {
+            store.ownerUsernames.forEach(username => {
+                personnel.push({ username, role: "owner" });
+            });
+        }
+
+        // Add managers to personnel
+        if (store.managerUsernames && Array.isArray(store.managerUsernames)) {
+            store.managerUsernames.forEach(username => {
+                personnel.push({ username, role: "manager" });
+            });
+        }
+
+        return personnel;
+    };
 
     // Handle adding a new product
     const handleAddProductSubmit = async (productData, quantity) => {
@@ -178,13 +203,16 @@ export default function StoreManagePage({ user }) {
         );
     }
 
+    // Get personnel list from store data
+    const personnel = getPersonnel();
+
     return (
         <div className="store-manage-container">
             <div className="store-header">
                 <h1 className="store-title">{store.name}</h1>
                 <span className={`store-status ${store.active ? "active" : "inactive"}`}>
-          {store.active ? "Active" : "Closed"}
-        </span>
+                    {store.active ? "Active" : "Closed"}
+                </span>
             </div>
 
             <div className="store-actions">
@@ -210,9 +238,9 @@ export default function StoreManagePage({ user }) {
 
             <section className="store-section">
                 <h2 className="store-section-title">Store Crew</h2>
-                {store.personnel && store.personnel.length > 0 ? (
+                {personnel && personnel.length > 0 ? (
                     <div className="personnel-list">
-                        {store.personnel.map((person) => (
+                        {personnel.map((person) => (
                             <div key={person.username} className="personnel-card">
                                 <div className="personnel-info">
                                     <span className="personnel-name">{person.username}</span>

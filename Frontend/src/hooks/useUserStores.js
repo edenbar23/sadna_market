@@ -15,7 +15,10 @@ export function useUserStores(user) {
 
         try {
             const storeIds = await fetchUserStores(user.username, user.token);
-            const storePromises = storeIds.map((storeId) => fetchStoreById(storeId));
+            const storePromises = storeIds.map((storeId) => {
+                console.log("storeId", storeId);
+                return fetchStoreById(storeId);
+            });
             const storeData = await Promise.all(storePromises);
 
             setStores(storeData);
