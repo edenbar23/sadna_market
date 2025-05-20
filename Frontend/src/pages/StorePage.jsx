@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import SendMessageModal from "../components/SendMessageModal";
 import RateStoreModal from "../components/RateStoreModal";
-import { useStoreManagement } from "../hooks/useStoreManagement";
+import { useStoreManagement } from "@/hooks/index.js";
 import "../index.css";
 
 export default function StorePage({ user }) {

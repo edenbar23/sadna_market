@@ -8,3 +8,21 @@ export const fetchTopProducts = async () => {
       }, 1000);
     });
   }
+
+export const searchProducts = async (searchParams) => {
+    // For development/testing, we can use mock data
+    // Later you can replace this with actual API calls
+    const mockProducts = await fetchTopProducts(); // Reuse your existing function
+
+    // Filter products based on search query if provided
+    if (searchParams.query) {
+        const query = searchParams.query.toLowerCase();
+        return mockProducts.filter(product =>
+            product.name.toLowerCase().includes(query) ||
+            (product.description && product.description.toLowerCase().includes(query)) ||
+            (product.category && product.category.toLowerCase().includes(query))
+        );
+    }
+
+    return mockProducts;
+};

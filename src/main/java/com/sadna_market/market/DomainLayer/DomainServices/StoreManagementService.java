@@ -402,7 +402,7 @@ public class StoreManagementService {
             throw new InvalidStoreDataException("Store name cannot be empty");
         }
 
-        if (email == null || isValidEmail(email)) {
+        if (email == null || !isValidEmail(email)) {
             throw new InvalidStoreDataException("Invalid email format");
         }
     }
