@@ -172,6 +172,18 @@ public class ProductController {
             logger.error("Error fetching store products: {}", response.getErrorMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/top-rated")
+    public ResponseEntity<Response<List<ProductDTO>>> getStoreProducts() {
+        logger.info("Received request to get all products");
+
+        Response<List<ProductDTO>> response = productService.getTopRatedProducts();
+        if (response.isError()) {
+            logger.error("Error fetching store products: {}", response.getErrorMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
 
         return ResponseEntity.ok(response);
     }
