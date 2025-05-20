@@ -129,6 +129,7 @@ public class SystemInitializer implements CommandLineRunner {
 
         for (String[] user : userData) {
             userAccessService.registerUser(user[0], user[1], user[2], user[3], user[4]);
+            authRepository.addUser(user[0], user[1]);
         }
     }
 

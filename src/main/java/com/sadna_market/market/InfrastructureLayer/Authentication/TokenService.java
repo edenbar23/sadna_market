@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.sql.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 
 @Component
@@ -27,6 +29,9 @@ public class TokenService {
     // Generate a secure key for signing JWT tokens
     @Getter
     private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+
+    private final Set<String> blacklistedTokens = new HashSet<>();
+
 
     public TokenService() {
         logger.info("TokenService initialized with key");
@@ -47,9 +52,15 @@ public class TokenService {
 
     public boolean validateToken(String token) {
         logger.info("Token expiration time set to: {} ms", sessionExpirationTime);
-
         logger.info("Validating token: {}", token);
         logger.info("(validating token) encoding key: {}", key);
+
+        // Check if token is blacklisted
+        if (blacklistedTokens.contains(token)) {
+            logger.info("Token is blacklisted");
+            return false;
+        }
+
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -84,5 +95,14 @@ public class TokenService {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+    public void invalidateToken(String token) {
+        if (token != null && !token.isEmpty()) {
+            logger.info("Invalidating token");
+            blacklistedTokens.add(token);
+            logger.info("Token added to blacklist");
+        }
+    }
+
 
 }

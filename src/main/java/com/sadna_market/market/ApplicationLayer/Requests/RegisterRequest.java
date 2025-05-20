@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegisterRequest {
-    private String userName;    // Unique username (required)
+    private String username;    // Unique username (required)
     private String password;    // User password (required)
     private String email;       // User email address (required)
     private String firstName;   // User's first name (required)
@@ -23,7 +23,7 @@ public class RegisterRequest {
     private String address;     // User's address (optional)
 
     public String getUserName() {
-        return userName;
+        return username;
     }
    
     public String getPassword() {
@@ -49,14 +49,14 @@ public class RegisterRequest {
     /**
      * Constructor with essential fields for user registration
      * 
-     * @param userName  The unique username for the account
+     * @param username  The unique username for the account
      * @param password  The account password
      * @param email     The user's email address
      * @param firstName The user's first name
      * @param lastName  The user's last name
      */
-    public RegisterRequest(String userName, String password, String email, String firstName, String lastName) {
-        this.userName = userName;
+    public RegisterRequest(String username, String password, String email, String firstName, String lastName) {
+        this.username = username;
         this.password = password;
         this.email = email;
         this.firstName = firstName;
@@ -66,12 +66,12 @@ public class RegisterRequest {
     /**
      * Constructor for simplified registration (with minimal information)
      * 
-     * @param userName The unique username for the account
+     * @param username The unique username for the account
      * @param password The account password
      * @param email    The user's email address
      */
-    public RegisterRequest(String userName, String password, String email) {
-        this.userName = userName;
+    public RegisterRequest(String username, String password, String email) {
+        this.username = username;
         this.password = password;
         this.email = email;
         this.firstName = "";
@@ -85,7 +85,7 @@ public class RegisterRequest {
      */
     public boolean isValid() {
         // Check required fields are present
-        if (userName == null || userName.isEmpty() ||
+        if (username == null || username.isEmpty() ||
             password == null || password.isEmpty() ||
             email == null || email.isEmpty()) {
             return false;
@@ -133,7 +133,7 @@ public class RegisterRequest {
      */
     public String toSafeString() {
         return "RegisterRequest{" +
-                "userName='" + userName + '\'' +
+                "userName='" + username + '\'' +
                 ", password='[PROTECTED]'" +
                 ", email='" + email + '\'' +
                 ", firstName='" + firstName + '\'' +

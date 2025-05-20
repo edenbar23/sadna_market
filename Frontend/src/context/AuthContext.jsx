@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import * as userAPI from '../api/user';
 
 // Create auth context
 const AuthContext = createContext();
@@ -12,26 +13,49 @@ export const AuthProvider = ({ children }) => {
     // Load user and token from localStorage on initial render
     const storedUser = localStorage.getItem('user');
     const storedToken = localStorage.getItem('token');
-    
+
     if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
+      try {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+      } catch (e) {
+        // If there's any error parsing stored data, clear it
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
-    
+
     setLoading(false);
   }, []);
 
+  // Update localStorage when user or token changes
   useEffect(() => {
-    // Save user and token to localStorage whenever they change
     if (user) {
       localStorage.setItem('user', JSON.stringify(user));
     } else {
       localStorage.removeItem('user');
     }
-    
+
     if (token) {
       localStorage.setItem('token', token);
     } else {
+      localStorage.removeItem('token');
+    }
+  }, [user, token]);
+
+  // Logout function at the context level
+  const logout = useCallback(async () => {
+    try {
+      if (user && token) {
+        await userAPI.logoutUser(user.username, token);
+      }
+    } catch (err) {
+      console.error("Error during logout:", err);
+    } finally {
+      // Always clear state regardless of API success/failure
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('user');
       localStorage.removeItem('token');
     }
   }, [user, token]);
@@ -41,14 +65,15 @@ export const AuthProvider = ({ children }) => {
     setUser,
     token,
     setToken,
+    logout,
     isAuthenticated: !!user && !!token,
     loading
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={value}>
+        {children}
+      </AuthContext.Provider>
   );
 };
 
