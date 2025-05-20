@@ -30,6 +30,7 @@ public class InMemoryAuthRepository implements IAuthRepository {
             throw new IllegalArgumentException("Wrong password");
         }
 
+
         logger.info("Login successful for user: {}", username);
     }
 
@@ -90,6 +91,5 @@ public class InMemoryAuthRepository implements IAuthRepository {
     private boolean checkPassword(String userName, String password) {
         return PasswordEncryptor.verifyPassword(password, username2Password.get(userName));
     }
-
 
 }

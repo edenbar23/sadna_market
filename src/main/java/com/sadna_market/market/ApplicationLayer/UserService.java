@@ -157,7 +157,10 @@ public class UserService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
-            authentication.logout(username);
+
+            // Logout in the authentication bridge - passing the token to invalidate it
+            authentication.logout(username, token);
+
             logger.info("Logging out user with username: {}", username);
             userAccessService.logoutUser(username);
 
