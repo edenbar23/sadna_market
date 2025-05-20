@@ -19,7 +19,7 @@ export function useStoreManagement(storeId, user) {
     // Load store data
     const loadStoreData = async () => {
         if (!storeId) {
-            setError("No store ID provided");
+            setError("Store ID is required");
             setIsLoading(false);
             return;
         }
@@ -42,16 +42,26 @@ export function useStoreManagement(storeId, user) {
             // Only fetch orders and messages if user is logged in
             if (user && user.username && token) {
                 // Fetch store orders
-                const storeOrders = await fetchStoreOrders(storeId, token, user.username);
-                setOrders(storeOrders || []);
+                try {
+                    const storeOrders = await fetchStoreOrders(storeId, token, user.username);
+                    setOrders(storeOrders || []);
+                } catch (ordersError) {
+                    console.warn("Could not fetch orders:", ordersError);
+                    // Don't fail completely if just orders fail
+                }
 
                 // Fetch store messages
-                const storeMessages = await fetchStoreMessages(storeId, token, user.username);
-                setMessages(storeMessages || []);
+                try {
+                    const storeMessages = await fetchStoreMessages(storeId, token, user.username);
+                    setMessages(storeMessages || []);
+                } catch (messagesError) {
+                    console.warn("Could not fetch messages:", messagesError);
+                    // Don't fail completely if just messages fail
+                }
             }
         } catch (err) {
             console.error("Failed to load store data:", err);
-            setError("Failed to load store data: " + (err.message || err.errorMessage || "Unknown error"));
+            setError(err.message || "Unknown error");
         } finally {
             setIsLoading(false);
         }

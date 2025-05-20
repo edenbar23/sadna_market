@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+// src/pages/StorePage.jsx
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import SendMessageModal from "../components/SendMessageModal";
 import RateStoreModal from "../components/RateStoreModal";
@@ -8,8 +9,16 @@ import "../index.css";
 
 export default function StorePage({ user }) {
     const { storeId } = useParams();
+    const navigate = useNavigate();
     const [showMessageModal, setShowMessageModal] = useState(false);
     const [showRateModal, setShowRateModal] = useState(false);
+
+    // Redirect if storeId is undefined
+    useEffect(() => {
+        if (!storeId) {
+            navigate("/");
+        }
+    }, [storeId, navigate]);
 
     // Use store management hook to get store data
     const {
@@ -44,12 +53,24 @@ export default function StorePage({ user }) {
         }
     };
 
+    if (!storeId) {
+        return <div className="loading-message">Redirecting...</div>;
+    }
+
     if (isLoading) {
         return <div className="store-page loading">Loading store information...</div>;
     }
 
     if (error) {
-        return <div className="store-page error">Error: {error}</div>;
+        return (
+            <div className="store-page error">
+                <h2>Error loading store</h2>
+                <p>{error}</p>
+                <button onClick={() => navigate("/")} className="btn">
+                    Back to Home
+                </button>
+            </div>
+        );
     }
 
     if (!store) {

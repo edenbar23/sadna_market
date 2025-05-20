@@ -1,3 +1,4 @@
+// src/components/StoreControlPanel.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStoreOperations } from "../hooks/useStoreOperations";
@@ -9,9 +10,16 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
     const [newStoreName, setNewStoreName] = useState(store.name);
     const [localError, setLocalError] = useState("");
 
+    // Ensure we have a valid store ID before proceeding
+    const storeId = store?.id || store?._id;
+
+    if (!storeId) {
+        return <div className="error-text">Invalid store data</div>;
+    }
+
     const handleStatusToggle = async () => {
         try {
-            await handleToggleStoreStatus(store.id, store.active);
+            await handleToggleStoreStatus(storeId, store.active);
             // Call the onUpdate function to refresh the list of stores
             if (onUpdate) onUpdate();
         } catch (err) {
@@ -36,7 +44,7 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
         }
 
         try {
-            await handleUpdateStore(store.id, { ...store, name: newStoreName });
+            await handleUpdateStore(storeId, { ...store, name: newStoreName });
             setIsRenaming(false);
             // Call the onUpdate function to refresh the list of stores
             if (onUpdate) onUpdate();
@@ -67,8 +75,8 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
                     <h2 className="store-name">{store.name}</h2>
                 )}
                 <span className={`store-status ${store.active ? "active" : "closed"}`}>
-          {store.active ? "Active" : "Closed"}
-        </span>
+                    {store.active ? "Active" : "Closed"}
+                </span>
             </div>
 
             <div className="store-buttons">
@@ -86,12 +94,12 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
                         </button>
                         <button
                             className="store-button"
-                            onClick={() => navigate(`/store/${store.id}/appoint`)}
+                            onClick={() => navigate(`/store/${storeId}/appoint`)}
                             disabled={isLoading}
                         >
                             Manage Users
                         </button>
-                        <Link to={`/store-manage/${store.id}`}>
+                        <Link to={`/store-manage/${storeId}`}>
                             <button className="store-button primary">Manage Store</button>
                         </Link>
                     </>
