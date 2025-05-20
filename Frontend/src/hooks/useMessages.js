@@ -22,7 +22,7 @@ export const useMessages = () => {
                 content,
                 token
             );
-            return response.data;
+            return response;
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to send message');
             throw err;
@@ -46,7 +46,7 @@ export const useMessages = () => {
                 content,
                 token
             );
-            return response.data;
+            return response;
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to reply to message');
             throw err;
@@ -69,7 +69,7 @@ export const useMessages = () => {
                 storeId,
                 token
             );
-            return response.data;
+            return response;
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to get conversation');
             throw err;
@@ -88,7 +88,7 @@ export const useMessages = () => {
         setError(null);
         try {
             const response = await messageAPI.getUserMessages(user.username, token);
-            return response.data;
+            return response;
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to get messages');
             throw err;
@@ -106,13 +106,21 @@ export const useMessages = () => {
         setLoading(true);
         setError(null);
         try {
+            // Using the fixed getStoreMessages API function
             const response = await messageAPI.getStoreMessages(
                 storeId,
                 user.username,
                 token
             );
-            return response.data;
+            return response;
         } catch (err) {
+            console.error("Failed to get store messages:", err);
+            console.error("Error details:", {
+                endpoint: `/stores/${storeId}/messages`,
+                storeId,
+                username: user.username,
+                errorMessage: err.message || "Unknown error"
+            });
             setError(err.response?.data?.message || 'Failed to get store messages');
             throw err;
         } finally {
@@ -175,3 +183,5 @@ export const useMessages = () => {
         reportMessage
     };
 };
+
+export default useMessages;

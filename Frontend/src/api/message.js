@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8081/api/messages';
+const API_BASE_URL = 'http://localhost:8081/api'; // Changed from API_URL to match other files
 
 // Create axios instance with common config
 const apiClient = axios.create({
-    baseURL: API_URL,
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json'
     },
@@ -13,9 +13,12 @@ const apiClient = axios.create({
 
 // Add request interceptor for authorization
 apiClient.interceptors.request.use(config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = token;
+    // Only add token from localStorage if not already in headers
+    if (!config.headers.Authorization) {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = token;
+        }
     }
     return config;
 });
@@ -31,7 +34,7 @@ apiClient.interceptors.response.use(
 
 // Send a message to a store
 export const sendMessage = async (senderUsername, receiverStoreId, content, token) => {
-    const response = await apiClient.post('/send', {
+    const response = await apiClient.post('/messages/send', {
         senderUsername,
         receiverStoreId,
         content
@@ -43,7 +46,7 @@ export const sendMessage = async (senderUsername, receiverStoreId, content, toke
 
 // Reply to a message
 export const replyToMessage = async (messageId, senderUsername, content, token) => {
-    const response = await apiClient.post(`/${messageId}/reply`, {
+    const response = await apiClient.post(`/messages/${messageId}/reply`, {
         senderUsername,
         content
     }, {
@@ -54,16 +57,16 @@ export const replyToMessage = async (messageId, senderUsername, content, token) 
 
 // Get conversation between user and store
 export const getUserStoreConversation = async (username, storeId, token) => {
-    const response = await apiClient.get('/user-to-store', {
+    const response = await apiClient.get('/messages/user-to-store', {
         params: { username, storeID: storeId },
         headers: { Authorization: token }
     });
     return response;
 };
 
-// Get messages received by a store
+// Get messages received by a store - FIXED ENDPOINT
 export const getStoreMessages = async (storeId, username, token) => {
-    const response = await apiClient.get(`/store/${storeId}/received`, {
+    const response = await apiClient.get(`/stores/${storeId}/messages`, {
         params: { username },
         headers: { Authorization: token }
     });
@@ -72,7 +75,7 @@ export const getStoreMessages = async (storeId, username, token) => {
 
 // Get messages sent by a user
 export const getUserMessages = async (username, token) => {
-    const response = await apiClient.get(`/user/${username}/sent`, {
+    const response = await apiClient.get(`/messages/user/${username}/sent`, {
         headers: { Authorization: token }
     });
     return response;
@@ -80,7 +83,7 @@ export const getUserMessages = async (username, token) => {
 
 // Mark message as read
 export const markMessageAsRead = async (messageId, username, token) => {
-    const response = await apiClient.patch(`/${messageId}/read`, null, {
+    const response = await apiClient.patch(`/messages/${messageId}/read`, null, {
         params: { username },
         headers: { Authorization: token }
     });
@@ -89,11 +92,21 @@ export const markMessageAsRead = async (messageId, username, token) => {
 
 // Report a message violation
 export const reportViolation = async (messageId, reporterUsername, reason, token) => {
-    const response = await apiClient.patch(`/${messageId}/report-violation`, {
+    const response = await apiClient.patch(`/messages/${messageId}/report-violation`, {
         reporterUsername,
         reason
     }, {
         headers: { Authorization: token }
     });
     return response;
+};
+
+export default {
+    sendMessage,
+    replyToMessage,
+    getUserStoreConversation,
+    getStoreMessages,
+    getUserMessages,
+    markMessageAsRead,
+    reportViolation
 };

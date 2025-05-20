@@ -12,9 +12,13 @@ export default function StoreMessagesList({ storeId }) {
     // Load store messages when component mounts or storeId changes
     useEffect(() => {
         const loadMessages = async () => {
-            if (!storeId) return;
+            if (!storeId) {
+                console.warn("No storeId provided to StoreMessagesList");
+                return;
+            }
 
             try {
+                console.log("Fetching messages for store:", storeId);
                 const messagesData = await getStoreMessagesList(storeId);
                 if (messagesData) {
                     // Sort messages by timestamp (newest first)
@@ -22,9 +26,14 @@ export default function StoreMessagesList({ storeId }) {
                         new Date(b.timestamp) - new Date(a.timestamp)
                     );
                     setMessages(sortedMessages);
+                    console.log("Successfully loaded messages:", sortedMessages.length);
+                } else {
+                    console.warn("No message data returned from API");
+                    setMessages([]);
                 }
             } catch (err) {
                 console.error("Failed to load store messages:", err);
+                // Don't set messages to empty array in case of error, to preserve existing messages
             }
         };
 
@@ -57,6 +66,7 @@ export default function StoreMessagesList({ storeId }) {
             }
         } catch (err) {
             console.error("Failed to send reply:", err);
+            alert("Failed to send reply. Please try again.");
         }
     };
 
