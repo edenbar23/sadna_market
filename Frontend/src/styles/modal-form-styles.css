@@ -1,0 +1,270 @@
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: #6b7280;
+}
+
+.modal-body {
+    padding: 1rem;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.error-text {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.help-text {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* Button Styles */
+.btn-submit,
+.btn-cancel {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.btn-submit {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #2563eb;
+}
+
+.btn-cancel {
+    background-color: #f3f4f6;
+    color: #1f2937;
+}
+
+.btn-cancel:hover {
+    background-color: #e5e7eb;
+}
+
+.btn-submit:disabled,
+.btn-cancel:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Rating Input */
+.rating-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.star {
+    font-size: 2rem;
+    cursor: pointer;
+    color: #d1d5db;
+}
+
+.star.selected {
+    color: #fbbf24;
+}
+
+/* Permissions List */
+.permissions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.permission-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.permission-option input[type="checkbox"] {
+    width: auto;
+}
+
+/* Store Status Indicator */
+.store-status-indicator {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 999px;
+    margin-top: 0.5rem;
+}
+
+.store-status-indicator.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.store-status-indicator.closed {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Store Rename Form */
+.rename-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.rename-input {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.rename-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Personnel Management */
+.personnel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.personnel-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+}
+
+.personnel-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.personnel-name {
+    font-weight: 500;
+    color: #111827;
+}
+
+.personnel-role {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.personnel-remove {
+    padding: 0.25rem 0.5rem;
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.personnel-remove:hover {
+    background-color: #dc2626;
+}
+
+/* Section Headers with Action Buttons */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.add-product-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+}

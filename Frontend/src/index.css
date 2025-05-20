@@ -7,6 +7,7 @@
 @import './styles/utilities.css';
 @import './styles/themes.css';
 @import './styles/messages.css';
+@import './styles/modal-form-styles.css';
 
 /* Additional styles specific to this app (optional) */
 body {

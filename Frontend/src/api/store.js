@@ -223,3 +223,13 @@ export const deleteProduct = async (storeId, productId, token, username) => {
   });
   return response.data;
 };
+
+export const searchStores = async (searchParams) => {
+  try {
+    const response = await apiClient.post('/stores/search', searchParams);
+    return response.data;
+  } catch (error) {
+    console.error('Error searching stores:', error);
+    throw error;
+  }
+};
