@@ -268,5 +268,7 @@ public interface IStoreRepository {
 
     List<Store> getTopRatedStores();
 
+    void addStoreRating(UUID storeId, int rating);
+
     void clear();
 }

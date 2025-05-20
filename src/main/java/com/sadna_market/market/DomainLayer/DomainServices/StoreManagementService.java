@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service
 public class StoreManagementService {
@@ -401,7 +402,7 @@ public class StoreManagementService {
             throw new InvalidStoreDataException("Store name cannot be empty");
         }
 
-        if (email != null && !email.contains("@")) {
+        if (email == null || !isValidEmail(email)) {
             throw new InvalidStoreDataException("Invalid email format");
         }
     }
@@ -526,5 +527,9 @@ public class StoreManagementService {
         return store.isActive();
     }
 
-
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        return pattern.matcher(email).matches();
+    }
 }

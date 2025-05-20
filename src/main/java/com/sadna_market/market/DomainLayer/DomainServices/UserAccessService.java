@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.regex.Pattern;
 
 /**
  * UserAccessService is responsible for managing user access and permissions in the system.
@@ -512,20 +513,9 @@ public class UserAccessService {
     }
 
     private boolean isValidEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            logger.error("Email cannot be null or empty");
-            return false;
-        }
-        if (!email.contains("@")) {
-            logger.error("Email must contain an '@' symbol");
-            return false;
-        }
-        String domain = email.substring(email.indexOf("@") + 1);
-        if (domain.isEmpty() || !domain.contains(".")) {
-            logger.error("Email must contain a valid domain name");
-            return false;
-        }
-        return true;
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        return pattern.matcher(email).matches();
     }
 
     public void clear() {

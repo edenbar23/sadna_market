@@ -1,100 +1,235 @@
-// storeApi.js
+// src/api/store.js - Backend integration
+import axios from 'axios';
 
-import mockStores from "../data/mockStores";
-import mockProducts from "../data/mockProducts"; 
+// Base URL for your backend API
+const API_BASE_URL = 'http://localhost:8081/api';
 
-export const mockStoreMessages = [
-  {
-    id: 1,
-    storeId: 1,
-    sender: "john_doe",
-    content: "Do you have this item in blue?",
-    timestamp: "2025-05-14 10:23",
+// Create an axios instance with common configuration
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  {
-    id: 2,
-    storeId: 1,
-    sender: "admin",
-    content: "Reminder to restock your best-selling items.",
-    timestamp: "2025-05-14 12:45",
-  },
-];
+  timeout: 10000, // 10 second timeout
+});
 
-export const mockStoreOrders = [
-  {
-    id: 101,
-    storeId: 1,
-    buyer: "alice123",
-    items: [
-      { product: "Gaming Mouse", quantity: 1, price: 49.99 },
-      { product: "Keyboard", quantity: 2, price: 29.99 },
-    ],
-    total: 109.97,
-    status: "Shipped",
-    orderedAt: "2025-05-13 14:22",
-  },
-  {
-    id: 102,
-    storeId: 1,
-    buyer: "bob456",
-    items: [
-      { product: "USB-C Cable", quantity: 3, price: 9.99 },
-    ],
-    total: 29.97,
-    status: "Complete",
-    orderedAt: "2025-05-14 09:10",
-  },
-  {
-    id: 103,
-    storeId: 1,
-    buyer: "charlie789",
-    items: [
-      { product: "Wireless Charger", quantity: 1, price: 19.99 },
-      { product: "Phone Case", quantity: 2, price: 14.99 },
-    ],
-    total: 49.97,
-    status: "Pending",
-    orderedAt: "2025-05-14 11:30",
-  },
-  {
-    id: 104,
-    storeId: 2,
-    buyer: "dave101",
-    items: [
-      { product: "Laptop Stand", quantity: 1, price: 39.99 },
-      { product: "Monitor", quantity: 1, price: 199.99 },
-    ],
-    total: 239.98,
-    status: "Pending",
-    orderedAt: "2025-05-14 13:00",
+// Add request interceptor to include authentication token when available
+apiClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = token;
   }
-];
+  return config;
+});
 
+// Add response interceptor to handle common error scenarios
+apiClient.interceptors.response.use(
+    response => response.data,
+    error => {
+      // Log the error for debugging
+      console.error('API Error:', error.response?.data || error.message);
+      return Promise.reject(error.response?.data || error);
+    }
+);
+
+// Store API functions
+export const fetchAllStores = async () => {
+  const response = await apiClient.get('/stores');
+  return response.data;
+};
 
 export const fetchStoreById = async (storeId) => {
-  const store = mockStores.find((s) => s.id === storeId);
-  if (!store) throw new Error("Store not found");
-  return store;
+  const response = await apiClient.get(`/stores/${storeId}`);
+  return response.data;
 };
 
 export const fetchStoreProducts = async (storeId) => {
-  // Assuming each product in mockProducts has a `storeId` field
-  return mockProducts.filter((product) => product.storeId === storeId);
+  const response = await apiClient.get(`/products/store/${storeId}`);
+  return response.data;
 };
 
 export const fetchTopStores = async () => {
-  // Simulate an API call to fetch top stores
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockStores.slice(0, 10)); // Return the first 5 stores as top stores
-    }, 1000);
-  });
-}
-
-export const fetchStoreMessages = async (storeId) => {
-  return mockStoreMessages.filter(msg => msg.storeId === parseInt(storeId));
+  const response = await apiClient.get('/stores/top-rated');
+  return response.data;
 };
 
-export const fetchStoreOrders = async (storeId) => {
-  return mockStoreOrders.filter(order => order.storeId === parseInt(storeId));
+export const fetchStoreMessages = async (storeId, token, username) => {
+  const response = await apiClient.get(`/stores/${storeId}/messages`, {
+    headers: { Authorization: token },
+    params: { username }
+  });
+  return response.data;
+};
+
+export const sendMessageToStore = async (storeId, content, token, username) => {
+  const response = await apiClient.post(`/messages`, {
+    storeId,
+    content
+  }, {
+    headers: { Authorization: token },
+    params: { username }
+  });
+  return response.data;
+};
+
+export const replyToMessage = async (messageId, content, token, username) => {
+  const response = await apiClient.post(`/messages/${messageId}/reply`, {
+    content
+  }, {
+    headers: { Authorization: token },
+    params: { username }
+  });
+  return response.data;
+};
+
+export const fetchStoreOrders = async (storeId, token, username) => {
+  const response = await apiClient.get(`/stores/${storeId}/orders`, {
+    headers: { Authorization: token },
+    params: { username }
+  });
+  return response.data;
+};
+
+// Store Management Functions
+export const createStore = async (storeData, token, username) => {
+  const response = await apiClient.post('/stores', {
+    ...storeData,
+    founderUserName: username
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const updateStore = async (storeId, storeData, token, username) => {
+  const response = await apiClient.put(`/stores/${storeId}`, {
+    ...storeData,
+    username
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const closeStore = async (storeId, token, username) => {
+  const response = await apiClient.post(`/stores/${storeId}/close`, null, {
+    headers: { Authorization: token },
+    params: { founderUserName: username }
+  });
+  return response.data;
+};
+
+export const reopenStore = async (storeId, token, username) => {
+  const response = await apiClient.post(`/stores/${storeId}/reopen`, null, {
+    headers: { Authorization: token },
+    params: { founderUserName: username }
+  });
+  return response.data;
+};
+
+export const getStoreStatus = async (storeId) => {
+  const response = await apiClient.get(`/stores/${storeId}/status`);
+  return response.data;
+};
+
+// Store Personnel Management
+export const appointStoreOwner = async (storeId, newOwnerUsername, token, username) => {
+  const response = await apiClient.post(`/stores/${storeId}/owners`, {
+    founderUserName: username,
+    newOwnerUserName: newOwnerUsername,
+    storeId
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const removeStoreOwner = async (storeId, ownerToRemove, token, username) => {
+  const response = await apiClient.delete(`/stores/${storeId}/owners`, {
+    data: {
+      founderUserName: username,
+      removedOwnerUserName: ownerToRemove,
+      storeId
+    },
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const appointStoreManager = async (storeId, newManagerUsername, permissions, token, username) => {
+  const response = await apiClient.post(`/stores/${storeId}/managers`, {
+    appointingUserName: username,
+    newManagerUserName: newManagerUsername,
+    storeId,
+    permissions
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const removeStoreManager = async (storeId, managerToRemove, token, username) => {
+  const response = await apiClient.delete(`/stores/${storeId}/managers`, {
+    data: {
+      appointingUserName: username,
+      removedManagerUserName: managerToRemove,
+      storeId
+    },
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const rateStore = async (storeId, rating, comment, token, username) => {
+  const response = await apiClient.post(`/stores/rate`, {
+    storeId,
+    username,
+    rate: rating,
+    comment
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+// Product Management Functions for Stores
+export const addProductToStore = async (storeId, productData, quantity, token, username) => {
+  const response = await apiClient.post(`/products/store/${storeId}`,
+      productData,
+      {
+        headers: { Authorization: token },
+        params: { quantity, username }
+      }
+  );
+  return response.data;
+};
+
+export const updateProduct = async (storeId, productData, quantity, token, username) => {
+  const response = await apiClient.put(`/products/store/${storeId}`,
+      productData,
+      {
+        headers: { Authorization: token },
+        params: { quantity, username }
+      }
+  );
+  return response.data;
+};
+
+export const deleteProduct = async (storeId, productId, token, username) => {
+  const response = await apiClient.delete(`/products/store/${storeId}`, {
+    data: { productId },
+    headers: { Authorization: token },
+    params: { username }
+  });
+  return response.data;
+};
+
+export const searchStores = async (searchParams) => {
+  try {
+    const response = await apiClient.post('/stores/search', searchParams);
+    return response.data;
+  } catch (error) {
+    console.error('Error searching stores:', error);
+    throw error;
+  }
 };
