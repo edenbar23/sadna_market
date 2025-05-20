@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useStoreManagement } from "../hooks/useStoreManagement";
-import { useProductOperations } from "../hooks/useProductOperations";
-import { useStoreOperations } from "../hooks/useStoreOperations";
-import { useStorePersonnel } from "../hooks/useStorePersonnel";
+import { useStoreManagement } from "@/hooks/index.js";
+import { useProductOperations } from "@/hooks/index.js";
+import { useStoreOperations } from "@/hooks/index.js";
+import { useStorePersonnel } from "@/hooks/index.js";
 import AddProductModal from "../components/AddProductModal";
 import EditProductModal from "../components/EditProductModal";
 import AppointUserModal from "../components/AppointUserModal";
+import StoreMessagesList from "../components/StoreMessagesList";
 
 export default function StoreManagePage({ user }) {
     const { storeId } = useParams();
@@ -277,22 +278,7 @@ export default function StoreManagePage({ user }) {
 
             <section className="store-section">
                 <h2 className="store-section-title">Store Messages</h2>
-                <div className="messages-scroll">
-                    {messages.length > 0 ? (
-                        messages.map((msg) => (
-                            <div key={msg.id} className="message-bubble">
-                                <div className="message-header">
-                                    <span className="message-sender">{msg.sender}</span>
-                                    <span className="message-time">{msg.timestamp}</span>
-                                </div>
-                                <div className="message-content">{msg.content}</div>
-                                <button className="reply-button">Reply</button>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-muted">No messages yet.</p>
-                    )}
-                </div>
+                <StoreMessagesList storeId={storeId} />
             </section>
 
             <section className="store-section">

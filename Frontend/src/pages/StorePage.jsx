@@ -1,10 +1,13 @@
-// src/pages/StorePage.jsx
+// This is a partial update to StorePage.jsx
+// Focus on the handleSendMessage function and related state
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import SendMessageModal from "../components/SendMessageModal";
 import RateStoreModal from "../components/RateStoreModal";
 import { useStoreManagement } from "@/hooks/index.js";
+import { useMessages } from "../hooks/useMessages";
 import "../index.css";
 
 export default function StorePage({ user }) {
@@ -12,13 +15,8 @@ export default function StorePage({ user }) {
     const navigate = useNavigate();
     const [showMessageModal, setShowMessageModal] = useState(false);
     const [showRateModal, setShowRateModal] = useState(false);
-
-    // Redirect if storeId is undefined
-    useEffect(() => {
-        if (!storeId) {
-            navigate("/");
-        }
-    }, [storeId, navigate]);
+    const [messageSent, setMessageSent] = useState(false);
+    const { sendMessageToStore } = useMessages();
 
     // Use store management hook to get store data
     const {
@@ -35,22 +33,18 @@ export default function StorePage({ user }) {
 
     const handleSendMessage = async (message) => {
         try {
-            // Send message logic would go here
-            console.log("Sending message to store:", message);
+            await sendMessageToStore(storeId, message);
+            setMessageSent(true);
+            setTimeout(() => setMessageSent(false), 3000); // Show success message for 3 seconds
             setShowMessageModal(false);
         } catch (err) {
             console.error("Failed to send message:", err);
+            // Error handling is done by the hook
         }
     };
 
     const handleRateStore = async (rating, comment) => {
-        try {
-            // Rate store logic would go here
-            console.log("Rating store:", { rating, comment });
-            setShowRateModal(false);
-        } catch (err) {
-            console.error("Failed to rate store:", err);
-        }
+        // Existing code for rating store...
     };
 
     if (!storeId) {
@@ -79,18 +73,17 @@ export default function StorePage({ user }) {
 
     return (
         <div className="store-page">
+            {/* Store header section */}
             <div className="store-header">
-                <img
-                    src={store.logo || "/assets/blank_store.png"}
-                    alt={`${store.name} logo`}
-                    className="store-logo"
-                />
-                <div className="store-header-info">
-                    <h2>{store.name}</h2>
-                    <p className="store-rating">Rating: {store.rating || 'N/A'} ⭐</p>
-                    {store.description && <p className="store-description">{store.description}</p>}
-                </div>
+                {/* ... existing code ... */}
             </div>
+
+            {/* Show success message if message was sent */}
+            {messageSent && (
+                <div className="success-message">
+                    Message sent successfully! The store will respond soon.
+                </div>
+            )}
 
             <div className="store-actions">
                 {user && (
@@ -114,23 +107,22 @@ export default function StorePage({ user }) {
                 )}
             </div>
 
+            {/* Products section */}
             <h3 className="store-products-title">Store Products</h3>
             <div className="store-products-scroll">
-                {products.length > 0 ? (
-                    products.map((product) => (
-                        <ProductCard key={product.productId} product={product} />
-                    ))
-                ) : (
-                    <p className="no-products-message">This store has no products yet.</p>
-                )}
+                {/* ... existing code ... */}
             </div>
 
             {/* Modals */}
             {showMessageModal && (
                 <SendMessageModal
-                    recipient={store.name}
+                    storeId={storeId}
+                    storeName={store.name}
                     onClose={() => setShowMessageModal(false)}
-                    onSubmit={handleSendMessage}
+                    onSuccess={() => {
+                        setMessageSent(true);
+                        setTimeout(() => setMessageSent(false), 3000);
+                    }}
                 />
             )}
 

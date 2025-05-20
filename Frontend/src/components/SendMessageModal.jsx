@@ -1,25 +1,24 @@
 import React, { useState } from "react";
 import "../index.css";
+import { useMessages } from "../hooks/useMessages";
 
-export default function SendMessageModal({ recipient, onClose, onSubmit }) {
+export default function SendMessageModal({ storeId, storeName, onClose, onSuccess }) {
     const [message, setMessage] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState("");
+    const { sendMessageToStore, loading, error } = useMessages();
+    const [localError, setLocalError] = useState("");
 
     const handleSubmit = async () => {
         if (!message.trim()) {
-            setError("Message cannot be empty");
+            setLocalError("Message cannot be empty");
             return;
         }
 
-        setIsSubmitting(true);
-
         try {
-            await onSubmit(message);
-            // The parent component will handle closing the modal
+            await sendMessageToStore(storeId, message);
+            onSuccess?.();
+            onClose();
         } catch (err) {
-            setError(`Failed to send message: ${err.message || "Unknown error"}`);
-            setIsSubmitting(false);
+            setLocalError(error || "Failed to send message. Please try again.");
         }
     };
 
@@ -27,12 +26,12 @@ export default function SendMessageModal({ recipient, onClose, onSubmit }) {
         <div className="modal-overlay">
             <div className="modal-container">
                 <div className="modal-header">
-                    <h2>Message to {recipient}</h2>
+                    <h2>Message to {storeName}</h2>
                     <button className="close-modal-btn" onClick={onClose}>×</button>
                 </div>
 
                 <div className="modal-body">
-                    {error && <div className="error-text">{error}</div>}
+                    {(localError || error) && <div className="error-text">{localError || error}</div>}
 
                     <div className="form-group">
                         <label htmlFor="message">Your Message</label>
@@ -42,7 +41,7 @@ export default function SendMessageModal({ recipient, onClose, onSubmit }) {
                             onChange={(e) => setMessage(e.target.value)}
                             placeholder="Type your message here..."
                             rows={5}
-                            disabled={isSubmitting}
+                            disabled={loading}
                         />
                     </div>
                 </div>
@@ -51,16 +50,16 @@ export default function SendMessageModal({ recipient, onClose, onSubmit }) {
                     <button
                         className="btn-cancel"
                         onClick={onClose}
-                        disabled={isSubmitting}
+                        disabled={loading}
                     >
                         Cancel
                     </button>
                     <button
                         className="btn-submit"
                         onClick={handleSubmit}
-                        disabled={isSubmitting}
+                        disabled={loading}
                     >
-                        {isSubmitting ? "Sending..." : "Send Message"}
+                        {loading ? "Sending..." : "Send Message"}
                     </button>
                 </div>
             </div>
