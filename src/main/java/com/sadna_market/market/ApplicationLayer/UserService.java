@@ -441,29 +441,29 @@ public class UserService {
         }
     }
 
-    //System functions here:
-    public Response<String> openMarket(String admin, String token) {
-        //open the market
-        //initialize the system
-        //validate admin user exists
-        logger.info("Validating token for user with username: {}", admin);
-        authentication.validateToken(admin, token);
-        //initialize the supply system
-        //initialize the payment system
-        //open market
-        return Response.error("not implemented yet");
-    }
-
-    public Response<String> closeMarket(String admin, String token) {
-        try {
-            logger.info("Validating token for user with username: {}", admin);
-            authentication.validateToken(admin, token);
-        } catch (IllegalArgumentException e) {
-            return Response.error(e.getMessage());
-        }
-        //close the market (not allowing anyone to access market)
-        return Response.error("not implemented yet");
-    }
+//    //System functions here:
+//    public Response<String> openMarket(String admin, String token) {
+//        //open the market
+//        //initialize the system
+//        //validate admin user exists
+//        logger.info("Validating token for user with username: {}", admin);
+//        authentication.validateToken(admin, token);
+//        //initialize the supply system
+//        //initialize the payment system
+//        //open market
+//        return Response.error("not implemented yet");
+//    }
+//
+//    public Response<String> closeMarket(String admin, String token) {
+//        try {
+//            logger.info("Validating token for user with username: {}", admin);
+//            authentication.validateToken(admin, token);
+//        } catch (IllegalArgumentException e) {
+//            return Response.error(e.getMessage());
+//        }
+//        //close the market (not allowing anyone to access market)
+//        return Response.error("not implemented yet");
+//    }
 
     public void clear() {
         authentication.clear();

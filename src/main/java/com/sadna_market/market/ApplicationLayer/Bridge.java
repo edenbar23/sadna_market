@@ -80,7 +80,7 @@ public class Bridge {
         return storeService.getTopRatedStores();
     }
     public Response<List<ProductDTO>> getTopRatedProducts(UUID storeId) {
-        return productService.getTopRatedProducts(storeId);
+        return productService.getTopRatedProductsByStore(storeId);
     }
     /** User Test Methods */
     public Response<String> registerUser(RegisterRequest request) {
@@ -233,6 +233,7 @@ public class Bridge {
     public Response<String> adminDeleteUser(String adminUsername, String token, String userToDelete) {
         return userService.deleteUser(adminUsername, token, userToDelete);
     }
+
 
     // Gets all violation reports (req 6.3.a)
     public Response<List<Report>> getViolationReports(String adminUsername, String token) {

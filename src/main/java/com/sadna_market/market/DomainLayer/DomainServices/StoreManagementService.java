@@ -525,4 +525,6 @@ public class StoreManagementService {
             .orElseThrow(() -> new RuntimeException("Store not found"));
         return store.isActive();
     }
+
+
 }

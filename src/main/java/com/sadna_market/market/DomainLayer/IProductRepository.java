@@ -44,4 +44,6 @@ public interface IProductRepository {
     void clear();
 
     List<ProductDTO> getTopRatedProducts(UUID storeId);
+
+    List<ProductDTO> getTopTenRatedProducts();
 }

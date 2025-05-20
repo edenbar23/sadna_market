@@ -204,7 +204,7 @@ public class ProductService {
             );
 
             return Response.success("Product updated successfully");
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.error("Error updating product: {}", e.getMessage(), e);
             return Response.error("Error updating product: " + e.getMessage());
         }
@@ -216,7 +216,7 @@ public class ProductService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
 
-            if (product.getProductId() == null){
+            if (product.getProductId() == null) {
                 logger.error("Product ID should not be null for existing products");
                 return Response.error("Product ID should not be null for existing products");
             }
@@ -229,7 +229,7 @@ public class ProductService {
             );
 
             return Response.success("Product deleted successfully");
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.error("Error deleting product: {}", e.getMessage(), e);
             return Response.error("Error deleting product: " + e.getMessage());
         }
@@ -306,8 +306,8 @@ public class ProductService {
         productRepository.clear();
     }
 
-    public Response<List<ProductDTO>> getTopRatedProducts(UUID storeId) {
-        logger.info("Getting top rated stores");
+    public Response<List<ProductDTO>> getTopRatedProductsByStore(UUID storeId) {
+        logger.info("Getting top rated products for store ID: {}", storeId);
 
         try {
             // Get all stores from the repository
@@ -317,6 +317,19 @@ public class ProductService {
         } catch (Exception e) {
             logger.error("Error getting top rated stores: {}", e.getMessage(), e);
             return Response.error("Failed to get top rated stores: " + e.getMessage());
+        }
+    }
+
+    public Response<List<ProductDTO>> getTopRatedProducts() {
+        logger.info("Getting top rated products");
+        try {
+            // Get all stores from the repository
+            List<ProductDTO> topRatedProducts = productRepository.getTopTenRatedProducts();
+            return Response.success(topRatedProducts);
+
+        } catch (Exception e) {
+            logger.error("Error getting top rated products: {}", e.getMessage(), e);
+            return Response.error("Failed to get top rated products: " + e.getMessage());
         }
     }
 }
