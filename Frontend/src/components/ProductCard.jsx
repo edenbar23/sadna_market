@@ -1,10 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext";
+import { useCart } from "../hooks/useCart";
 import "../styles/components.css";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const { addToCart, loading } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleNavigate = () => {
     navigate(`/product/${product.productId}`);
@@ -13,31 +19,77 @@ export default function ProductCard({ product }) {
   const incrementQty = () => setQuantity((q) => q + 1);
   const decrementQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
-  const handleAddToCart = () => {
-    console.log("Adding to cart:", { productId: product.productId, quantity });
-    // You could call context, Redux, or backend here
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    setError(null);
+
+    try {
+      // If user is logged in, use user cart, otherwise use guest cart
+      if (user) {
+        await addToCart(product.storeId, product.productId, quantity);
+      } else {
+        // Get guest cart from localStorage or create new one
+        let guestCart = JSON.parse(localStorage.getItem('guestCart')) || { baskets: {} };
+
+        // Check if store exists in baskets
+        if (!guestCart.baskets[product.storeId]) {
+          guestCart.baskets[product.storeId] = {};
+        }
+
+        // Add or update product quantity
+        guestCart.baskets[product.storeId][product.productId] = quantity;
+
+        // Save updated cart to localStorage
+        localStorage.setItem('guestCart', JSON.stringify(guestCart));
+      }
+
+      // Show success feedback (you could add a toast notification here)
+      alert(`Added ${quantity} ${product.name} to cart`);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      setError("Failed to add to cart. Please try again.");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   return (
-    <div className="card">
-      <div className="clickable-area" onClick={handleNavigate}>
-        <img src={product.image} alt={product.name} className="card-img" />
-        <h3 className="card-title">{product.name}</h3>
-        <p className="card-text">Store: {product.store || "N/A"}</p>
-        <p className="card-text">Rating: {product.rating} ⭐</p>
-        <p className="card-price">${product.price}</p>
-      </div>
-
-      <div className="card-actions">
-        <div className="quantity-controls">
-          <button onClick={decrementQty}>-</button>
-          <span>{quantity}</span>
-          <button onClick={incrementQty}>+</button>
+      <div className="card">
+        <div className="clickable-area" onClick={handleNavigate}>
+          <img
+              src={product.imageUrl || "/assets/blank_product.png"}
+              alt={product.name}
+              className="card-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/assets/blank_product.png";
+              }}
+          />
+          <h3 className="card-title">{product.name}</h3>
+          {product.storeName && (
+              <p className="card-text">Store: {product.storeName}</p>
+          )}
+          <p className="card-text">
+            Rating: {product.rating ? `${product.rating} ⭐` : 'Not rated yet'}
+          </p>
+          <p className="card-price">${parseFloat(product.price).toFixed(2)}</p>
         </div>
-        <button className="add-to-cart-btn" onClick={handleAddToCart}>
-          Add to Cart
-        </button>
+
+        <div className="card-actions">
+          <div className="quantity-controls">
+            <button onClick={decrementQty} disabled={addingToCart}>-</button>
+            <span>{quantity}</span>
+            <button onClick={incrementQty} disabled={addingToCart}>+</button>
+          </div>
+          <button
+              className="add-to-cart-btn"
+              onClick={handleAddToCart}
+              disabled={addingToCart || loading}
+          >
+            {addingToCart ? "Adding..." : "Add to Cart"}
+          </button>
+          {error && <p className="error-text">{error}</p>}
+        </div>
       </div>
-    </div>
   );
 }

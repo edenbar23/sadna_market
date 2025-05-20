@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useAuthContext } from "../context/AuthContext";
 import "../index.css";
 
 export default function EditProductModal({ product, onClose, onSubmit }) {
+    const { user } = useAuthContext();
     const [productData, setProductData] = useState({
         id: "",
         name: "",
@@ -77,12 +79,17 @@ export default function EditProductModal({ product, onClose, onSubmit }) {
         try {
             // Format the data properly for the backend
             const formattedData = {
-                ...productData,
+                productId: productData.id,  // Important for update
+                name: productData.name,
                 price: parseFloat(productData.price),
                 quantity: parseInt(productData.quantity),
+                description: productData.description,
+                category: productData.category,
+                imageUrl: productData.imageUrl
             };
 
             await onSubmit(formattedData);
+            onClose();
         } catch (error) {
             console.error("Error updating product:", error);
             setErrors({ form: "Failed to update product. Please try again." });
