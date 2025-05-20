@@ -15,17 +15,34 @@ function HeaderBar() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [userStores, setUserStores] = useState([]);
+  const [storesLoading, setStoresLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      fetchUserStores(user.username)
-          .then(setUserStores)
-          .catch(console.error);
-    } else {
-      // Clear stores when user logs out
-      setUserStores([]);
-    }
+    const loadUserStores = async () => {
+      if (user && user.username && user.token) {
+        setStoresLoading(true);
+        try {
+          const storesResponse = await fetchUserStores(user.username, user.token);
+          if (storesResponse && storesResponse.data) {
+            setUserStores(storesResponse.data);
+            console.log("User stores loaded:", storesResponse.data);
+          } else {
+            setUserStores([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch user stores:", err);
+          setUserStores([]);
+        } finally {
+          setStoresLoading(false);
+        }
+      } else {
+        // Clear stores when user logs out
+        setUserStores([]);
+      }
+    };
+
+    loadUserStores();
   }, [user]);
 
   const handleLogout = () => {
@@ -43,20 +60,26 @@ function HeaderBar() {
           {user?.role === "admin" && <AdminControls />}
 
           {isAuthenticated && (
-              userStores.length > 0 ? (
-                  <Link to="/my-stores">
-                    <button className="button">Stores</button>
-                  </Link>
+              !storesLoading ? (
+                  userStores && userStores.length > 0 ? (
+                      <Link to="/my-stores">
+                        <button className="button">My Stores</button>
+                      </Link>
+                  ) : (
+                      <Link to="/create-store">
+                        <button className="button">Create Store</button>
+                      </Link>
+                  )
               ) : (
-                  <Link to="/create-store">
-                    <button className="button">Create Store</button>
-                  </Link>
+                  <span>Loading stores...</span>
               )
           )}
 
           {/* Center: Logo */}
           <div className="logo-container">
-            <img src={logo} alt="Market Logo" className="logo" />
+            <Link to="/">
+              <img src={logo} alt="Market Logo" className="logo" />
+            </Link>
           </div>
 
           {/* Right Side Buttons */}

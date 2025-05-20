@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProductById, getStoreProducts, rateProduct } from "../api/product";
+import { getProductInfo, getStoreProducts, rateProduct } from "../api/product";
 import StoreActionPanel from "../components/StoreActionPanel";
 import ProductCard from "../components/ProductCard";
 import ProductInfo from "../components/ProductInfo";
@@ -28,7 +28,7 @@ export default function ProductPage() {
 
       try {
         // Fetch product details
-        const productResponse = await getProductById(productId);
+        const productResponse = await getProductInfo(productId);
 
         if (productResponse && !productResponse.error) {
           const productData = productResponse.data;

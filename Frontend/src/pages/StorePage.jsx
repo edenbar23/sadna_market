@@ -1,138 +1,101 @@
-// This is a partial update to StorePage.jsx
-// Focus on the handleSendMessage function and related state
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { getStoreProducts } from "../api/product";
+import { fetchStoreById } from "../api/store";
 import ProductCard from "../components/ProductCard";
-import SendMessageModal from "../components/SendMessageModal";
-import RateStoreModal from "../components/RateStoreModal";
-import { useStoreManagement } from "@/hooks/index.js";
-import { useMessages } from "../hooks/useMessages";
+import StoreActionPanel from "../components/StoreActionPanel";
 import "../index.css";
 
-export default function StorePage({ user }) {
+export default function StorePage() {
     const { storeId } = useParams();
     const navigate = useNavigate();
-    const [showMessageModal, setShowMessageModal] = useState(false);
-    const [showRateModal, setShowRateModal] = useState(false);
-    const [messageSent, setMessageSent] = useState(false);
-    const { sendMessageToStore } = useMessages();
 
-    // Use store management hook to get store data
-    const {
-        store,
-        products,
-        isLoading,
-        error
-    } = useStoreManagement(storeId, user);
+    const [store, setStore] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Check if user has completed a purchase from this store
-    const hasCompletedPurchase = user && user.orders && user.orders.some(
-        order => order.storeId === storeId && order.status === "Complete"
-    );
+    useEffect(() => {
+        const fetchStoreData = async () => {
+            if (!storeId) return;
 
-    const handleSendMessage = async (message) => {
-        try {
-            await sendMessageToStore(storeId, message);
-            setMessageSent(true);
-            setTimeout(() => setMessageSent(false), 3000); // Show success message for 3 seconds
-            setShowMessageModal(false);
-        } catch (err) {
-            console.error("Failed to send message:", err);
-            // Error handling is done by the hook
-        }
-    };
+            setIsLoading(true);
+            setError(null);
 
-    const handleRateStore = async (rating, comment) => {
-        // Existing code for rating store...
-    };
+            try {
+                // Fetch store details
+                const storeResponse = await fetchStoreById(storeId);
 
-    if (!storeId) {
-        return <div className="loading-message">Redirecting...</div>;
-    }
+                if (storeResponse && !storeResponse.error) {
+                    setStore(storeResponse.data);
+
+                    // Fetch store products in parallel
+                    const productsResponse = await getStoreProducts(storeId);
+
+                    if (productsResponse && !productsResponse.error) {
+                        setProducts(productsResponse.data || []);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching store data:", err);
+                setError("Failed to load store information. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStoreData();
+    }, [storeId]);
 
     if (isLoading) {
-        return <div className="store-page loading">Loading store information...</div>;
+        return <div className="loading-indicator">Loading store information...</div>;
     }
 
     if (error) {
         return (
-            <div className="store-page error">
-                <h2>Error loading store</h2>
+            <div className="error-container">
+                <h2>Error</h2>
                 <p>{error}</p>
-                <button onClick={() => navigate("/")} className="btn">
-                    Back to Home
-                </button>
+                <button onClick={() => navigate(-1)}>Go Back</button>
             </div>
         );
     }
 
     if (!store) {
-        return <div className="store-page not-found">Store not found</div>;
+        return <div className="not-found">Store not found</div>;
     }
 
     return (
         <div className="store-page">
-            {/* Store header section */}
             <div className="store-header">
-                {/* ... existing code ... */}
-            </div>
-
-            {/* Show success message if message was sent */}
-            {messageSent && (
-                <div className="success-message">
-                    Message sent successfully! The store will respond soon.
-                </div>
-            )}
-
-            <div className="store-actions">
-                {user && (
-                    <>
-                        <button
-                            className="button"
-                            onClick={() => setShowMessageModal(true)}
-                        >
-                            Message Seller
-                        </button>
-
-                        {hasCompletedPurchase && (
-                            <button
-                                className="button"
-                                onClick={() => setShowRateModal(true)}
-                            >
-                                Rate Store
-                            </button>
-                        )}
-                    </>
-                )}
-            </div>
-
-            {/* Products section */}
-            <h3 className="store-products-title">Store Products</h3>
-            <div className="store-products-scroll">
-                {/* ... existing code ... */}
-            </div>
-
-            {/* Modals */}
-            {showMessageModal && (
-                <SendMessageModal
-                    storeId={storeId}
-                    storeName={store.name}
-                    onClose={() => setShowMessageModal(false)}
-                    onSuccess={() => {
-                        setMessageSent(true);
-                        setTimeout(() => setMessageSent(false), 3000);
+                <img
+                    src={store.logo || "/assets/blank_store.png"}
+                    alt={`${store.name} logo`}
+                    className="store-logo"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/assets/blank_store.png";
                     }}
                 />
-            )}
+                <div>
+                    <h1>{store.name}</h1>
+                    <p>Rating: {store.rating ? `${store.rating.toFixed(1)} ⭐` : 'Not rated yet'}</p>
+                    {store.description && <p>{store.description}</p>}
+                </div>
+            </div>
 
-            {showRateModal && (
-                <RateStoreModal
-                    storeName={store.name}
-                    onClose={() => setShowRateModal(false)}
-                    onSubmit={handleRateStore}
-                />
-            )}
+            <StoreActionPanel store={store} />
+
+            <h2 className="store-products-title">Store Products</h2>
+            <div className="store-products-scroll">
+                {products.length > 0 ? (
+                    products.map(product => (
+                        <ProductCard key={product.productId} product={product} />
+                    ))
+                ) : (
+                    <p>No products available in this store.</p>
+                )}
+            </div>
         </div>
     );
 }

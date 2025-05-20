@@ -1,6 +1,7 @@
 package com.sadna_market.market.PresentationLayer.Controllers;
 
 import com.sadna_market.market.ApplicationLayer.DTOs.CartDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.UserDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.ApplicationLayer.Response;
@@ -280,6 +281,25 @@ public class UserController {
                 ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
                 : ResponseEntity.ok(response);
     }
+
+
+    /**
+     * Get user's stores id's
+     */
+
+    @GetMapping("/user/{username}/stores")
+    public ResponseEntity<Response<List<UUID>>> getUserStores(
+        @PathVariable String username,
+        @RequestHeader("Authorization") String token) {
+
+        Response<List<UUID>> response = userService.getStoresIds(username, token);
+
+        return response.isError()
+                ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
+                : ResponseEntity.ok(response);
+
+        }
+
 
     /**
      * Get user's order history

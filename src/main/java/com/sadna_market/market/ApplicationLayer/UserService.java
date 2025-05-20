@@ -444,6 +444,22 @@ public class UserService {
         }
     }
 
+    public Response<List<UUID>> getStoresIds (String username, String token){
+        try{
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+            logger.info("Getting stores ids for user with username: {}", username);
+            List<UUID> storesIds = userAccessService.getStoresIds(username);
+            logger.info("StoresIds retrieved successfully");
+            return Response.success(storesIds);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+
+
+    }
+
 //    //System functions here:
 //    public Response<String> openMarket(String admin, String token) {
 //        //open the market

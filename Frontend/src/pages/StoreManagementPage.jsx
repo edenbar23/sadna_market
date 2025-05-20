@@ -4,31 +4,54 @@ import { useUserStores } from "@/hooks/index.js";
 import { useStoreOperations } from "@/hooks/index.js";
 import StoreControlPanel from "../components/StoreControlPanel";
 import CreateStoreModal from "../components/CreateStoreModal";
+import { fetchStoreById } from "@/api/store"; // Adjust the path if needed
 
 export default function StoreManagementPage({ user }) {
     const navigate = useNavigate();
     const { stores, isLoading, error, loadUserStores } = useUserStores(user);
     const { handleCreateStore } = useStoreOperations(user);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [storeDetails, setStoreDetails] = useState([]);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
-        // Load user's stores when component mounts
-        loadUserStores();
+        const fetchAndSetStoreDetails = async () => {
+            try {
+                setLoadingDetails(true);
+                await loadUserStores(); // Load basic store list (IDs)
+                if (stores.length > 0) {
+                    const detailedStores = await Promise.all(
+                        stores.map((store) => fetchStoreById(store.storeId))
+                    );
+                    setStoreDetails(detailedStores);
+                } else {
+                    setStoreDetails([]);
+                }
+            } catch (err) {
+                console.error("Error loading store details:", err);
+            } finally {
+                setLoadingDetails(false);
+            }
+        };
+
+        fetchAndSetStoreDetails();
     }, [user]);
 
     const handleCreateStoreSubmit = async (storeData) => {
         try {
             await handleCreateStore(storeData);
-            // Refresh the stores list after creating a new store
             await loadUserStores();
+            const detailedStores = await Promise.all(
+                stores.map((store) => fetchStoreById(store.storeId))
+            );
+            setStoreDetails(detailedStores);
             setShowCreateModal(false);
         } catch (err) {
             console.error("Failed to create store:", err);
-            // Error is handled by the hook and will be available in the error state
         }
     };
 
-    if (isLoading) {
+    if (isLoading || loadingDetails) {
         return <div className="store-management-container">Loading your stores...</div>;
     }
 
@@ -43,9 +66,9 @@ export default function StoreManagementPage({ user }) {
             )}
 
             <div className="store-grid">
-                {stores.length > 0 ? (
-                    stores.map((store) => (
-                        <div key={store.storeId} className="store-card">
+                {storeDetails.length > 0 ? (
+                    storeDetails.map((store) => (
+                        <div key={store.id} className="store-card">
                             <StoreControlPanel
                                 store={store}
                                 onUpdate={loadUserStores}
@@ -72,7 +95,7 @@ export default function StoreManagementPage({ user }) {
                 <CreateStoreModal
                     onClose={() => setShowCreateModal(false)}
                     onSubmit={handleCreateStoreSubmit}
-                    isLoading={isLoading}
+                    isLoading={isLoading || loadingDetails}
                 />
             )}
         </div>
