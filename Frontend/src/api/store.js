@@ -1,5 +1,4 @@
-// store.js - Real API implementation
-
+// src/api/store.js - Backend integration
 import axios from 'axios';
 
 // Base URL for your backend API
@@ -11,6 +10,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Add request interceptor to include authentication token when available
@@ -26,7 +26,7 @@ apiClient.interceptors.request.use(config => {
 apiClient.interceptors.response.use(
     response => response.data,
     error => {
-      // Handle API errors appropriately
+      // Log the error for debugging
       console.error('API Error:', error.response?.data || error.message);
       return Promise.reject(error.response?.data || error);
     }
@@ -94,7 +94,17 @@ export const fetchStoreOrders = async (storeId, token, username) => {
 export const createStore = async (storeData, token, username) => {
   const response = await apiClient.post('/stores', {
     ...storeData,
-    founderUsername: username
+    founderUserName: username
+  }, {
+    headers: { Authorization: token }
+  });
+  return response.data;
+};
+
+export const updateStore = async (storeId, storeData, token, username) => {
+  const response = await apiClient.put(`/stores/${storeId}`, {
+    ...storeData,
+    username
   }, {
     headers: { Authorization: token }
   });
@@ -182,7 +192,7 @@ export const rateStore = async (storeId, rating, comment, token, username) => {
   return response.data;
 };
 
-// Product Management Functions
+// Product Management Functions for Stores
 export const addProductToStore = async (storeId, productData, quantity, token, username) => {
   const response = await apiClient.post(`/products/store/${storeId}`,
       productData,
@@ -212,75 +222,4 @@ export const deleteProduct = async (storeId, productId, token, username) => {
     params: { username }
   });
   return response.data;
-};
-
-// For backwards compatibility with your mock data
-export const getMockStores = () => {
-  return [
-    {
-      id: 1,
-      name: "TechHaven",
-      description: "Your go-to store for tech gadgets and accessories",
-      active: true,
-      founderUsername: "techguru",
-      ownerUsernames: ["techguru", "gadgetpro"],
-      managerUsernames: ["techlead", "gadgetexpert"]
-    },
-    {
-      id: 2,
-      name: "FashionFusion",
-      description: "Latest trends in fashion for all ages",
-      active: true,
-      founderUsername: "fashionista",
-      ownerUsernames: ["fashionista", "styleicon"],
-      managerUsernames: ["trendsetter", "fashionadvisor"]
-    }
-  ];
-};
-
-export const getMockMessages = () => {
-  return [
-    {
-      id: 1,
-      storeId: 1,
-      sender: "john_doe",
-      content: "Do you have this item in blue?",
-      timestamp: "2025-05-14 10:23",
-    },
-    {
-      id: 2,
-      storeId: 1,
-      sender: "admin",
-      content: "Reminder to restock your best-selling items.",
-      timestamp: "2025-05-14 12:45",
-    },
-  ];
-};
-
-export const getMockOrders = () => {
-  return [
-    {
-      id: 101,
-      storeId: 1,
-      buyer: "alice123",
-      items: [
-        { product: "Gaming Mouse", quantity: 1, price: 49.99 },
-        { product: "Keyboard", quantity: 2, price: 29.99 },
-      ],
-      total: 109.97,
-      status: "Shipped",
-      orderedAt: "2025-05-13 14:22",
-    },
-    {
-      id: 102,
-      storeId: 1,
-      buyer: "bob456",
-      items: [
-        { product: "USB-C Cable", quantity: 3, price: 9.99 },
-      ],
-      total: 29.97,
-      status: "Complete",
-      orderedAt: "2025-05-14 09:10",
-    }
-  ];
 };
