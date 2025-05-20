@@ -76,7 +76,7 @@ export function useStoreManagement(storeId, user) {
     const updateProductInList = (updatedProduct) => {
         setProducts(currentProducts =>
             currentProducts.map(p =>
-                p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p
+                p.productId === updatedProduct.productId ? { ...p, ...updatedProduct } : p
             )
         );
     };

@@ -261,6 +261,8 @@ public class StoreService {
                     rate.getRate(),
                     rate.getComment());
 
+            storeRepository.addStoreRating(rate.getStoreId(), rate.getRate());
+
             // Convert domain object to DTO for response
             StoreRatingDTO ratingDTO = new StoreRatingDTO(storeRating);
 

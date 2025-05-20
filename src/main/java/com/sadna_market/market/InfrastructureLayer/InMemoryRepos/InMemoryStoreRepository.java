@@ -364,6 +364,20 @@ public class InMemoryStoreRepository implements IStoreRepository {
     }
 
     @Override
+    public void addStoreRating(UUID storeId, int rating) {
+        logger.debug("Adding rating {} to store {}", rating, storeId);
+        Store store = stores.get(storeId);
+        if (store != null) {
+            store.addRating(rating); // Properly calculates average internally
+            logger.info("Rating {} added to store {}", rating, storeId);
+        } else {
+            logger.warn("Cannot add rating - store not found with ID: {}", storeId);
+        }
+    }
+
+
+
+    @Override
     public void clear() {
         stores.clear();
         logger.info("Store repository cleared");

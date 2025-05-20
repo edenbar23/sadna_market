@@ -54,7 +54,7 @@ export function useUserStores(user) {
     const updateStore = (updatedStore) => {
         setStores(currentStores =>
             currentStores.map(store =>
-                store.id === updatedStore.id ? { ...store, ...updatedStore } : store
+                store.storeId === updatedStore.storeId ? { ...store, ...updatedStore } : store
             )
         );
     };
@@ -65,7 +65,7 @@ export function useUserStores(user) {
      */
     const removeStore = (storeId) => {
         setStores(currentStores =>
-            currentStores.filter(store => store.id !== storeId)
+            currentStores.filter(store => store.storeId !== storeId)
         );
     };
 

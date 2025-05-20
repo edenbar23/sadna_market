@@ -7,6 +7,6 @@ export const fetchUserStores = async (username) => {
       throw new Error(`User ${username} not found`);
     }
     // Return the full store objects based on the IDs the user owns
-    const userStores = mockStores.filter((store) => user.stores.includes(store.id));
+    const userStores = mockStores.filter((store) => user.stores.includes(store.storeId));
     return userStores;
   };

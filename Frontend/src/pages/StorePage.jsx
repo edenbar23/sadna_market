@@ -118,7 +118,7 @@ export default function StorePage({ user }) {
             <div className="store-products-scroll">
                 {products.length > 0 ? (
                     products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                        <ProductCard key={product.productId} product={product} />
                     ))
                 ) : (
                     <p className="no-products-message">This store has no products yet.</p>

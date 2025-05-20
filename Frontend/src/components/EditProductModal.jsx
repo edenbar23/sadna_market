@@ -19,7 +19,7 @@ export default function EditProductModal({ product, onClose, onSubmit }) {
     useEffect(() => {
         if (product) {
             setProductData({
-                id: product.id,
+                id: product.productId,
                 name: product.name || "",
                 price: product.price ? product.price.toString() : "",
                 quantity: product.quantity ? product.quantity.toString() : "",

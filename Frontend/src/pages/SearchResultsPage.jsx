@@ -60,7 +60,7 @@ export default function SearchResultsPage() {
                             <h2>Stores ({stores.length})</h2>
                             <div className="store-results">
                                 {stores.map((store) => (
-                                    <StoreCard key={store.id} store={store} />
+                                    <StoreCard key={store.storeId} store={store} />
                                 ))}
                             </div>
                         </div>
@@ -71,7 +71,7 @@ export default function SearchResultsPage() {
                             <h2>Products ({products.length})</h2>
                             <div className="product-results">
                                 {products.map((product) => (
-                                    <ProductCard key={product.id} product={product} />
+                                    <ProductCard key={product.productId} product={product} />
                                 ))}
                             </div>
                         </div>

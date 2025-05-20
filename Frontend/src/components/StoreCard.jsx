@@ -6,7 +6,7 @@ export default function StoreCard({ store }) {
     const navigate = useNavigate();
 
     const handleNavigate = () => {
-        navigate(`/store/${store.id}`);
+        navigate(`/store/${store.storeId}`);
     };
 
     // Use a default image if no logo is provided

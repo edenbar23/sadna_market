@@ -52,25 +52,50 @@ export default function StoreManagePage({ user }) {
     const [appointmentType, setAppointmentType] = useState("owner"); // "owner" or "manager"
 
     // Handle adding a new product
-    const handleAddProductSubmit = async (productData) => {
+    const handleAddProductSubmit = async (productData, quantity) => {
         try {
-            const result = await handleAddProduct(productData);
-            addProductToList(result); // Update UI
+            // Make sure we have a valid storeId
+            if (!storeId || storeId === "undefined") {
+                throw new Error("Invalid store ID");
+            }
+
+            await handleAddProduct({
+                ...productData,
+                productId: null // Ensure we don't send undefined as productId
+            }, quantity);
+
+            // Refresh products list
+            await loadStoreData();
             setShowAddProductModal(false);
         } catch (err) {
             console.error("Failed to add product:", err);
+            // Handle error
         }
     };
 
     // Handle editing an existing product
     const handleEditProductSubmit = async (productData) => {
         try {
-            const result = await handleUpdateProduct(productData);
-            updateProductInList(result); // Update UI
+            // Make sure we have valid IDs
+            if (!storeId || storeId === "undefined") {
+                throw new Error("Invalid store ID");
+            }
+            if (!productData.id || productData.id === "undefined") {
+                throw new Error("Invalid product ID");
+            }
+
+            await handleUpdateProduct({
+                ...productData,
+                productId: productData.id // Ensure we set the correct productId field
+            }, productData.quantity);
+
+            // Refresh products list
+            await loadStoreData();
             setShowEditProductModal(false);
             setSelectedProduct(null);
         } catch (err) {
             console.error("Failed to update product:", err);
+            // Handle error
         }
     };
 
@@ -219,7 +244,7 @@ export default function StoreManagePage({ user }) {
                 <div className="products-scroll">
                     {products.length > 0 ? (
                         products.map((product) => (
-                            <div key={product.id} className="product-card">
+                            <div key={product.productId} className="product-card">
                                 <div className="product-info">
                                     <h3 className="product-name">{product.name}</h3>
                                     <p className="product-price">Price: ${product.price}</p>
@@ -237,7 +262,7 @@ export default function StoreManagePage({ user }) {
                                     </button>
                                     <button
                                         className="product-delete"
-                                        onClick={() => handleDeleteProductConfirm(product.id)}
+                                        onClick={() => handleDeleteProductConfirm(product.productId)}
                                     >
                                         Delete
                                     </button>
