@@ -75,6 +75,13 @@ public class Bridge {
         return userService.deleteUser(userName, token, userToDelete);
     }
 
+    // top rated stores and products
+    public Response<List<Store>> getTopRatedStores() {
+        return storeService.getTopRatedStores();
+    }
+    public Response<List<ProductDTO>> getTopRatedProducts(UUID storeId) {
+        return productService.getTopRatedProducts(storeId);
+    }
     /** User Test Methods */
     public Response<String> registerUser(RegisterRequest request) {
         return userService.registerUser(request);

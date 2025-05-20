@@ -4,12 +4,9 @@ import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductReviewDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
+import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
-import com.sadna_market.market.DomainLayer.IProductRepository;
-import com.sadna_market.market.DomainLayer.Product;
-import com.sadna_market.market.DomainLayer.ProductRating;
-import com.sadna_market.market.DomainLayer.ProductReview;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -307,5 +304,19 @@ public class ProductService {
 
     public void clear() {
         productRepository.clear();
+    }
+
+    public Response<List<ProductDTO>> getTopRatedProducts(UUID storeId) {
+        logger.info("Getting top rated stores");
+
+        try {
+            // Get all stores from the repository
+            List<ProductDTO> topRatedProducts = productRepository.getTopRatedProducts(storeId);
+            return Response.success(topRatedProducts);
+
+        } catch (Exception e) {
+            logger.error("Error getting top rated stores: {}", e.getMessage(), e);
+            return Response.error("Failed to get top rated stores: " + e.getMessage());
+        }
     }
 }

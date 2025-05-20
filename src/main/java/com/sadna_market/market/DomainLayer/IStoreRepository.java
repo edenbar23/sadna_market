@@ -266,5 +266,7 @@ public interface IStoreRepository {
                                   Double maxPrice, 
                                   Double minRating);
 
+    List<Store> getTopRatedStores();
+
     void clear();
 }
