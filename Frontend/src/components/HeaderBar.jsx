@@ -85,9 +85,11 @@ function HeaderBar({ user, onLogout, onLogin }) {
     onClose={() => setShowRegister(false)}
     onRegister={(userData) => {
       // Make sure onLogin is passed from the parent of HeaderBar
-      onLogin(userData);
       setShowRegister(false);
-    }}
+    }
+    onLogin={() => setShowLogin(true);}
+
+  }
   />
 )}
 

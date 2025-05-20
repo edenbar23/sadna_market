@@ -33,7 +33,7 @@ const setAuthHeader = (token) => {
 
 // Guest user methods
 export const registerUser = async (userData) => {
-  const response = await apiClient.post(API_URL, userData);
+  const response = await apiClient.post(`${API_URL}/register`, userData);
   return response.data;
 };
 
