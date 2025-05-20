@@ -822,9 +822,10 @@ public class StoreOwnerTests {
         // Get the message ID
         UUID messageId = sendResponse.getData().getMessageId();
 
-        // Create a reply request
+        // Create a reply request with sender username
         MessageReplyRequest replyRequest = new MessageReplyRequest(
                 messageId,
+                ownerUsername,  // Add the sender username parameter
                 "Thank you for your inquiry. How can I help you?"
         );
 
@@ -860,9 +861,10 @@ public class StoreOwnerTests {
         // Get the message ID
         UUID messageId = sendResponse.getData().getMessageId();
 
-        // Create a reply request
+        // Create a reply request - now with senderUsername parameter
         MessageReplyRequest replyRequest = new MessageReplyRequest(
                 messageId,
+                managerUsername,  // Add the sender username parameter
                 "I'm trying to reply but I'm not the store owner."
         );
 
@@ -903,11 +905,13 @@ public class StoreOwnerTests {
         Response<String> logoutResponse = bridge.logout(ownerUsername, ownerToken);
         Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
 
-        // Create a reply request
+        // Create a reply request with sender username
         MessageReplyRequest replyRequest = new MessageReplyRequest(
                 messageId,
+                ownerUsername,  // Add the sender username parameter
                 "I'm trying to reply but I'm logged out."
         );
+
 
         // Try to reply to the message while logged out
         Response<String> replyResponse = bridge.replyToMessage(
