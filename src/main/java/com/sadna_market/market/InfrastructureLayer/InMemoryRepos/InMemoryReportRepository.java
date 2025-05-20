@@ -60,6 +60,7 @@ public class InMemoryReportRepository implements IReportRepository {
     @Override
     public List<Report> getAllReports() {
         logger.info("Getting all reports");
+
         return List.copyOf(reports.values());
     }
 
