@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+
+import java.rmi.server.UID;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -498,4 +500,17 @@ public class MessageService {
     public void clear() {
         messageRepository.clear();
     }
+
+    public void reportViolation(UUID messageId, String reporterUsername, String reason) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+    
+        if (!message.getSenderUsername().equals(reporterUsername)) {
+            throw new IllegalStateException("Only the sender can report the message");
+        }
+    
+        message.reportViolation(reason);
+        messageRepository.save(message);
+    }
+    
 }

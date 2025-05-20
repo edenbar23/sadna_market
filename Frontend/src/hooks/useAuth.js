@@ -1,43 +1,66 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useState, useCallback } from 'react';
+import * as userAPI from '../api/user';
+import { useAuthContext } from '../context/AuthContext'; 
 
-const AuthContext = createContext();
+export const useAuth = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { setUser, setToken } = useAuthContext();
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-
-  // Load from localStorage on first load
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const savedToken = localStorage.getItem("token");
-
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
-      setToken(savedToken);
+  const register = useCallback(async (userData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await userAPI.registerUser(userData);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
+      throw err;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  const login = (userData, jwtToken) => {
-    setUser(userData);
-    setToken(jwtToken);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", jwtToken);
+  const login = useCallback(async (username, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await userAPI.loginUser(username, password);
+      if (response.data) {
+        // Assuming response.data contains the token
+        setToken(response.data);
+        setUser({ username }); // You might want to fetch user details here
+      }
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [setToken, setUser]);
+
+  const logout = useCallback(async (username, token) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await userAPI.logoutUser(username, token);
+      setToken(null);
+      setUser(null);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Logout failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [setToken, setUser]);
+
+  return {
+    register,
+    login,
+    logout,
+    loading,
+    error
   };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+};

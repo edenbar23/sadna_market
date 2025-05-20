@@ -35,6 +35,13 @@ public class Message {
     @Getter @Setter
     private boolean isRead;
 
+    @Getter @Setter
+    private boolean isViolationReported;
+
+    @Getter @Setter
+    private String violationReason;
+
+
     /**
      * Constructor for a new message
      *
@@ -52,6 +59,8 @@ public class Message {
         this.replyTimestamp = null;
         this.replyAuthor = null;
         this.isRead = false;
+        this.isViolationReported = false;
+        this.violationReason = null;
     }
 
     /**
@@ -111,6 +120,16 @@ public class Message {
     @Override
     public int hashCode() {
         return messageId.hashCode();
+    }
+
+    /**
+     * Reports a violation on this message.
+     *
+     * @param reason The reason for reporting the message
+     */
+    public void reportViolation(String reason) {
+        this.isViolationReported = true;
+        this.violationReason = reason;
     }
 
     @Override
