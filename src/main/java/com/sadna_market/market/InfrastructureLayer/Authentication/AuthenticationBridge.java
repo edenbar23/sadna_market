@@ -41,7 +41,6 @@ public class AuthenticationBridge {
     }
 
     public String checkSessionToken(String jwt) {
-
         if (!tokenService.validateToken(jwt)) {
             logger.info("Invalid token");
             throw new IllegalArgumentException("Invalid token");
@@ -75,14 +74,17 @@ public class AuthenticationBridge {
         }
     }
 
-    public void logout(String username) {
+    public void logout(String username, String token) {
         logger.info("Logging out user: {}", username);
-        authRepository.removeUser(username);
+        // Add token to blacklist to invalidate it
+        tokenService.invalidateToken(token);
+
+
+        // UserAccessService will mark the user as logged out
     }
 
     public void clear() {
         authRepository.clear();
         logger.info("Authentication bridge cleared");
     }
-
 }
