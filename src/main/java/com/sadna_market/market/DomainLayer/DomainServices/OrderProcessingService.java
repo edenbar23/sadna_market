@@ -57,7 +57,7 @@ public class OrderProcessingService {
                 orders = processGuestPurchase(event.getCart(), event.getPaymentMethod());
             } else {
                 orders = processPurchase(event.getUsername(), event.getCart(), event.getPaymentMethod());
-
+                logger.info("Successfully processed purchase for user {}", event.getUsername());
                 // Clear the user's cart if registered user
                 User user = userRepository.findByUsername(event.getUsername())
                         .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -76,6 +76,7 @@ public class OrderProcessingService {
             }
         } catch (Exception e) {
             logger.error("Error processing checkout: {}", e.getMessage(), e);
+            throw new RuntimeException("Checkout failed: " + e.getMessage(), e);
             // Could publish a CheckoutFailedEvent here
         }
     }
@@ -242,9 +243,16 @@ public class OrderProcessingService {
         store.addOrder(orderId);
         storeRepository.save(store);
 
-        // Return the created order
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalStateException("Order creation failed"));
+        // Return the created order and save in user order history
+        if (orderRepository.findById(orderId).isPresent()) {
+            Optional<User> user = userRepository.findByUsername(username);
+            if(user.isPresent()) {
+                user.get().addOrderToHistory(orderId);
+                userRepository.update(user.get());
+            }
+            return orderRepository.findById(orderId).get();
+        }
+        throw new IllegalStateException("Order not found: " + orderId);
     }
 
     private Order processGuestBasketCommon(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
@@ -396,27 +404,27 @@ public class OrderProcessingService {
     public Optional<Order> getOrderById(UUID orderId) {
         return orderRepository.findById(orderId);
     }
-    
+
     public void cancelOrder(UUID orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         if (orderOpt.isEmpty()) {
             throw new IllegalArgumentException("Order not found");
         }
         Order order = orderOpt.get();
-    
+
         // Update order status to CANCELED
         orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
-    
+
         // Refund payment if any
         UUID paymentId = order.getPaymentId();
         if (paymentId != null) {
             paymentService.refund(paymentId);
         }
-    
+
         // Restore inventory
         Store store = storeRepository.findById(order.getStoreId())
                 .orElseThrow(() -> new IllegalStateException("Store not found"));
-    
+
         Map<UUID, Integer> items = order.getProductsMap();
         for (var entry : items.entrySet()) {
             UUID productId = entry.getKey();
@@ -425,10 +433,10 @@ public class OrderProcessingService {
             store.updateProductQuantity(productId, currentQty + quantity);
         }
         storeRepository.save(store);
-    
+
         logger.info("Order {} cancelled and inventory restored", orderId);
     }
-    
+
     public List<Order> getOrdersByUser(String username) {
         return orderRepository.findByUserName(username);
     }

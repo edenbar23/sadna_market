@@ -28,13 +28,20 @@ public class InMemoryUserRepository implements IUserRepository {
 
     @Override
     public Optional<User> findByUsername(String username) {
+        logger.info("beginning to find user by username: {}", username);
         if (username == null || username.isEmpty()) {
             logger.error("Cannot find user with null or empty username");
             return Optional.empty();
         }
 
-        logger.debug("Finding user by username: {}", username);
-        return Optional.ofNullable(users.get(username));
+        logger.info("Finding user by username: {}", username);
+        Optional<User> user = Optional.ofNullable(users.get(username));
+        if (user.isPresent()) {
+            logger.info("User found: {}", user.get());
+        } else {
+            logger.warn("User not found with username: {}", username);
+        }
+        return user;
     }
 
     @Override

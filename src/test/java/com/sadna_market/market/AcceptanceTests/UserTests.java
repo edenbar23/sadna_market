@@ -3,15 +3,13 @@ package com.sadna_market.market.AcceptanceTests;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
-import com.sadna_market.market.ApplicationLayer.DTOs.CartDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
-import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
@@ -19,7 +17,9 @@ import java.util.UUID;
 
 @SpringBootTest
 public class UserTests {
-    private Bridge bridge = new Bridge();
+
+    @Autowired
+    private Bridge bridge;
     ObjectMapper objectMapper = new ObjectMapper();
     private Logger logger = LoggerFactory.getLogger(UserTests.class.getName());
     // Test data
@@ -797,5 +797,108 @@ public class UserTests {
         Assertions.assertTrue(response.isError(), "Sending message while logged out should fail");
         Assertions.assertNotNull(response.getErrorMessage(), "Response should contain error message");
 
+    }
+
+    @Test
+    void successfulProductReviewTest() {
+        // First add the product to cart and purchase it to establish a purchase history
+        Response<String> addToCartResponse = bridge.addProductToUserCart(
+                testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addToCartResponse.isError(), "Adding product to cart should succeed");
+
+        // Create a credit card for purchase
+        CreditCardDTO creditCard = new CreditCardDTO(
+                "John Doe",
+                "4111111111111111",
+                "12/25",
+                "123"
+        );
+        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+        Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
+
+        // Create a product review request
+        String reviewText = "This product exceeded my expectations. Great value for money!";
+
+        // Using UUID.randomUUID() for userId as it's not clear what this should be
+        ProductReviewRequest reviewRequest = new ProductReviewRequest(
+                testUsername,
+                productId,
+                storeId,
+                reviewText
+        );
+
+        // Submit the review
+        Response<ProductReviewDTO> reviewResponse = bridge.reviewProduct(testUsername, testToken, reviewRequest);
+
+        // Verify the response
+        Assertions.assertNotNull(reviewResponse, "Review response should not be null");
+        Assertions.assertFalse(reviewResponse.isError(), "Reviewing an existing product should succeed");
+        Assertions.assertNotNull(reviewResponse.getData(), "Response should contain review data");
+
+    }
+
+    @Test
+    void reviewNonPurchasedProductTest() {
+        // Create a review request for a product the user hasn't purchased
+        ProductReviewRequest reviewRequest = new ProductReviewRequest(
+                testUsername,
+                productId,
+                storeId,
+                "This is a review for a product I haven't purchased."
+        );
+
+        // Attempt to submit the review
+        Response<ProductReviewDTO> reviewResponse = bridge.reviewProduct(testUsername, testToken, reviewRequest);
+
+        // Verify the response indicates an error
+        Assertions.assertNotNull(reviewResponse, "Review response should not be null");
+        Assertions.assertTrue(reviewResponse.isError(), "Reviewing a non-purchased product should fail");
+        Assertions.assertNotNull(reviewResponse.getErrorMessage(), "Response should contain error message");
+
+    }
+
+    @Test
+    void reviewNonExistentProductTest() {
+        // Generate a random UUID for a non-existent product
+        UUID nonExistentProductId = UUID.randomUUID();
+
+        // Create a review request for a non-existent product
+        ProductReviewRequest reviewRequest = new ProductReviewRequest(
+                testUsername, // userId
+                nonExistentProductId,
+                storeId,
+                "This review is for a product that doesn't exist."
+        );
+
+        // Attempt to submit the review
+        Response<ProductReviewDTO> reviewResponse = bridge.reviewProduct(testUsername, testToken, reviewRequest);
+
+        // Verify the response indicates an error
+        Assertions.assertNotNull(reviewResponse, "Review response should not be null");
+        Assertions.assertTrue(reviewResponse.isError(), "Reviewing a non-existent product should fail");
+        Assertions.assertNotNull(reviewResponse.getErrorMessage(), "Response should contain error message");
+    }
+
+    @Test
+    void loggedOutUserReviewTest() {
+        // First, log out the user
+        Response<String> logoutResponse = bridge.logout(testUsername, testToken);
+        Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
+
+        // Create a review request
+        ProductReviewRequest reviewRequest = new ProductReviewRequest(
+                testUsername, // userId
+                productId,
+                storeId,
+                "This review is being submitted while logged out."
+        );
+
+        // Attempt to submit the review while logged out
+        Response<ProductReviewDTO> reviewResponse = bridge.reviewProduct(testUsername, testToken, reviewRequest);
+
+        // Verify the response indicates an error
+        Assertions.assertNotNull(reviewResponse, "Review response should not be null");
+        Assertions.assertTrue(reviewResponse.isError(), "Reviewing while logged out should fail");
+        Assertions.assertNotNull(reviewResponse.getErrorMessage(), "Response should contain error message");
     }
 }

@@ -262,7 +262,7 @@ public class UserAccessService {
         return user.getOrdersHistory();
     }
 
-    public void saveReview(String username, UUID storeId, UUID productId, int rating, String comment) {
+    public void saveReview(String username, UUID storeId, UUID productId, String reviewText) {
         User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
         checkIfLoggedIn(username);
         // Implementation logic for saving review
@@ -294,7 +294,7 @@ public class UserAccessService {
         try {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("user not found!"));
-
+            logger.info("User found: {}", user.getUserName());
             checkIfLoggedIn(username);
             Cart cart = user.getCart();
             System.out.println("printing cart.toString()");
@@ -414,6 +414,9 @@ public class UserAccessService {
             logger.info("No violation reports found");
             return new ArrayList<>();
         }
+        for (Report report : reports) {
+            logger.info("{}", report.toString());
+        }
         return reports;
     }
 
@@ -432,6 +435,13 @@ public class UserAccessService {
     public void replyViolationReport(String admin, UUID reportId, String user, String message) {
         validateAdmin(admin);
         checkIfLoggedIn(admin);
+        // check if user exists
+        if (!userRepository.contains(user)) {
+            logger.info("User not found: {}", user);
+            throw new IllegalArgumentException("User not found");
+        }
+        // check if report exists
+        Report report = reportRepository.findById(reportId).orElseThrow(()-> new IllegalArgumentException("report not found!"));
         // Publish a message for the report reply instead of direct call
         DomainEventPublisher.publish(
                 new ViolationReplyEvent(admin, reportId, user, message)
@@ -442,6 +452,11 @@ public class UserAccessService {
     public void sendMessageToUser(String admin, String addressee, String message) {
         validateAdmin(admin);
         checkIfLoggedIn(admin);
+        // check if user exists
+        if (!userRepository.contains(addressee)) {
+            logger.info("User not found: {}", addressee);
+            throw new IllegalArgumentException("User not found");
+        }
         // Publish direct message event instead of direct call
         DomainEventPublisher.publish(
                 new DirectMessageEvent(admin, addressee, message)

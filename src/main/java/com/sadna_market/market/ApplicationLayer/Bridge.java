@@ -10,6 +10,7 @@ import com.sadna_market.market.InfrastructureLayer.Authentication.InMemoryAuthRe
 import com.sadna_market.market.InfrastructureLayer.Authentication.TokenService;
 import com.sadna_market.market.InfrastructureLayer.InMemoryRepos.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,34 +25,49 @@ public class Bridge {
 
     private final MessageApplicationService messageService;
 
-    public Bridge() {
-        // Create the repositories
-        IRatingRepository ratingRepository = new InMemoryRatingRepository();
-        IUserRepository userRepository = new InMemoryUserRepository();
-        IStoreRepository storeRepository = new InMemoryStoreRepository();
-        IProductRepository productRepository = new InMemoryProductRepository();
-        IOrderRepository orderRepository = new InMemoryOrderRepository();
-        IMessageRepository messageRepository = new InMemoryMessageRepository();
-        IReportRepository reportRepository = new InMemoryReportRepository();
-        IAuthRepository authRepository = new InMemoryAuthRepository();
+//    public Bridge() {
+//        // Create the repositories
+//        IRatingRepository ratingRepository = new InMemoryRatingRepository();
+//        IUserRepository userRepository = new InMemoryUserRepository();
+//        IStoreRepository storeRepository = new InMemoryStoreRepository();
+//        IProductRepository productRepository = new InMemoryProductRepository();
+//        IOrderRepository orderRepository = new InMemoryOrderRepository();
+//        IMessageRepository messageRepository = new InMemoryMessageRepository();
+//        IReportRepository reportRepository = new InMemoryReportRepository();
+//        IAuthRepository authRepository = new InMemoryAuthRepository();
+//
+//        TokenService tokenService = new TokenService();
+//
+//        // Create authentication
+//        AuthenticationBridge authentication = new AuthenticationBridge(authRepository, tokenService);
+//
+//        // Create domain services
+//        UserAccessService userAccessService = new UserAccessService(userRepository, storeRepository, reportRepository, "admin");
+//        OrderProcessingService orderProcessingService = new OrderProcessingService(storeRepository, orderRepository, userRepository, productRepository);
+//        StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository, messageRepository);
+//        InventoryManagementService inventoryManagementService = new InventoryManagementService(storeRepository, productRepository, userRepository);
+//        MessageService messageService = new MessageService(messageRepository, storeRepository, userRepository);
+//        RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository,orderRepository);
+//
+//        // Create application services
+//        this.userService = new UserService(authentication, userAccessService, inventoryManagementService, orderProcessingService);
+//        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService);
+//        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService);
+//        this.messageService = new MessageApplicationService(authentication, messageService);
+//    }
 
-        TokenService tokenService = new TokenService();
+    @Autowired
+    public Bridge(
+            // Inject Application Services
+            UserService userService,
+            ProductService productService,
+            StoreService storeService,
+            MessageApplicationService messageService) {
 
-        // Create authentication
-        AuthenticationBridge authentication = new AuthenticationBridge(authRepository, tokenService);
-
-        // Create domain services
-        UserAccessService userAccessService = new UserAccessService(userRepository, storeRepository, reportRepository, "admin");
-        StoreManagementService storeManagementService = new StoreManagementService(storeRepository, userRepository, messageRepository);
-        InventoryManagementService inventoryManagementService = new InventoryManagementService(storeRepository, productRepository, userRepository);
-        MessageService messageService = new MessageService(messageRepository, storeRepository, userRepository);
-        RatingService ratingService = new RatingService(ratingRepository, userRepository, productRepository, storeRepository);
-
-        // Create application services
-        this.userService = new UserService(authentication, userAccessService, inventoryManagementService);
-        this.productService = new ProductService(authentication, productRepository, inventoryManagementService, ratingService);
-        this.storeService = new StoreService(authentication, storeManagementService, storeRepository, orderRepository, ratingService);
-        this.messageService = new MessageApplicationService(authentication, messageService);
+        this.userService = userService;
+        this.productService = productService;
+        this.storeService = storeService;
+        this.messageService = messageService;
     }
 
     /** Admin Test Methods */
@@ -131,6 +147,14 @@ public class Bridge {
         return productService.rateProduct(token, request);
     }
 
+    public Response<ProductReviewDTO> reviewProduct(String username, String token, ProductReviewRequest request){
+        return productService.reviewProduct(username, token, request);
+    }
+
+    public Response<String> reportViolation(String username, String token, ReviewRequest report){
+        return userService.reportViolation(username, token, report);
+    }
+
     public Response<List<UUID>> getOrdersHistory(String userName, String token){
         return userService.getOrdersHistory(userName, token);
     }
@@ -195,6 +219,47 @@ public class Bridge {
     public Response<String> giveUpOwnerShip(String username, String token, UUID storeId){
         return storeService.leaveOwnership(username, token, storeId);
     }
+
+    /** Admin Operations */
+
+// Deletes a user from the system (req 6.2)
+    public Response<String> adminDeleteUser(String adminUsername, String token, String userToDelete) {
+        return userService.deleteUser(adminUsername, token, userToDelete);
+    }
+
+    // Gets all violation reports (req 6.3.a)
+    public Response<List<Report>> getViolationReports(String adminUsername, String token) {
+        return userService.getViolationReports(adminUsername, token);
+    }
+
+    // Allows admin to reply to a violation report (req 6.3.b)
+    public Response<String> replyToViolationReport(String adminUsername, String token, UUID reportId,
+                                                   String user, String message) {
+        return userService.replyViolationReport(adminUsername, token, reportId, user, message);
+    }
+
+    // Allows admin to send a direct message to a user (req 6.3.c)
+    public Response<String> adminSendMessage(String adminUsername, String token, String recipient,
+                                             String message) {
+        return userService.sendMessageToUser(adminUsername, token, recipient, message);
+    }
+
+    // Gets purchase history for a specific user (req 6.4.a)
+    public Response<List<UUID>> getUserPurchaseHistory(String adminUsername, String token,
+                                                       String targetUsername) {
+        return userService.getUserPurchasedHistory(adminUsername, token, targetUsername);
+    }
+
+    // Gets the transaction rate statistics (req 6.5.b)
+    public Response<Double> getTransactionRate(String adminUsername, String token) {
+        return userService.getTransactionsRate(adminUsername, token);
+    }
+
+    // Gets the subscription rate statistics (req 6.5.c)
+    public Response<Double> getSubscriptionRate(String adminUsername, String token) {
+        return userService.getSubscriptionsRate(adminUsername, token);
+    }
+
 
     public void clear() {
         userService.clear();

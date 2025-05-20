@@ -2,12 +2,14 @@ package com.sadna_market.market.ApplicationLayer;
 
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductReviewDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.DomainLayer.ProductRating;
+import com.sadna_market.market.DomainLayer.ProductReview;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -126,7 +128,7 @@ public class ProductService {
             productRepository.addProductReview(
                     review.getProductId(),
                     review.getUsername(),
-                    review.getComment()
+                    review.getReviewText()
             );
 
             return Response.success("Review added successfully");
@@ -280,6 +282,26 @@ public class ProductService {
         } catch (Exception e) {
             logger.error("Error while getting store products with request: {}", e.getMessage(), e);
             return Response.error("Failed to get store products with request: " + e.getMessage());
+        }
+    }
+
+    public Response<ProductReviewDTO> reviewProduct(String username, String token, ProductReviewRequest review) {
+        logger.info("Adding review for product ID: {}", review.getProductId());
+        try {
+            logger.info("Validating token for user with username: {}", review.getUsername());
+            authentication.validateToken(review.getUsername(), token);
+
+            // Convert application request to domain parameters
+            ProductReview productReview = ratingService.reviewProduct(username,
+                    review.getProductId(),
+                    review.getStoreId(),
+                    review.getReviewText());
+            // Convert domain object to DTO for response
+            ProductReviewDTO reviewDTO = new ProductReviewDTO(productReview);
+            return Response.success(reviewDTO);
+        } catch (Exception e) {
+            logger.error("Error adding product review: {}", e.getMessage(), e);
+            return Response.error("Error adding product review: " + e.getMessage());
         }
     }
 

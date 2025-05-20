@@ -283,4 +283,35 @@ public class InMemoryOrderRepository implements IOrderRepository {
         orders.clear();
         logger.info("Order repository cleared");
     }
+
+    @Override
+    public List<Order> findOrdersByUser(String username){
+        if (username == null || username.isEmpty()) {
+            logger.error("Cannot find orders for null or empty username");
+            return Collections.emptyList();
+        }
+
+        logger.debug("Finding orders for user: {}", username);
+
+        return orders.values().stream()
+                .filter(order -> username.equals(order.getUserName()))
+                .collect(Collectors.toList());
+    }
+
+
+    public boolean hasUserPurchasedProduct(String username, UUID productId) {
+        logger.info("Checking if user {} has purchased product {}", username, productId);
+        List<Order> orders = findOrdersByUser(username);
+        logger.info("Found {} orders for user {}", orders.size(), username);
+        for (Order order : orders) {
+            logger.info("Checking order {} with status {}", order.getOrderId(), order.getStatus());
+            if (order.getProductsMap().containsKey(productId) && order.getStatus() == OrderStatus.PAID) {
+                logger.info("User {} has purchased product {}", username, productId);
+                return true;
+            }
+        }
+        logger.info("User {} has not purchased product {}", username, productId);
+        return false;
+    }
+
 }

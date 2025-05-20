@@ -9,6 +9,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.RegisterRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ReviewRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
+import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
@@ -27,14 +28,16 @@ public class UserService {
     private final AuthenticationBridge authentication;
     private final UserAccessService userAccessService;
     private final InventoryManagementService inventoryManagementService;
+    private final OrderProcessingService orderProcessingService;
 
     @Autowired
     public UserService(AuthenticationBridge authentication,
                        UserAccessService userAccessService,
-                       InventoryManagementService inventoryManagementService) {
+                       InventoryManagementService inventoryManagementService, OrderProcessingService orderProcessingService) {
         this.authentication = authentication;
         this.userAccessService = userAccessService;
         this.inventoryManagementService = inventoryManagementService;
+        this.orderProcessingService = orderProcessingService;
     }
 
     //Guest functions here:
@@ -246,7 +249,7 @@ public class UserService {
             logger.info("Validating token for user with username: {}", review.getUsername());
             authentication.validateToken(review.getUsername(), token);
             logger.info("Saving review for product with ID: {}", review.getProductId());
-            userAccessService.saveReview(review.getUsername(), review.getStoreId(), review.getProductId(), review.getRating(), review.getComment());
+            userAccessService.saveReview(review.getUsername(), review.getStoreId(), review.getProductId(), review.getReviewText());
             logger.info("Review saved successfully");
             return Response.success("Review saved successfully");
         } catch (Exception e) {
@@ -415,7 +418,7 @@ public class UserService {
             authentication.validateToken(admin, token);
             logger.info("Getting transactions rate for admin with username: {}", admin);
             double transactionsRate = userAccessService.getTransactionsRatePerHour(admin);
-            logger.info("Transactions rate retrieved successfully");
+            logger.info("Transactions rate retrieved successfully:{}", transactionsRate);
             return Response.success(transactionsRate);
         } catch (Exception e) {
             logger.error(e.getMessage());
