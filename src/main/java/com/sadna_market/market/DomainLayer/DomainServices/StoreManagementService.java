@@ -519,4 +519,10 @@ public class StoreManagementService {
 
         return permissions;
     }
+
+    public boolean getStoreStatus(UUID storeId) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new RuntimeException("Store not found"));
+        return store.isActive();
+    }
 }

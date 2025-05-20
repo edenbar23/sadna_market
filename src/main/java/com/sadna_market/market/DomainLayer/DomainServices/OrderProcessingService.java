@@ -386,4 +386,50 @@ public class OrderProcessingService {
         user.clearCart();
         userRepository.update(user);
     }
+
+    public OrderStatus getOrderStatus(UUID orderId) {
+        return orderRepository.findById(orderId)
+                .map(Order::getStatus)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+    }
+
+    public Optional<Order> getOrderById(UUID orderId) {
+        return orderRepository.findById(orderId);
+    }
+    
+    public void cancelOrder(UUID orderId) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            throw new IllegalArgumentException("Order not found");
+        }
+        Order order = orderOpt.get();
+    
+        // Update order status to CANCELED
+        orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
+    
+        // Refund payment if any
+        UUID paymentId = order.getPaymentId();
+        if (paymentId != null) {
+            paymentService.refund(paymentId);
+        }
+    
+        // Restore inventory
+        Store store = storeRepository.findById(order.getStoreId())
+                .orElseThrow(() -> new IllegalStateException("Store not found"));
+    
+        Map<UUID, Integer> items = order.getProductsMap();
+        for (var entry : items.entrySet()) {
+            UUID productId = entry.getKey();
+            int quantity = entry.getValue();
+            int currentQty = store.getProductQuantity(productId);
+            store.updateProductQuantity(productId, currentQty + quantity);
+        }
+        storeRepository.save(store);
+    
+        logger.info("Order {} cancelled and inventory restored", orderId);
+    }
+    
+    public List<Order> getOrdersByUser(String username) {
+        return orderRepository.findByUserName(username);
+    }
 }
