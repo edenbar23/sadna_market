@@ -95,6 +95,7 @@ public class StoreService {
         }
     }
 
+
     //req 2.1 (b)
     public Response<StoreDTO> getStoreInfo(UUID storeId) {
         logger.info("Getting store info for store ID: {}", storeId);

@@ -329,6 +329,15 @@ public class InMemoryProductRepository implements IProductRepository {
                 .collect(Collectors.toList());
     }
 
+    public List<ProductDTO> getTopTenRatedProducts() {
+        logger.debug("Retrieving top 10 rated products");
+        return productStorage.values().stream()
+                .filter(Product::isAvailable)
+                .sorted(Comparator.comparingDouble(Product::getRate).reversed())
+                .limit(10)
+                .map(ProductDTO::new)
+                .collect(Collectors.toList());
+    }
 
 
     @Override
