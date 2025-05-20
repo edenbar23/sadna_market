@@ -1,0 +1,42 @@
+/* Delete Confirmation Modal */
+.delete-confirmation {
+    max-width: 450px;
+}
+
+.warning-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.confirmation-message {
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.warning-text {
+    color: #dc2626;
+    text-align: center;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.btn-delete {
+    background-color: #ef4444;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background-color: #dc2626;
+}
+
+.btn-delete:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

@@ -17,7 +17,7 @@ public class Store {
     private StoreFounder founder;
 
     // Rating properties
-    private double ratingSum;
+    private double rating;
     private int ratingCount;
 
     // Collections - thread-safe implementations
@@ -46,7 +46,7 @@ public class Store {
         this.active = true;
         this.creationDate = new Date();
         this.founder = null; // Will be set later
-        this.ratingSum = 0.0;
+        this.rating = 0.0;
         this.ratingCount = 0;
     }
 
@@ -59,7 +59,7 @@ public class Store {
         this.active = true;
         this.creationDate = new Date();
         this.founder = null;
-        this.ratingSum = 0.0;
+        this.rating = 0.0;
         this.ratingCount = 0;
 
         // If founder is provided, set it properly
@@ -79,7 +79,7 @@ public class Store {
         this.active = active;
         this.creationDate = creationDate;
         this.founder = founder;
-        this.ratingSum = 0.0;
+        this.rating = 0.0;
         this.ratingCount = 0;
 
         // Add the founder as the first owner
@@ -165,8 +165,9 @@ public class Store {
 
         storeLock.writeLock().lock();
         try {
-            this.ratingSum += ratingValue;
-            this.ratingCount++;
+            // Calculate new average without storing the sum
+            rating = (rating * ratingCount + ratingValue) / (ratingCount + 1);
+            ratingCount++;
         } finally {
             storeLock.writeLock().unlock();
         }
@@ -177,7 +178,12 @@ public class Store {
 
         storeLock.writeLock().lock();
         try {
-            this.ratingSum = this.ratingSum - oldRate + newRate;
+            if (ratingCount == 0) {
+                throw new IllegalStateException("No ratings to update");
+            }
+            double total = rating * ratingCount;
+            total = total - oldRate + newRate;
+            rating = total / ratingCount;
         } finally {
             storeLock.writeLock().unlock();
         }
@@ -186,7 +192,7 @@ public class Store {
     public double getStoreRating() {
         storeLock.readLock().lock();
         try {
-            return ratingCount > 0 ? ratingSum / ratingCount : 0.0;
+            return rating;
         } finally {
             storeLock.readLock().unlock();
         }

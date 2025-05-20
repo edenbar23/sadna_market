@@ -7,14 +7,14 @@ export default function ProductCard({ product }) {
   const [quantity, setQuantity] = useState(1);
 
   const handleNavigate = () => {
-    navigate(`/product/${product.id}`);
+    navigate(`/product/${product.productId}`);
   };
 
   const incrementQty = () => setQuantity((q) => q + 1);
   const decrementQty = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
 
   const handleAddToCart = () => {
-    console.log("Adding to cart:", { productId: product.id, quantity });
+    console.log("Adding to cart:", { productId: product.productId, quantity });
     // You could call context, Redux, or backend here
   };
 
