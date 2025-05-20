@@ -130,6 +130,20 @@ public class StoreService {
         }
     }
 
+    public Response<List<Store>> getTopRatedStores() {
+        logger.info("Getting top rated stores");
+
+        try {
+            // Get all stores from the repository
+            List<Store> topRatedStores = storeRepository.getTopRatedStores();
+            return Response.success(topRatedStores);
+
+        } catch (Exception e) {
+            logger.error("Error getting top rated stores: {}", e.getMessage(), e);
+            return Response.error("Failed to get top rated stores: " + e.getMessage());
+        }
+    }
+
     public Response<String> appointStoreOwner(String appointerUsername, String token, UUID storeId, String newOwnerUsername) {
         logger.info("User {} appointing {} as store owner for store {}", appointerUsername, newOwnerUsername, storeId);
 

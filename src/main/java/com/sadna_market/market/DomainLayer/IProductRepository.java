@@ -1,5 +1,7 @@
 package com.sadna_market.market.DomainLayer;
 
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,4 +42,6 @@ public interface IProductRepository {
                                           Double minRate, Double maxRate);
 
     void clear();
+
+    List<ProductDTO> getTopRatedProducts(UUID storeId);
 }

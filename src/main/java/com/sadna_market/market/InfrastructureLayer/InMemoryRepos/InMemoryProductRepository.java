@@ -1,5 +1,6 @@
 package com.sadna_market.market.InfrastructureLayer.InMemoryRepos;
 
+import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.DomainLayer.ProductRating;
@@ -316,6 +317,16 @@ public class InMemoryProductRepository implements IProductRepository {
             logger.warn("Product rating not found for deletion: {}", ratingId);
             return false;
         }
+    }
+
+    public List<ProductDTO> getTopRatedProducts(UUID storeId) {
+        logger.debug("Retrieving top-rated products for store ID: {}", storeId);
+        return productStorage.values().stream()
+                .filter(product -> product.getStoreId().equals(storeId) && product.isAvailable())
+                .sorted(Comparator.comparingDouble(Product::getRate).reversed())
+                .limit(10)
+                .map(ProductDTO::new)
+                .collect(Collectors.toList());
     }
 
 

@@ -342,6 +342,28 @@ public class InMemoryStoreRepository implements IStoreRepository {
     }
 
     @Override
+    public List<Store> getTopRatedStores() {
+        logger.debug("Getting top rated stores");
+
+        // Get all active stores
+        List<Store> activeStores = stores.values().stream()
+                .filter(Store::isActive)
+                .toList();
+
+        // Sort by rating in descending order
+        List<Store> sortedStores = activeStores.stream()
+                .sorted(Comparator.comparing(Store::getStoreRating).reversed())
+                .collect(Collectors.toList());
+
+        // Take top 10 or all if less than 10
+        int limit = Math.min(10, sortedStores.size());
+        List<Store> topStores = sortedStores.subList(0, limit);
+
+        logger.info("Retrieved {} top rated stores", topStores.size());
+        return topStores;
+    }
+
+    @Override
     public void clear() {
         stores.clear();
         logger.info("Store repository cleared");
