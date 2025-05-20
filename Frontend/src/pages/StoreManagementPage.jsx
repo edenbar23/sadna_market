@@ -68,7 +68,7 @@ export default function StoreManagementPage({ user }) {
             <div className="store-grid">
                 {storeDetails.length > 0 ? (
                     storeDetails.map((store) => (
-                        <div key={store.id} className="store-card">
+                        <div key={store.storeId} className="store-card">
                             <StoreControlPanel
                                 store={store}
                                 onUpdate={loadUserStores}
