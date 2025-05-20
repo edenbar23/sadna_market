@@ -24,4 +24,14 @@ public class Report {
         this.reportId = UUID.randomUUID();
     }
 
+    public String toString() {
+        return "Report{" +
+                "username='" + username + '\'' +
+                ", comment='" + comment + '\'' +
+                ", storeId=" + storeId +
+                ", productId=" + productId +
+                ", reportId=" + reportId +
+                '}';
+    }
+
 }

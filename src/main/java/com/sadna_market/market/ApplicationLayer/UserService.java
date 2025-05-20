@@ -418,7 +418,7 @@ public class UserService {
             authentication.validateToken(admin, token);
             logger.info("Getting transactions rate for admin with username: {}", admin);
             double transactionsRate = userAccessService.getTransactionsRatePerHour(admin);
-            logger.info("Transactions rate retrieved successfully");
+            logger.info("Transactions rate retrieved successfully:{}", transactionsRate);
             return Response.success(transactionsRate);
         } catch (Exception e) {
             logger.error(e.getMessage());
