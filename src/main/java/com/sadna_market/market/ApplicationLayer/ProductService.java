@@ -7,7 +7,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
-import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class ProductService {
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class);
 
-    private final AuthenticationBridge authentication;
+    private final AuthenticationAdapter authentication;
     private final IProductRepository productRepository;
     private final InventoryManagementService inventoryManagementService;
     private final RatingService ratingService;

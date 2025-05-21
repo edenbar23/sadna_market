@@ -11,7 +11,7 @@ import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
-import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +25,13 @@ import java.util.UUID;
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    private final AuthenticationBridge authentication;
+    private final AuthenticationAdapter authentication;
     private final UserAccessService userAccessService;
     private final InventoryManagementService inventoryManagementService;
     private final OrderProcessingService orderProcessingService;
 
     @Autowired
-    public UserService(AuthenticationBridge authentication,
+    public UserService(AuthenticationAdapter authentication,
                        UserAccessService userAccessService,
                        InventoryManagementService inventoryManagementService, OrderProcessingService orderProcessingService) {
         this.authentication = authentication;
