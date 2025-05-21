@@ -3,18 +3,11 @@ package com.sadna_market.market.ApplicationLayer;
 import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
-import com.sadna_market.market.DomainLayer.DomainServices.*;
-import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
-import com.sadna_market.market.InfrastructureLayer.Authentication.IAuthRepository;
-import com.sadna_market.market.InfrastructureLayer.Authentication.InMemoryAuthRepository;
-import com.sadna_market.market.InfrastructureLayer.Authentication.TokenService;
-import com.sadna_market.market.InfrastructureLayer.InMemoryRepos.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Component

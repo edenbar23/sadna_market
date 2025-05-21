@@ -7,7 +7,7 @@ import com.sadna_market.market.DomainLayer.DomainServices.MessageService;
 import com.sadna_market.market.DomainLayer.Events.DomainEventPublisher;
 import com.sadna_market.market.DomainLayer.Events.MessageSentEvent;
 import com.sadna_market.market.DomainLayer.Message;
-import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationBridge;
+import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
 public class MessageApplicationService {
     private static final Logger logger = LoggerFactory.getLogger(MessageApplicationService.class);
 
-    private final AuthenticationBridge authentication;
+    private final AuthenticationAdapter authentication;
     private final MessageService messageService;
 
     @Autowired
-    public MessageApplicationService(AuthenticationBridge authentication,
+    public MessageApplicationService(AuthenticationAdapter authentication,
                                      MessageService messageService) {
         this.authentication = authentication;
         this.messageService = messageService;

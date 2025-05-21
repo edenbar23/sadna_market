@@ -6,17 +6,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Component
-public class AuthenticationBridge {
+public class AuthenticationAdapter {
 
     private final TokenService tokenService;
     private final IAuthRepository authRepository;
-    private final Logger logger = LogManager.getLogger(AuthenticationBridge.class);
+    private final Logger logger = LogManager.getLogger(AuthenticationAdapter.class);
 
     @Autowired
-    public AuthenticationBridge(IAuthRepository authRepository, TokenService tokenService) {
+    public AuthenticationAdapter(IAuthRepository authRepository, TokenService tokenService) {
         this.authRepository = authRepository;
         this.tokenService = tokenService;
         logger.info("AuthenticationBridge initialized");
