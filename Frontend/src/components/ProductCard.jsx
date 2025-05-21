@@ -6,7 +6,7 @@ import "../styles/components.css";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user, token } = useAuthContext();
   const { addToCart, loading } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);

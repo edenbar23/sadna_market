@@ -105,12 +105,8 @@ export const checkoutGuest = async (cart, paymentMethod) => {
 // User cart management APIs
 export const addToCart = async (username, token, storeId, productId, quantity) => {
     const response = await apiClient.post(
-        `/${username}/cart`,
-        {
-            storeId,
-            productId,
-            quantity
-        },
+        `/${username}/cart?storeId=${storeId}&productId=${productId}&quantity=${quantity}`,
+        null,
         {
             headers: { Authorization: token }
         }

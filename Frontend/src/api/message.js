@@ -70,7 +70,7 @@ export const getStoreMessages = async (storeId, username, token) => {
         params: { username },
         headers: { Authorization: token }
     });
-    return response;
+    return response.data;
 };
 
 // Get messages sent by a user

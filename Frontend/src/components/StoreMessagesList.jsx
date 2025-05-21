@@ -7,110 +7,102 @@ export default function StoreMessagesList({ storeId }) {
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [replyText, setReplyText] = useState("");
     const [showReplyForm, setShowReplyForm] = useState(false);
-    const { getStoreMessagesList, replyToStoreMessage, markAsRead, loading, error } = useMessages();
 
-    // Load store messages when component mounts or storeId changes
+    const {
+        getStoreMessagesList,
+        replyToStoreMessage,
+        markAsRead,
+        loading,
+        error
+    } = useMessages();
+
+    // Load store messages
     useEffect(() => {
-        const loadMessages = async () => {
-            if (!storeId) {
-                console.warn("No storeId provided to StoreMessagesList");
-                return;
-            }
+        if (!storeId) return;
 
+        const fetchMessages = async () => {
             try {
-                console.log("Fetching messages for store:", storeId);
-                const messagesData = await getStoreMessagesList(storeId);
-                if (messagesData) {
-                    // Sort messages by timestamp (newest first)
-                    const sortedMessages = messagesData.sort((a, b) =>
-                        new Date(b.timestamp) - new Date(a.timestamp)
-                    );
-                    setMessages(sortedMessages);
-                    console.log("Successfully loaded messages:", sortedMessages.length);
-                } else {
-                    console.warn("No message data returned from API");
-                    setMessages([]);
+                const data = await getStoreMessagesList(storeId);
+
+                if (!Array.isArray(data)) {
+                    console.error("Expected an array of messages but got:", data);
+                    return;
                 }
+
+                const sorted = data
+                    .filter(msg => msg && msg.timestamp)
+                    .sort((a, b) =>
+                        new Date(b.timestamp.replace(" ", "T")) - new Date(a.timestamp.replace(" ", "T"))
+                    );
+
+                setMessages(sorted);
             } catch (err) {
-                console.error("Failed to load store messages:", err);
-                // Don't set messages to empty array in case of error, to preserve existing messages
+                console.error("Failed to fetch store messages:", err);
             }
         };
 
-        loadMessages();
+        fetchMessages();
     }, [storeId, getStoreMessagesList]);
 
-    // Handle sending a reply to a message
-    const handleReply = async () => {
-        if (!selectedMessage || !replyText.trim()) return;
-
-        try {
-            const success = await replyToStoreMessage(selectedMessage.messageId, replyText);
-
-            if (success) {
-                // Update the message in our local state
-                const updatedMessages = messages.map(msg =>
-                    msg.messageId === selectedMessage.messageId
-                        ? {
-                            ...msg,
-                            reply: replyText,
-                            hasReply: true,
-                            replyTimestamp: new Date().toISOString()
-                        }
-                        : msg
-                );
-
-                setMessages(updatedMessages);
-                setReplyText("");
-                setShowReplyForm(false);
-            }
-        } catch (err) {
-            console.error("Failed to send reply:", err);
-            alert("Failed to send reply. Please try again.");
-        }
-    };
-
-    // Mark a message as read when opened
     const handleSelectMessage = async (message) => {
         setSelectedMessage(message);
+        setShowReplyForm(true);
 
-        if (!message.isRead) {
+        if (!message.read) {
             try {
                 const success = await markAsRead(message.messageId);
-
                 if (success) {
-                    // Update the message in our local state
-                    const updatedMessages = messages.map(msg =>
-                        msg.messageId === message.messageId
-                            ? { ...msg, isRead: true }
-                            : msg
+                    setMessages(prev =>
+                        prev.map(m => m.messageId === message.messageId ? { ...m, read: true } : m)
                     );
-
-                    setMessages(updatedMessages);
                 }
             } catch (err) {
                 console.error("Failed to mark message as read:", err);
             }
         }
-
-        setShowReplyForm(true);
     };
 
-    // Format timestamp to readable date/time using native JavaScript
-    const formatTimestamp = (timestamp) => {
-        if (!timestamp) return "";
+    const handleReply = async () => {
+        if (!selectedMessage || !replyText.trim()) return;
+
         try {
-            const date = new Date(timestamp);
-            return date.toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
+            const success = await replyToStoreMessage(selectedMessage.messageId, replyText.trim());
+            if (success) {
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.messageId === selectedMessage.messageId
+                            ? {
+                                ...m,
+                                reply: replyText.trim(),
+                                hasReply: true,
+                                replyTimestamp: new Date().toISOString()
+                            }
+                            : m
+                    )
+                );
+                setReplyText("");
+                setShowReplyForm(false);
+            }
+        } catch (err) {
+            console.error("Reply failed:", err);
+            alert("Failed to send reply.");
+        }
+    };
+
+    const formatTimestamp = (ts) => {
+        if (!ts) return "";
+        try {
+            const d = new Date(ts.replace(" ", "T"));
+            return d.toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
                 hour12: true
             });
-        } catch (e) {
-            return timestamp;
+        } catch {
+            return ts;
         }
     };
 
@@ -129,34 +121,34 @@ export default function StoreMessagesList({ storeId }) {
     return (
         <div className="store-messages-list">
             <div className="messages-scroll">
-                {messages.map((message) => (
+                {messages.map((msg) => (
                     <div
-                        key={message.messageId}
-                        className={`message-bubble ${!message.isRead ? 'unread' : ''}`}
-                        onClick={() => handleSelectMessage(message)}
+                        key={msg.messageId}
+                        className={`message-bubble ${msg.read ? "" : "unread"}`}
+                        onClick={() => handleSelectMessage(msg)}
                     >
                         <div className="message-header">
-                            <span className="message-sender">{message.senderUsername}</span>
-                            <span className="message-time">{formatTimestamp(message.timestamp)}</span>
+                            <span className="message-sender">{msg.senderUsername}</span>
+                            <span className="message-time">{formatTimestamp(msg.timestamp)}</span>
                         </div>
-                        <div className="message-content">{message.content}</div>
+                        <div className="message-content">{msg.content}</div>
 
-                        {message.hasReply && (
+                        {msg.hasReply && (
                             <div className="message-reply">
                                 <div className="reply-header">
-                                    <span className="reply-author">{message.replyAuthor}</span>
-                                    <span className="reply-time">{formatTimestamp(message.replyTimestamp)}</span>
+                                    <span className="reply-author">{msg.replyAuthor}</span>
+                                    <span className="reply-time">{formatTimestamp(msg.replyTimestamp)}</span>
                                 </div>
-                                <div className="reply-content">{message.reply}</div>
+                                <div className="reply-content">{msg.reply}</div>
                             </div>
                         )}
 
-                        {!message.hasReply && (
+                        {!msg.hasReply && (
                             <button
                                 className="reply-button"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleSelectMessage(message);
+                                    handleSelectMessage(msg);
                                 }}
                             >
                                 Reply

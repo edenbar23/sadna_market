@@ -27,7 +27,7 @@ export default function StorePage() {
                 const storeResponse = await fetchStoreById(storeId);
 
                 if (storeResponse && !storeResponse.error) {
-                    setStore(storeResponse.data);
+                    setStore(storeResponse);
 
                     // Fetch store products in parallel
                     const productsResponse = await getStoreProducts(storeId);
