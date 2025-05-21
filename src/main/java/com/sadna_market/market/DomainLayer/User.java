@@ -148,5 +148,14 @@ public class User extends IUser {
         myReports.add(reportId);
     }
 
+    public List<UUID> getStoresIds(){
+        List<UUID> ids = new ArrayList<>();
+        for (UserStoreRoles userRole : userStoreRoles){
+            UUID storeId = userRole.getStoreId();
+            ids.add(storeId);
+        }
+        return ids;
+    }
+
 
 }

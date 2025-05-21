@@ -40,6 +40,8 @@ export const fetchAllStores = async () => {
 
 export const fetchStoreById = async (storeId) => {
   const response = await apiClient.get(`/stores/${storeId}`);
+  console.log(response);
+  console.log(response.data);
   return response.data;
 };
 

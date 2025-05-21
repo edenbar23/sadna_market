@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useAuthContext } from "../context/AuthContext";
 import "../index.css";
 
 export default function AddProductModal({ storeId, onClose, onSubmit }) {
+    const { user } = useAuthContext();
     const [productData, setProductData] = useState({
         name: "",
         price: "",
@@ -75,10 +77,10 @@ export default function AddProductModal({ storeId, onClose, onSubmit }) {
             }
 
             await onSubmit(formattedData, parseInt(productData.quantity));
+            onClose();
         } catch (error) {
             console.error("Error adding product:", error);
             setErrors({ form: "Failed to add product. Please try again." });
-        } finally {
             setIsSubmitting(false);
         }
     };

@@ -11,7 +11,7 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
     const [localError, setLocalError] = useState("");
 
     // Ensure we have a valid store ID before proceeding
-    const storeId = store?.id || store?._id;
+    const storeId = store.storeId;
 
     if (!storeId) {
         return <div className="error-text">Invalid store data</div>;

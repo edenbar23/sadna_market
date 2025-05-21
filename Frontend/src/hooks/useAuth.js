@@ -33,16 +33,20 @@ export const useAuth = () => {
         // Set the token in context and localStorage
         setToken(tokenValue);
 
-        // Fetch user details or create a basic user object
+        // After successful login, fetch user info to get roles and stores
+        const userInfoResponse = await userAPI.returnInfo(username, tokenValue);
+
+        // Create a complete user object with all the necessary info
         const userObject = {
           username,
           token: tokenValue,
-          // Add other user details if available from response
+          role: userInfoResponse?.data?.role || 'user',
+          stores: userInfoResponse?.data?.stores || [],
+          // Add other user details as needed
         };
 
-        // Update auth context with user data
+        // Update auth context with complete user data
         setUser(userObject);
-
         return response;
       } else {
         throw new Error('Invalid response from server');

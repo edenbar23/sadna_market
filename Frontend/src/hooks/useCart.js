@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as userService from '../api/user';
-import { useAuthContext } from './useAuthContext';
+import { useAuthContext } from '../context/AuthContext';
 
 export const useCart = () => {
   const [loading, setLoading] = useState(false);

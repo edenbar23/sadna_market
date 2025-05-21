@@ -530,4 +530,9 @@ public class UserAccessService {
             throw new IllegalArgumentException("User is not logged in");
         }
     }
+
+    public List<UUID> getStoresIds(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+        return user.getStoresIds();
+    }
 }

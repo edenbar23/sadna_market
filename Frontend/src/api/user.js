@@ -30,13 +30,15 @@ apiClient.interceptors.response.use(
 );
 
 // Function to fetch a user's stores from the API
-export const fetchUserStores = async (username) => {
+export const fetchUserStores = async (username, token) => {
     try {
-        const response = await apiClient.get(`/stores/user/${username}`);
-        return response.data || [];
+        const response = await apiClient.get(`/user/${username}/stores`, {
+            headers: { Authorization: token }
+        });
+        return response;
     } catch (error) {
-        console.error("Error fetching user stores:", error);
-        return []; // Return empty array on error
+        console.error('Error fetching user stores:', error);
+        throw error;
     }
 };
 
@@ -103,12 +105,8 @@ export const checkoutGuest = async (cart, paymentMethod) => {
 // User cart management APIs
 export const addToCart = async (username, token, storeId, productId, quantity) => {
     const response = await apiClient.post(
-        `/${username}/cart`,
-        {
-            storeId,
-            productId,
-            quantity
-        },
+        `/${username}/cart?storeId=${storeId}&productId=${productId}&quantity=${quantity}`,
+        null,
         {
             headers: { Authorization: token }
         }

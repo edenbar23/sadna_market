@@ -1,181 +1,225 @@
-import mockProducts  from '../data/mockProducts';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/products'; // adjust if deployed
+// Base URL configuration
+const API_BASE_URL = 'http://localhost:8081/api';
+const PRODUCTS_URL = `${API_BASE_URL}/products`;
 
-// Attach the auth token to headers
-const authHeaders = (token) => ({
-    headers: { Authorization: token },
+// Create a configured axios instance with common settings
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    timeout: 10000, // 10 second timeout
 });
 
-// 1. Search for products
-export const searchProducts = async (searchRequest) => {
-    const response = await axios.post(`${BASE_URL}/search`, searchRequest);
-    return response.data;
-};
+// Request interceptor to automatically add auth token when available
+apiClient.interceptors.request.use(config => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        config.headers.Authorization = token;
+    }
+    return config;
+});
 
+// Response interceptor for consistent error handling
+apiClient.interceptors.response.use(
+    response => response.data,
+    error => {
+        console.error('API Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error);
+    }
+);
 
-export const fetchTopProducts = async () => {
-    const response = await axios.get(`${BASE_URL}/top-rated`);
-    return response.data;
-};
-
-// export const searchProducts = async (searchParams) => {
-//     // For development/testing, we can use mock data
-//     // Later you can replace this with actual API calls
-//     const mockProducts = await fetchTopProducts(); // Reuse your existing function
-//
-//     // Filter products based on search query if provided
-//     if (searchParams.query) {
-//         const query = searchParams.query.toLowerCase();
-//         return mockProducts.filter(product =>
-//             product.name.toLowerCase().includes(query) ||
-//             (product.description && product.description.toLowerCase().includes(query)) ||
-//             (product.category && product.category.toLowerCase().includes(query))
-//         );
-//     }
-//
-//     return mockProducts;
-// };
-
+/**
+ * Validates UUID values for API calls
+ * @param {string} id - The UUID to validate
+ * @returns {string} - The validated UUID
+ * @throws {Error} - If UUID is invalid
+ */
 function ensureValidUUID(id) {
     if (!id || id === "undefined" || id === undefined) {
         throw new Error("Invalid UUID value");
     }
     return id;
 }
-//
-// // Update the addProductToStore function
-// export const addProductToStore = async (storeId, productData, quantity, token, username) => {
-//     try {
-//         // Validate the storeId
-//         const validStoreId = ensureValidUUID(storeId);
-//
-//         // Create the request data object
-//         const requestData = {
-//             ...productData,
-//             productId: null // Make sure we don't send an undefined productId
-//         };
-//
-//         const response = await apiClient.post(
-//             `/products/store/${validStoreId}`,
-//             requestData,
-//             {
-//                 headers: { Authorization: token },
-//                 params: { quantity, username }
-//             }
-//         );
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error adding product to store:", error);
-//         throw error;
-//     }
-// };
-//
-// // Update the updateProduct function
-// export const updateProduct = async (storeId, productData, quantity, token, username) => {
-//     try {
-//         // Validate the storeId and productId
-//         const validStoreId = ensureValidUUID(storeId);
-//         const validProductId = ensureValidUUID(productData.productId);
-//
-//         // Create the request data object with valid productId
-//         const requestData = {
-//             ...productData,
-//             productId: validProductId
-//         };
-//
-//         const response = await apiClient.put(
-//             `/products/store/${validStoreId}`,
-//             requestData,
-//             {
-//                 headers: { Authorization: token },
-//                 params: { quantity, username }
-//             }
-//         );
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error updating product:", error);
-//         throw error;
-//     }
-// };
-//
-// // Update the deleteProduct function
-// export const deleteProduct = async (storeId, productId, token, username) => {
-//     try {
-//         // Validate the storeId and productId
-//         const validStoreId = ensureValidUUID(storeId);
-//         const validProductId = ensureValidUUID(productId);
-//
-//         const response = await apiClient.delete(
-//             `/products/store/${validStoreId}`,
-//             {
-//                 data: { productId: validProductId },
-//                 headers: { Authorization: token },
-//                 params: { username }
-//             }
-//         );
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error deleting product:", error);
-//         throw error;
-//     }
-// };
 
+/**
+ * Search for products using criteria
+ * @param {Object} searchRequest - Search parameters
+ * @returns {Promise<Object>} - Search results
+ */
+export const searchProducts = async (searchRequest) => {
+    try {
+        return await apiClient.post(`/products/search`, searchRequest);
+    } catch (error) {
+        console.error("Error searching products:", error);
+        throw error;
+    }
+};
 
-// 2. Get product info by ID
+/**
+ * Get top rated products
+ * @returns {Promise<Object>} - Top rated products
+ */
+export const fetchTopProducts = async () => {
+    try {
+        return await apiClient.get(`/products/top-rated`);
+    } catch (error) {
+        console.error("Error fetching top products:", error);
+        throw error;
+    }
+};
+
+/**
+ * Get product details by ID
+ * @param {string} productId - The product UUID
+ * @returns {Promise<Object>} - Product details
+ */
 export const getProductInfo = async (productId) => {
-    const response = await axios.get(`${BASE_URL}/${productId}`);
-    return response.data;
+    try {
+        ensureValidUUID(productId);
+        return await apiClient.get(`/products/${productId}`);
+    } catch (error) {
+        console.error(`Error fetching product ${productId}:`, error);
+        throw error;
+    }
 };
 
-// 3. Rate a product
-export const rateProduct = async (token, rateRequest) => {
-    const response = await axios.post(`${BASE_URL}/rate`, rateRequest, authHeaders(token));
-    return response.data;
+/**
+ * Rate a product
+ * @param {Object} rateRequest - Rating data including productId, username and rating
+ * @returns {Promise<Object>} - Rating result
+ */
+export const rateProduct = async (rateRequest) => {
+    try {
+        ensureValidUUID(rateRequest.productId);
+        return await apiClient.post(`/products/rate`, rateRequest);
+    } catch (error) {
+        console.error(`Error rating product:`, error);
+        throw error;
+    }
 };
 
-// 4. Add a new product to a store
-export const addProductToStore = async (token, storeId, productRequest, quantity, username) => {
-    const response = await axios.post(
-        `${BASE_URL}/store/${storeId}`,
-        productRequest,
-        {
-            ...authHeaders(token),
-            params: { quantity, username },
-        }
-    );
-    return response.data;
+/**
+ * Add product to a store
+ * @param {string} storeId - Store UUID
+ * @param {Object} productRequest - Product data
+ * @param {number} quantity - Initial quantity
+ * @param {string} username - Username performing the action
+ * @returns {Promise<Object>} - Added product result
+ */
+export const addProductToStore = async (storeId, productRequest, quantity, username) => {
+    try {
+        ensureValidUUID(storeId);
+        // Ensure we don't send invalid productId
+        const cleanProductRequest = {
+            ...productRequest,
+            productId: null
+        };
+
+        return await apiClient.post(
+            `/products/store/${storeId}`,
+            cleanProductRequest,
+            {
+                params: { quantity, username }
+            }
+        );
+    } catch (error) {
+        console.error(`Error adding product to store ${storeId}:`, error);
+        throw error;
+    }
 };
 
-// 5. Update an existing product in a store
-export const updateProduct = async (token, storeId, productRequest, quantity, username) => {
-    const response = await axios.put(
-        `${BASE_URL}/store/${storeId}`,
-        productRequest,
-        {
-            ...authHeaders(token),
-            params: { quantity, username },
-        }
-    );
-    return response.data;
+/**
+ * Update a product
+ * @param {string} storeId - Store UUID
+ * @param {Object} productRequest - Updated product data with productId
+ * @param {number} quantity - Updated quantity
+ * @param {string} username - Username performing the action
+ * @returns {Promise<Object>} - Update result
+ */
+export const updateProduct = async (storeId, productRequest, quantity, username) => {
+    try {
+        ensureValidUUID(storeId);
+        ensureValidUUID(productRequest.productId);
+
+        return await apiClient.put(
+            `/products/store/${storeId}`,
+            productRequest,
+            {
+                params: { quantity, username }
+            }
+        );
+    } catch (error) {
+        console.error(`Error updating product in store ${storeId}:`, error);
+        throw error;
+    }
 };
 
-// 6. Delete a product from a store
-export const deleteProduct = async (token, storeId, productRequest, username) => {
-    const response = await axios.delete(
-        `${BASE_URL}/store/${storeId}`,
-        {
-            ...authHeaders(token),
-            data: productRequest, // must use "data" key for DELETE body
-            params: { username },
-        }
-    );
-    return response.data;
+/**
+ * Delete a product
+ * @param {string} storeId - Store UUID
+ * @param {string} productId - Product UUID to delete
+ * @param {string} username - Username performing the action
+ * @returns {Promise<Object>} - Deletion result
+ */
+export const deleteProduct = async (storeId, productId, username) => {
+    try {
+        ensureValidUUID(storeId);
+        ensureValidUUID(productId);
+
+        return await apiClient.delete(
+            `/products/store/${storeId}`,
+            {
+                data: { productId },
+                params: { username }
+            }
+        );
+    } catch (error) {
+        console.error(`Error deleting product ${productId} from store ${storeId}:`, error);
+        throw error;
+    }
 };
 
-// 7. Get all products for a store
+/**
+ * Get all products for a store
+ * @param {string} storeId - Store UUID
+ * @returns {Promise<Object>} - Store products
+ */
 export const getStoreProducts = async (storeId) => {
-    const response = await axios.get(`${BASE_URL}/store/${storeId}`);
-    return response.data;
+    try {
+        ensureValidUUID(storeId);
+        return await apiClient.get(`/products/store/${storeId}`);
+    } catch (error) {
+        console.error(`Error fetching products for store ${storeId}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Add a review to a product
+ * @param {Object} reviewRequest - Review data
+ * @returns {Promise<Object>} - Review result
+ */
+export const addProductReview = async (reviewRequest) => {
+    try {
+        ensureValidUUID(reviewRequest.productId);
+        return await apiClient.post(`/products/review`, reviewRequest);
+    } catch (error) {
+        console.error(`Error adding product review:`, error);
+        throw error;
+    }
+};
+
+export default {
+    searchProducts,
+    fetchTopProducts,
+    getProductInfo,
+    rateProduct,
+    addProductToStore,
+    updateProduct,
+    deleteProduct,
+    getStoreProducts,
+    addProductReview
 };
