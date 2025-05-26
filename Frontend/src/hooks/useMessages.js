@@ -24,7 +24,7 @@ export const useMessages = () => {
             );
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send message');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to send message');
             throw err;
         } finally {
             setLoading(false);
@@ -53,16 +53,16 @@ export const useMessages = () => {
             console.log("useMessages: Reply response:", response);
 
             // Check if response indicates success
-            if (response && (response.data === true || response.success !== false)) {
+            if (response && !response.error) {
                 return true;
             } else {
-                console.error("useMessages: Reply failed - unexpected response:", response);
-                setError('Reply failed - unexpected response');
+                console.error("useMessages: Reply failed - response error:", response);
+                setError(response.errorMessage || 'Reply failed');
                 return false;
             }
         } catch (err) {
             console.error("useMessages: Reply error:", err);
-            setError(err.response?.data?.message || err.message || 'Failed to reply to message');
+            setError(err.response?.data?.errorMessage || err.errorMessage || err.message || 'Failed to reply to message');
             return false;
         } finally {
             setLoading(false);
@@ -85,7 +85,7 @@ export const useMessages = () => {
             );
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to get conversation');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get conversation');
             throw err;
         } finally {
             setLoading(false);
@@ -104,7 +104,7 @@ export const useMessages = () => {
             const response = await messageAPI.getUserMessages(user.username, token);
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to get messages');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get messages');
             throw err;
         } finally {
             setLoading(false);
@@ -138,7 +138,7 @@ export const useMessages = () => {
                 username: user.username,
                 errorMessage: err.message || "Unknown error"
             });
-            setError(err.response?.data?.message || 'Failed to get store messages');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get store messages');
             throw err;
         } finally {
             setLoading(false);
@@ -157,7 +157,7 @@ export const useMessages = () => {
             await messageAPI.markMessageAsRead(messageId, user.username, token);
             return true;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to mark message as read');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to mark message as read');
             return false;
         } finally {
             setLoading(false);
@@ -181,7 +181,7 @@ export const useMessages = () => {
             );
             return true;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to report message');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to report message');
             return false;
         } finally {
             setLoading(false);

@@ -377,7 +377,7 @@ export default function StoreManagePage() {
 
                 {/* Debug info */}
                 <div className="debug-info" style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', marginBottom: '20px', fontSize: '12px' }}>
-                    <p>Store ID: {storeId}</p>
+                    <p>Store Name: {store.name}</p>
                     <p>Orders loaded: {orders ? orders.length : 'null'}</p>
                     <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
                     {error && <p>Error: {error}</p>}

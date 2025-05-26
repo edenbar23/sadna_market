@@ -22,7 +22,14 @@ export default function StoreMessagesList({ storeId }) {
 
         const fetchMessages = async () => {
             try {
-                const data = await getStoreMessagesList(storeId);
+                const response = await getStoreMessagesList(storeId);
+
+                let data;
+                if (response && response.data) {
+                    data = response.data;
+                } else {
+                    data = response || [];
+                }
 
                 if (!Array.isArray(data)) {
                     console.error("Expected an array of messages but got:", data);
@@ -31,9 +38,11 @@ export default function StoreMessagesList({ storeId }) {
 
                 const sorted = data
                     .filter(msg => msg && msg.timestamp)
-                    .sort((a, b) =>
-                        new Date(b.timestamp.replace(" ", "T")) - new Date(a.timestamp.replace(" ", "T"))
-                    );
+                    .sort((a, b) => {
+                        const timeA = new Date(msg.timestamp);
+                        const timeB = new Date(msg.timestamp);
+                        return timeB - timeA; // newest first
+                    });
 
                 setMessages(sorted);
             } catch (err) {
@@ -68,6 +77,7 @@ export default function StoreMessagesList({ storeId }) {
         try {
             const success = await replyToStoreMessage(selectedMessage.messageId, replyText.trim());
             if (success) {
+                // Update the message in the local state to show the reply
                 setMessages(prev =>
                     prev.map(m =>
                         m.messageId === selectedMessage.messageId
@@ -75,25 +85,39 @@ export default function StoreMessagesList({ storeId }) {
                                 ...m,
                                 reply: replyText.trim(),
                                 hasReply: true,
-                                replyTimestamp: new Date().toISOString()
+                                replyTimestamp: new Date().toISOString(),
+                                replyAuthor: "Store" // This should be the actual username, but for display purposes
                             }
                             : m
                     )
                 );
                 setReplyText("");
                 setShowReplyForm(false);
+                setSelectedMessage(null);
             }
         } catch (err) {
             console.error("Reply failed:", err);
-            alert("Failed to send reply.");
+            alert("Failed to send reply. Please try again.");
         }
     };
 
     const formatTimestamp = (ts) => {
         if (!ts) return "";
         try {
-            const d = new Date(ts.replace(" ", "T"));
-            return d.toLocaleString("en-US", {
+            let date;
+            if (Array.isArray(ts)) {
+                // Handle array format [year, month, day, hour, minute, second]
+                const [year, month, day, hour = 0, minute = 0, second = 0] = ts;
+                date = new Date(year, month - 1, day, hour, minute, second);
+            } else {
+                date = new Date(ts);
+            }
+
+            if (isNaN(date.getTime())) {
+                return ts.toString();
+            }
+
+            return date.toLocaleString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -102,7 +126,7 @@ export default function StoreMessagesList({ storeId }) {
                 hour12: true
             });
         } catch {
-            return ts;
+            return ts.toString();
         }
     };
 
@@ -111,7 +135,7 @@ export default function StoreMessagesList({ storeId }) {
     }
 
     if (error && messages.length === 0) {
-        return <div className="error-message">{error}</div>;
+        return <div className="error-message">Error: {error}</div>;
     }
 
     if (messages.length === 0) {
@@ -124,7 +148,7 @@ export default function StoreMessagesList({ storeId }) {
                 {messages.map((msg) => (
                     <div
                         key={msg.messageId}
-                        className={`message-bubble ${msg.read ? "" : "unread"}`}
+                        className={`message-bubble ${msg.read || msg.isRead ? "" : "unread"}`}
                         onClick={() => handleSelectMessage(msg)}
                     >
                         <div className="message-header">
@@ -133,10 +157,10 @@ export default function StoreMessagesList({ storeId }) {
                         </div>
                         <div className="message-content">{msg.content}</div>
 
-                        {msg.hasReply && (
+                        {msg.hasReply && msg.reply && (
                             <div className="message-reply">
                                 <div className="reply-header">
-                                    <span className="reply-author">{msg.replyAuthor}</span>
+                                    <span className="reply-author">{msg.replyAuthor || "Store"}</span>
                                     <span className="reply-time">{formatTimestamp(msg.replyTimestamp)}</span>
                                 </div>
                                 <div className="reply-content">{msg.reply}</div>
@@ -176,6 +200,7 @@ export default function StoreMessagesList({ storeId }) {
                             onClick={() => {
                                 setShowReplyForm(false);
                                 setReplyText("");
+                                setSelectedMessage(null);
                             }}
                         >
                             Cancel

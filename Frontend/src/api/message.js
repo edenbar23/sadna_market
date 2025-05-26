@@ -105,8 +105,9 @@ export const getUserMessages = async (username, token) => {
 export const markMessageAsRead = async (messageId, username, token) => {
     console.log("API: Marking message as read", { messageId, username });
 
-    const response = await apiClient.patch(`/messages/${messageId}/read`, null, {
-        params: { username },
+    const response = await apiClient.patch(`/messages/${messageId}/read`, {
+        username: username
+    }, {
         headers: { Authorization: token }
     });
 
