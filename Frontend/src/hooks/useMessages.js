@@ -24,7 +24,7 @@ export const useMessages = () => {
             );
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send message');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to send message');
             throw err;
         } finally {
             setLoading(false);
@@ -33,9 +33,12 @@ export const useMessages = () => {
 
     const replyToStoreMessage = useCallback(async (messageId, content) => {
         if (!user || !token) {
+            console.error("User not logged in for reply");
             setError('You must be logged in to reply to messages');
-            return null;
+            return false;
         }
+
+        console.log("useMessages: Sending reply...", { messageId, content, username: user.username });
 
         setLoading(true);
         setError(null);
@@ -46,10 +49,21 @@ export const useMessages = () => {
                 content,
                 token
             );
-            return response;
+
+            console.log("useMessages: Reply response:", response);
+
+            // Check if response indicates success
+            if (response && !response.error) {
+                return true;
+            } else {
+                console.error("useMessages: Reply failed - response error:", response);
+                setError(response.errorMessage || 'Reply failed');
+                return false;
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to reply to message');
-            throw err;
+            console.error("useMessages: Reply error:", err);
+            setError(err.response?.data?.errorMessage || err.errorMessage || err.message || 'Failed to reply to message');
+            return false;
         } finally {
             setLoading(false);
         }
@@ -71,7 +85,7 @@ export const useMessages = () => {
             );
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to get conversation');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get conversation');
             throw err;
         } finally {
             setLoading(false);
@@ -90,7 +104,7 @@ export const useMessages = () => {
             const response = await messageAPI.getUserMessages(user.username, token);
             return response;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to get messages');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get messages');
             throw err;
         } finally {
             setLoading(false);
@@ -106,22 +120,25 @@ export const useMessages = () => {
         setLoading(true);
         setError(null);
         try {
-            // Using the fixed getStoreMessages API function
+            console.log("useMessages: Fetching store messages for:", storeId);
+
             const response = await messageAPI.getStoreMessages(
                 storeId,
                 user.username,
                 token
             );
+
+            console.log("useMessages: Store messages response:", response);
             return response;
         } catch (err) {
-            console.error("Failed to get store messages:", err);
+            console.error("useMessages: Failed to get store messages:", err);
             console.error("Error details:", {
                 endpoint: `/stores/${storeId}/messages`,
                 storeId,
                 username: user.username,
                 errorMessage: err.message || "Unknown error"
             });
-            setError(err.response?.data?.message || 'Failed to get store messages');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to get store messages');
             throw err;
         } finally {
             setLoading(false);
@@ -140,7 +157,7 @@ export const useMessages = () => {
             await messageAPI.markMessageAsRead(messageId, user.username, token);
             return true;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to mark message as read');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to mark message as read');
             return false;
         } finally {
             setLoading(false);
@@ -164,7 +181,7 @@ export const useMessages = () => {
             );
             return true;
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to report message');
+            setError(err.response?.data?.errorMessage || err.errorMessage || 'Failed to report message');
             return false;
         } finally {
             setLoading(false);

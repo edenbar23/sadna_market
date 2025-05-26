@@ -24,6 +24,7 @@ export function useStoreManagement(storeId, user) {
             return;
         }
 
+        console.log("Loading store data for store:", storeId);
         setIsLoading(true);
         setError(null);
 
@@ -32,32 +33,46 @@ export function useStoreManagement(storeId, user) {
             const token = user?.token || localStorage.getItem("authToken");
 
             // Fetch store details
+            console.log("Fetching store details...");
             const storeData = await fetchStoreById(storeId);
+            console.log("Store data received:", storeData);
             setStore(storeData);
 
             // Fetch store products
+            console.log("Fetching store products...");
             const storeProducts = await fetchStoreProducts(storeId);
+            console.log("Products received:", storeProducts);
             setProducts(storeProducts || []);
 
             // Only fetch orders and messages if user is logged in
             if (user && user.username && token) {
                 // Fetch store orders
                 try {
+                    console.log("Fetching store orders...");
                     const storeOrders = await fetchStoreOrders(storeId, token, user.username);
+                    console.log("Orders received:", storeOrders);
                     setOrders(storeOrders || []);
                 } catch (ordersError) {
                     console.warn("Could not fetch orders:", ordersError);
+                    setOrders([]);
                     // Don't fail completely if just orders fail
                 }
 
                 // Fetch store messages
                 try {
+                    console.log("Fetching store messages...");
                     const storeMessages = await fetchStoreMessages(storeId, token, user.username);
+                    console.log("Messages received:", storeMessages);
                     setMessages(storeMessages || []);
                 } catch (messagesError) {
                     console.warn("Could not fetch messages:", messagesError);
+                    setMessages([]);
                     // Don't fail completely if just messages fail
                 }
+            } else {
+                console.log("User not logged in, skipping orders and messages");
+                setOrders([]);
+                setMessages([]);
             }
         } catch (err) {
             console.error("Failed to load store data:", err);
@@ -84,7 +99,7 @@ export function useStoreManagement(storeId, user) {
     // Remove product from the list
     const removeProductFromList = (productId) => {
         setProducts(currentProducts =>
-            currentProducts.filter(p => p.id !== productId)
+            currentProducts.filter(p => p.productId !== productId)
         );
     };
 

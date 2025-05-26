@@ -3,6 +3,7 @@ package com.sadna_market.market.ApplicationLayer;
 import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.MessageReplyRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.MessageRequest;
+import com.sadna_market.market.ApplicationLayer.Requests.SendMessageRequest;
 import com.sadna_market.market.DomainLayer.DomainServices.MessageService;
 import com.sadna_market.market.DomainLayer.Events.DomainEventPublisher;
 import com.sadna_market.market.DomainLayer.Events.MessageSentEvent;
@@ -32,7 +33,39 @@ public class MessageApplicationService {
     }
 
     /**
-     * Sends a message from a user to a store
+     * Sends a message from a user to a store using SendMessageRequest
+     *
+     * @param username The username of the sender
+     * @param token Authentication token
+     * @param request The send message request containing store ID and content
+     * @return Response object with success/error status and message data
+     */
+    public Response<MessageDTO> sendMessage(String username, String token, SendMessageRequest request) {
+        logger.info("Processing send message request from user: {} to store: {}", username, request.getReceiverStoreId());
+
+        try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            // Publish the event
+            DomainEventPublisher.publish(
+                    new MessageSentEvent(username, request.getReceiverStoreId(), request.getContent())
+            );
+
+            // Use the domain service to send the message
+            Message message = messageService.sendMessage(username, request.getReceiverStoreId(), request.getContent());
+            MessageDTO messageDTO = new MessageDTO(message);
+
+            logger.info("Message sent successfully by user: {}", username);
+            return Response.success(messageDTO);
+        } catch (Exception e) {
+            logger.error("Error sending message: {}", e.getMessage(), e);
+            return Response.error("Failed to send message: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Sends a message from a user to a store using MessageRequest
      *
      * @param username The username of the sender
      * @param token Authentication token
@@ -40,18 +73,18 @@ public class MessageApplicationService {
      * @return Response object with success/error status and message data
      */
     public Response<MessageDTO> sendMessage(String username, String token, MessageRequest request) {
-        logger.info("Processing send message request from user: {}", username);
+        logger.info("Processing send message request from user: {} to store: {}", username, request.getStoreId());
 
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
 
-            // Publish the event instead of direct service call
+            // Publish the event
             DomainEventPublisher.publish(
                     new MessageSentEvent(username, request.getStoreId(), request.getContent())
             );
 
-            // For now, we'll still use the direct service method to get the message
+            // Use the domain service to send the message
             Message message = messageService.sendMessage(username, request.getStoreId(), request.getContent());
             MessageDTO messageDTO = new MessageDTO(message);
 
@@ -72,11 +105,12 @@ public class MessageApplicationService {
      * @return Response object with success/error status
      */
     public Response<String> replyToMessage(String username, String token, MessageReplyRequest request) {
-        logger.info("Processing reply to message request from user: {}", username);
+        logger.info("Processing reply to message request from user: {} to message: {}", username, request.getMessageId());
 
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             boolean success = messageService.replyToMessage(
                     request.getMessageId(), username, request.getContent());
 
@@ -106,6 +140,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             List<Message> messages = messageService.getUserMessages(username);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
 
@@ -131,6 +166,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             List<Message> messages = messageService.getStoreMessages(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
 
@@ -139,6 +175,32 @@ public class MessageApplicationService {
         } catch (Exception e) {
             logger.error("Error getting store messages: {}", e.getMessage(), e);
             return Response.error("Failed to get store messages: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gets the conversation between a user and a store
+     *
+     * @param username The username of the user
+     * @param token Authentication token
+     * @param storeId The ID of the store
+     * @return Response object with success/error status and conversation data
+     */
+    public Response<List<MessageDTO>> getUserStoreConversation(String username, String token, UUID storeId) {
+        logger.info("Getting conversation between user: {} and store: {}", username, storeId);
+
+        try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            List<Message> messages = messageService.getUserStoreConversation(username, storeId);
+            List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
+
+            logger.info("Retrieved {} messages in conversation", messages.size());
+            return Response.success(messageDTOs);
+        } catch (Exception e) {
+            logger.error("Error getting conversation: {}", e.getMessage(), e);
+            return Response.error("Failed to get conversation: " + e.getMessage());
         }
     }
 
@@ -156,6 +218,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             List<Message> messages = messageService.getUnansweredStoreMessages(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
 
@@ -181,6 +244,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             List<Message> messages = messageService.getUnreadMessagesForStore(username, storeId);
             List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
 
@@ -189,31 +253,6 @@ public class MessageApplicationService {
         } catch (Exception e) {
             logger.error("Error getting unread store messages: {}", e.getMessage(), e);
             return Response.error("Failed to get unread store messages: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Gets the conversation between a user and a store
-     *
-     * @param username The username of the user
-     * @param token Authentication token
-     * @param storeId The ID of the store
-     * @return Response object with success/error status and conversation data
-     */
-    public Response<List<MessageDTO>> getUserStoreConversation(String username, String token, UUID storeId) {
-        logger.info("Getting conversation between user: {} and store: {}", username, storeId);
-
-        try {
-            logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username, token);
-            List<Message> messages = messageService.getUserStoreConversation(username, storeId);
-            List<MessageDTO> messageDTOs = convertToMessageDTOs(messages);
-
-            logger.info("Retrieved {} messages in conversation", messages.size());
-            return Response.success(messageDTOs);
-        } catch (Exception e) {
-            logger.error("Error getting conversation: {}", e.getMessage(), e);
-            return Response.error("Failed to get conversation: " + e.getMessage());
         }
     }
 
@@ -231,6 +270,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             boolean success = messageService.deleteMessage(username, messageId);
 
             if (success) {
@@ -261,6 +301,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             boolean success = messageService.markMessageAsRead(username, messageId);
 
             if (success) {
@@ -291,6 +332,7 @@ public class MessageApplicationService {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
+
             int count = messageService.markAllStoreMessagesAsRead(username, storeId);
             logger.info("{} messages marked as read for store {} by user {}",
                     count, storeId, username);

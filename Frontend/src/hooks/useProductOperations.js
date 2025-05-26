@@ -16,9 +16,10 @@ export function useProductOperations(storeId, user) {
      * Add a new product to the store
      *
      * @param {object} productData - Product data to add
-     * @returns {Promise<object>} The added product
+     * @param {number} quantity - Initial quantity (optional, defaults to 10)
+     * @returns {Promise<object>} The added product result
      */
-    const handleAddProduct = async (productData) => {
+    const handleAddProduct = async (productData, quantity = 10) => {
         if (!user || !user.username) {
             throw new Error("You must be logged in to add a product");
         }
@@ -27,23 +28,62 @@ export function useProductOperations(storeId, user) {
             throw new Error("Store ID is required");
         }
 
+        if (!productData || !productData.name || !productData.price) {
+            throw new Error("Product name and price are required");
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const token = user.token || localStorage.getItem("authToken");
-            const result = await addProductToStore(
+
+            console.log('Adding product with data:', {
                 storeId,
                 productData,
-                productData.quantity || 10,
+                quantity,
+                username: user.username
+            });
+
+            // Ensure productData has the required fields
+            const cleanProductData = {
+                name: productData.name,
+                description: productData.description || "",
+                category: productData.category || "",
+                price: parseFloat(productData.price),
+                productId: null // Ensure we don't send productId for new products
+            };
+
+            const result = await addProductToStore(
+                storeId,
+                cleanProductData,
+                parseInt(quantity),
                 token,
                 user.username
             );
+
+            console.log('Add product result:', result);
             return result;
         } catch (err) {
             console.error("Failed to add product:", err);
-            setError(err.message || err.errorMessage || "Failed to add product");
-            throw err;
+
+            // Extract meaningful error message
+            let errorMessage = 'Failed to add product';
+
+            if (err.response?.data?.errorMessage) {
+                errorMessage = err.response.data.errorMessage;
+            } else if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.errorMessage) {
+                errorMessage = err.errorMessage;
+            } else if (err.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+
+            setError(errorMessage);
+            throw new Error(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -53,9 +93,10 @@ export function useProductOperations(storeId, user) {
      * Update an existing product
      *
      * @param {object} productData - Updated product data
+     * @param {number} quantity - Updated quantity (optional)
      * @returns {Promise<object>} Result of the update operation
      */
-    const handleUpdateProduct = async (productData) => {
+    const handleUpdateProduct = async (productData, quantity) => {
         if (!user || !user.username) {
             throw new Error("You must be logged in to update a product");
         }
@@ -64,23 +105,53 @@ export function useProductOperations(storeId, user) {
             throw new Error("Store ID is required");
         }
 
+        if (!productData || !productData.productId) {
+            throw new Error("Product ID is required for updates");
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const token = user.token || localStorage.getItem("authToken");
+
+            console.log('Updating product with data:', {
+                storeId,
+                productData,
+                quantity,
+                username: user.username
+            });
+
             const result = await updateProduct(
                 storeId,
                 productData,
-                productData.quantity,
+                quantity || 1,
                 token,
                 user.username
             );
+
+            console.log('Update product result:', result);
             return result;
         } catch (err) {
             console.error("Failed to update product:", err);
-            setError(err.message || err.errorMessage || "Failed to update product");
-            throw err;
+
+            // Extract meaningful error message
+            let errorMessage = 'Failed to update product';
+
+            if (err.response?.data?.errorMessage) {
+                errorMessage = err.response.data.errorMessage;
+            } else if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.errorMessage) {
+                errorMessage = err.errorMessage;
+            } else if (err.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+
+            setError(errorMessage);
+            throw new Error(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -101,17 +172,46 @@ export function useProductOperations(storeId, user) {
             throw new Error("Store ID is required");
         }
 
+        if (!productId) {
+            throw new Error("Product ID is required");
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const token = user.token || localStorage.getItem("authToken");
+
+            console.log('Deleting product:', {
+                storeId,
+                productId,
+                username: user.username
+            });
+
             const result = await deleteProduct(storeId, productId, token, user.username);
+
+            console.log('Delete product result:', result);
             return result;
         } catch (err) {
             console.error("Failed to delete product:", err);
-            setError(err.message || err.errorMessage || "Failed to delete product");
-            throw err;
+
+            // Extract meaningful error message
+            let errorMessage = 'Failed to delete product';
+
+            if (err.response?.data?.errorMessage) {
+                errorMessage = err.response.data.errorMessage;
+            } else if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.errorMessage) {
+                errorMessage = err.errorMessage;
+            } else if (err.message) {
+                errorMessage = err.message;
+            } else if (typeof err === 'string') {
+                errorMessage = err;
+            }
+
+            setError(errorMessage);
+            throw new Error(errorMessage);
         } finally {
             setIsLoading(false);
         }

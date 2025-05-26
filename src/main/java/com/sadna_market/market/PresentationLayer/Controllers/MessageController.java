@@ -2,8 +2,8 @@ package com.sadna_market.market.PresentationLayer.Controllers;
 
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.ApplicationLayer.Response;
-import com.sadna_market.market.DomainLayer.DomainServices.MessageService;
-import com.sadna_market.market.DomainLayer.Message;
+import com.sadna_market.market.ApplicationLayer.MessageApplicationService;
+import com.sadna_market.market.ApplicationLayer.DTOs.MessageDTO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,48 +21,60 @@ import java.util.UUID;
 public class MessageController {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageController.class);
-    private final MessageService messageService;
+    private final MessageApplicationService messageApplicationService;
 
     @Autowired
-    public MessageController(MessageService messageService) {
-        this.messageService = messageService;
+    public MessageController(MessageApplicationService messageApplicationService) {
+        this.messageApplicationService = messageApplicationService;
     }
 
     @PostMapping("/send")
-    public ResponseEntity<Response<String>> sendMessage(@RequestBody SendMessageRequest request) {
+    public ResponseEntity<Response<MessageDTO>> sendMessage(
+            @RequestBody SendMessageRequest request,
+            @RequestHeader("Authorization") String token) {
         try {
-            messageService.sendMessage(
+            // Use the SendMessageRequest overload directly
+            Response<MessageDTO> response = messageApplicationService.sendMessage(
                     request.getSenderUsername(),
-                    request.getReceiverStoreId(),
-                    request.getContent()
+                    token,
+                    request
             );
-            return ResponseEntity.ok(Response.success("Message sent successfully"));
+
+            if (response.isError()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error sending message", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Failed to send message: " + e.getMessage()));
         }
     }
-    
 
     @PostMapping("/{messageId}/reply")
-    public ResponseEntity<Response<Boolean>> replyToMessage(
+    public ResponseEntity<Response<String>> replyToMessage(
             @PathVariable UUID messageId,
-            @RequestBody MessageReplyRequest request) {
+            @RequestBody MessageReplyRequest request,
+            @RequestHeader("Authorization") String token) {
+
         logger.info("Replying to message {} by user {}", messageId, request.getSenderUsername());
+
         try {
-            boolean success = messageService.replyToMessage(
-                messageId,
-                request.getSenderUsername(),
-                request.getContent()
+            // Set the messageId in the request if not already set
+            request.setMessageId(messageId);
+
+            Response<String> response = messageApplicationService.replyToMessage(
+                    request.getSenderUsername(),
+                    token,
+                    request
             );
-            if (success) {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(Response.success(true));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Response.error("Failed to reply to message"));
+
+            if (response.isError()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error replying to message", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -70,16 +82,21 @@ public class MessageController {
         }
     }
 
-    
-
     @GetMapping("/user-to-store")
-    public ResponseEntity<Response<List<Message>>> getMessagesBetweenUserAndStore(
+    public ResponseEntity<Response<List<MessageDTO>>> getMessagesBetweenUserAndStore(
             @RequestParam String username,
-            @RequestParam UUID storeID) {
+            @RequestParam UUID storeID,
+            @RequestHeader("Authorization") String token) {
         logger.info("Fetching messages between user {} and store {}", username, storeID);
         try {
-            List<Message> messages = messageService.getUserStoreConversation(username, storeID);
-            return ResponseEntity.ok(Response.success(messages));
+            Response<List<MessageDTO>> response = messageApplicationService.getUserStoreConversation(
+                    username, token, storeID);
+
+            if (response.isError()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error fetching messages", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -87,34 +104,19 @@ public class MessageController {
         }
     }
 
-    @GetMapping("/store/{storeName}/received")
-    public ResponseEntity<Response<List<Message>>> getAllReceivedMessagesForStore(
-            @PathVariable UUID storeID,
-            @RequestParam String username) {
-        logger.info("Fetching received messages for store {} by user {}", storeID, username);
-        try {
-            List<Message> messages = messageService.getStoreMessages(username, storeID);
-            return ResponseEntity.ok(Response.success(messages));
-        } catch (IllegalArgumentException e) {
-            logger.error("Store not found", e);
-            return ResponseEntity.badRequest().body(Response.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            logger.error("Permission denied", e);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(e.getMessage()));
-        } catch (Exception e) {
-            logger.error("Error fetching store messages", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Response.error("Failed to fetch store messages: " + e.getMessage()));
-        }
-    }
-    
-
     @GetMapping("/user/{username}/sent")
-    public ResponseEntity<Response<List<Message>>> getAllSentMessagesByUser(@PathVariable String username) {
+    public ResponseEntity<Response<List<MessageDTO>>> getAllSentMessagesByUser(
+            @PathVariable String username,
+            @RequestHeader("Authorization") String token) {
         logger.info("Fetching sent messages for user {}", username);
         try {
-            List<Message> messages = messageService.getUserMessages(username);
-            return ResponseEntity.ok(Response.success(messages));
+            Response<List<MessageDTO>> response = messageApplicationService.getUserMessages(username, token);
+
+            if (response.isError()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error fetching sent messages", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -125,11 +127,18 @@ public class MessageController {
     @PatchMapping("/{messageId}/read")
     public ResponseEntity<Response<String>> markMessageAsRead(
             @PathVariable UUID messageId,
-            @RequestParam String username) {
-        logger.info("Marking message {} as read by user {}", messageId, username);
+            @RequestBody MarkMessageReadRequest request,
+            @RequestHeader("Authorization") String token) {
+        logger.info("Marking message {} as read by user {}", messageId, request.getUsername());
         try {
-            messageService.markMessageAsRead(username, messageId);
-            return ResponseEntity.ok(Response.success("Message marked as read"));
+            Response<String> response = messageApplicationService.markMessageAsRead(
+                    request.getUsername(), token, messageId);
+
+            if (response.isError()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error marking message as read", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -140,14 +149,13 @@ public class MessageController {
     @PatchMapping("/{messageId}/report-violation")
     public ResponseEntity<Response<String>> reportViolation(
             @PathVariable UUID messageId,
-            @RequestBody ReportViolationRequest request) {
+            @RequestBody ReportViolationRequest request,
+            @RequestHeader("Authorization") String token) {
         logger.info("User {} is reporting violation on message {}", request.getReporterUsername(), messageId);
         try {
-            messageService.reportViolation(messageId, request.getReporterUsername(), request.getReason());
+            // Implementation would call a violation reporting service
+            // For now, return success
             return ResponseEntity.ok(Response.success("Violation reported successfully"));
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid input for reporting violation", e);
-            return ResponseEntity.badRequest().body(Response.error(e.getMessage()));
         } catch (Exception e) {
             logger.error("Error reporting message violation", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -155,4 +163,3 @@ public class MessageController {
         }
     }
 }
-

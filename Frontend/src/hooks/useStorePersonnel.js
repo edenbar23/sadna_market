@@ -27,22 +27,31 @@ export function useStorePersonnel(storeId, user) {
             throw new Error("Store ID is required");
         }
 
+        if (!targetUsername || !targetUsername.trim()) {
+            throw new Error("Target username is required");
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const token = user.token || localStorage.getItem("authToken");
+            console.log('Appointing owner:', { storeId, targetUsername, appointer: user.username });
+
             const result = await appointStoreOwner(
                 storeId,
-                targetUsername,
+                targetUsername.trim(),
                 token,
                 user.username
             );
+
+            console.log('Appoint owner result:', result);
             return result;
         } catch (err) {
             console.error("Failed to appoint owner:", err);
-            setError(err.message || err.errorMessage || "Failed to appoint owner");
-            throw err;
+            const errorMsg = err?.errorMessage || err?.message || "Failed to appoint owner";
+            setError(errorMsg);
+            throw new Error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -77,8 +86,9 @@ export function useStorePersonnel(storeId, user) {
             return result;
         } catch (err) {
             console.error("Failed to remove owner:", err);
-            setError(err.message || err.errorMessage || "Failed to remove owner");
-            throw err;
+            const errorMsg = err?.errorMessage || err?.message || "Failed to remove owner";
+            setError(errorMsg);
+            throw new Error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -91,7 +101,7 @@ export function useStorePersonnel(storeId, user) {
      * @param {Array<string>} permissions - List of permission keys
      * @returns {Promise<object>} Result of the operation
      */
-    const handleAppointManager = async (targetUsername, permissions) => {
+    const handleAppointManager = async (targetUsername, permissions = []) => {
         if (!user || !user.username) {
             throw new Error("You must be logged in to appoint a manager");
         }
@@ -115,8 +125,9 @@ export function useStorePersonnel(storeId, user) {
             return result;
         } catch (err) {
             console.error("Failed to appoint manager:", err);
-            setError(err.message || err.errorMessage || "Failed to appoint manager");
-            throw err;
+            const errorMsg = err?.errorMessage || err?.message || "Failed to appoint manager";
+            setError(errorMsg);
+            throw new Error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -151,8 +162,9 @@ export function useStorePersonnel(storeId, user) {
             return result;
         } catch (err) {
             console.error("Failed to remove manager:", err);
-            setError(err.message || err.errorMessage || "Failed to remove manager");
-            throw err;
+            const errorMsg = err?.errorMessage || err?.message || "Failed to remove manager";
+            setError(errorMsg);
+            throw new Error(errorMsg);
         } finally {
             setIsLoading(false);
         }

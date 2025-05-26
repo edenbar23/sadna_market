@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/messages.css";
 import { useAuthContext } from "../context/AuthContext";
 import { getUserMessages, getUserStoreConversation, sendMessage, replyToMessage, markMessageAsRead } from "../api/message";
+import { fetchStoreById } from "../api/store";
 
 export default function MessagesPage() {
   const { user, token } = useAuthContext();
@@ -29,11 +30,30 @@ export default function MessagesPage() {
 
         // Group messages by conversation (store)
         const convMap = new Map();
+        const storeNames = new Map(); // Cache for store names
 
         if (response && response.data) {
+          // First, collect all unique store IDs
+          const storeIds = [...new Set(response.data.map(message => message.storeId))];
+
+          // Fetch store names for all stores
+          for (const storeId of storeIds) {
+            try {
+              const storeResponse = await fetchStoreById(storeId);
+              if (storeResponse && storeResponse.name) {
+                storeNames.set(storeId, storeResponse.name);
+              } else {
+                storeNames.set(storeId, `Store ${storeId.substring(0, 8)}...`);
+              }
+            } catch (err) {
+              console.error(`Failed to fetch store name for ${storeId}:`, err);
+              storeNames.set(storeId, `Store ${storeId.substring(0, 8)}...`);
+            }
+          }
+
           response.data.forEach(message => {
             const storeId = message.storeId;
-            const storeName = message.storeId; // We might need to fetch store names separately
+            const storeName = storeNames.get(storeId) || `Store ${storeId.substring(0, 8)}...`;
 
             if (!convMap.has(storeId)) {
               convMap.set(storeId, {
@@ -45,23 +65,43 @@ export default function MessagesPage() {
             }
 
             const conv = convMap.get(storeId);
-            conv.messages.push({
+
+            // Add the original message
+            const messageItem = {
               id: message.messageId,
-              sender: message.senderUsername === user.username ? "user" : "store",
+              sender: "user", // This is always from the user since we're getting sent messages
               text: message.content,
               time: formatMessageTime(message.timestamp),
               hasReply: message.hasReply,
-              reply: message.reply,
-              replyTimestamp: message.replyTimestamp ? formatMessageTime(message.replyTimestamp) : null,
-              replyAuthor: message.replyAuthor,
-              isRead: message.isRead
-            });
+              isRead: message.isRead,
+              originalMessageId: message.messageId
+            };
+
+            conv.messages.push(messageItem);
+
+            // If there's a reply, add it as a separate message in the conversation
+            if (message.hasReply && message.reply) {
+              const replyMessage = {
+                id: `${message.messageId}-reply`,
+                sender: "store",
+                text: message.reply,
+                time: formatMessageTime(message.replyTimestamp),
+                replyAuthor: "Store",
+                isReply: true,
+                replyingTo: message.messageId
+              };
+              conv.messages.push(replyMessage);
+            }
           });
         }
 
         const sortedConversations = Array.from(convMap.values()).map(conv => {
           // Sort messages by timestamp
-          conv.messages.sort((a, b) => new Date(a.time) - new Date(b.time));
+          conv.messages.sort((a, b) => {
+            const timeA = new Date(a.time);
+            const timeB = new Date(b.time);
+            return timeA - timeB;
+          });
           return conv;
         });
 
@@ -82,7 +122,7 @@ export default function MessagesPage() {
     loadMessages();
   }, [user, token]);
 
-  // Helper function to format message timestamps using native JavaScript
+  // Helper function to format message timestamps
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return "Unknown";
 
@@ -98,7 +138,7 @@ export default function MessagesPage() {
       });
     } catch (e) {
       console.error("Error formatting date:", e);
-      return timestamp; // Return the original timestamp if formatting fails
+      return timestamp;
     }
   };
 
@@ -116,26 +156,27 @@ export default function MessagesPage() {
       );
 
       // Update the UI
+      const newMessage = {
+        id: `temp-${Date.now()}`,
+        sender: "user",
+        text: newMsg,
+        time: new Date().toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true
+        }),
+        hasReply: false,
+        isRead: false
+      };
+
       const updated = conversations.map((conv) =>
           conv.id === selectedConv.id
               ? {
                 ...conv,
-                messages: [
-                  ...conv.messages,
-                  {
-                    id: `temp-${Date.now()}`,
-                    sender: "user",
-                    text: newMsg,
-                    time: new Date().toLocaleString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: 'numeric',
-                      minute: 'numeric',
-                      hour12: true
-                    })
-                  },
-                ],
+                messages: [...conv.messages, newMessage],
               }
               : conv
       );
@@ -155,11 +196,6 @@ export default function MessagesPage() {
     if (!to || !text || !user || !token) return;
 
     try {
-      // In a real implementation, you'd need to:
-      // 1. Convert the store name to a storeId
-      // 2. Send the message with the storeId
-
-      // For now, we'll pretend 'to' is the storeId for simplicity
       await sendMessage(
           user.username,
           to, // This should be a storeId
@@ -167,10 +203,21 @@ export default function MessagesPage() {
           token
       );
 
+      // Try to get the store name
+      let storeName = `Store ${to.substring(0, 8)}...`;
+      try {
+        const storeResponse = await fetchStoreById(to);
+        if (storeResponse && storeResponse.name) {
+          storeName = storeResponse.name;
+        }
+      } catch (err) {
+        console.error("Failed to fetch store name:", err);
+      }
+
       // Create a new conversation object
       const newConv = {
-        id: to, // Using 'to' as storeId for now
-        with: to, // Ideally this would be the store name
+        id: to,
+        with: storeName,
         type: toType,
         messages: [
           {
@@ -184,7 +231,9 @@ export default function MessagesPage() {
               hour: 'numeric',
               minute: 'numeric',
               hour12: true
-            })
+            }),
+            hasReply: false,
+            isRead: false
           }
         ],
       };
@@ -199,45 +248,27 @@ export default function MessagesPage() {
     }
   };
 
-  // Handle replying to a message
-  const handleReply = async (messageId, replyText) => {
-    if (!replyText.trim() || !user || !token) return;
-
-    try {
-      // Send reply to the API
-      await replyToMessage(messageId, user.username, replyText, token);
-
-      // Reload conversations to get updated message with reply
-      // Ideally this would be more efficient, updating only the specific message
-      const response = await getUserMessages(user.username, token);
-      // Process response similarly to the useEffect...
-    } catch (err) {
-      console.error("Failed to reply to message:", err);
-      alert("Failed to reply to message. Please try again.");
-    }
-  };
-
-  // Mark a message as read when viewing it
+  // Mark messages as read when viewing a conversation
   useEffect(() => {
     const markMessagesRead = async () => {
       if (!selectedConv || !user || !token) return;
 
       const unreadMessages = selectedConv.messages.filter(
-          msg => msg.sender !== "user" && !msg.isRead
+          msg => msg.sender !== "user" && !msg.isRead && msg.originalMessageId
       );
 
       for (const msg of unreadMessages) {
         try {
-          await markMessageAsRead(msg.id, user.username, token);
-          // Update local state
+          await markMessageAsRead(msg.originalMessageId, user.username, token);
           msg.isRead = true;
         } catch (err) {
           console.error(`Failed to mark message ${msg.id} as read:`, err);
         }
       }
 
-      // Force a re-render by creating a new array
-      setConversations([...conversations]);
+      if (unreadMessages.length > 0) {
+        setConversations([...conversations]);
+      }
     };
 
     markMessagesRead();
@@ -282,20 +313,14 @@ export default function MessagesPage() {
                 <h4>Chat with {selectedConv.with} ({selectedConv.type})</h4>
                 <div className="chat-messages">
                   {selectedConv.messages.map((msg, idx) => (
-                      <div key={idx} className={`message ${msg.sender}`}>
+                      <div key={msg.id} className={`message ${msg.sender}`}>
                         <div className="message-content">
-                          <span className="sender">{msg.sender === "user" ? "You" : selectedConv.with}</span>
-                          <span>{msg.text}</span>
+                          <span className="sender">
+                            {msg.sender === "user" ? "You" :
+                                msg.isReply ? (msg.replyAuthor || "Store") : selectedConv.with}
+                          </span>
+                          <span className="message-text">{msg.text}</span>
                           <span className="time">{msg.time}</span>
-
-                          {/* Show reply if exists */}
-                          {msg.hasReply && (
-                              <div className="message-reply">
-                                <span className="reply-author">{msg.replyAuthor}</span>
-                                <span>{msg.reply}</span>
-                                <span className="time">{msg.replyTimestamp}</span>
-                              </div>
-                          )}
                         </div>
                       </div>
                   ))}
@@ -325,7 +350,6 @@ export default function MessagesPage() {
                     onChange={(e) => setNewFormData({ ...newFormData, toType: e.target.value })}
                 >
                   <option value="store">Store</option>
-                  {/* We could include more options like admin if needed */}
                 </select>
               </label>
               <label>

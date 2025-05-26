@@ -78,23 +78,111 @@ export function useStoreOperations(user) {
             throw new Error("You must be logged in to change store status");
         }
 
+        if (!storeId) {
+            throw new Error("Store ID is required");
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             const token = user.token || localStorage.getItem("authToken");
 
+            console.log('Toggling store status:', {
+                storeId,
+                isCurrentlyActive,
+                action: isCurrentlyActive ? 'close' : 'reopen',
+                username: user.username
+            });
+
+            let result;
             if (isCurrentlyActive) {
                 // Close the store
-                return await closeStore(storeId, token, user.username);
+                console.log('Closing store...');
+                result = await closeStore(storeId, token, user.username);
             } else {
                 // Reopen the store
-                return await reopenStore(storeId, token, user.username);
+                console.log('Reopening store...');
+                result = await reopenStore(storeId, token, user.username);
             }
+
+            console.log('Store status toggle result:', result);
+            return result;
         } catch (err) {
             console.error("Failed to change store status:", err);
-            setError(err.message || err.errorMessage || "Failed to change store status");
-            throw err;
+            const errorMsg = err?.errorMessage || err?.message || "Failed to change store status";
+            setError(errorMsg);
+            throw new Error(errorMsg);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * Close a store
+     *
+     * @param {string} storeId - ID of the store to close
+     * @returns {Promise<object>} Result of the operation
+     */
+    const handleCloseStore = async (storeId) => {
+        if (!user || !user.username) {
+            throw new Error("You must be logged in to close a store");
+        }
+
+        if (!storeId) {
+            throw new Error("Store ID is required");
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const token = user.token || localStorage.getItem("authToken");
+            console.log('Closing store:', { storeId, username: user.username });
+
+            const result = await closeStore(storeId, token, user.username);
+            console.log('Close store result:', result);
+            return result;
+        } catch (err) {
+            console.error("Failed to close store:", err);
+            const errorMsg = err?.errorMessage || err?.message || "Failed to close store";
+            setError(errorMsg);
+            throw new Error(errorMsg);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * Reopen a store
+     *
+     * @param {string} storeId - ID of the store to reopen
+     * @returns {Promise<object>} Result of the operation
+     */
+    const handleReopenStore = async (storeId) => {
+        if (!user || !user.username) {
+            throw new Error("You must be logged in to reopen a store");
+        }
+
+        if (!storeId) {
+            throw new Error("Store ID is required");
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const token = user.token || localStorage.getItem("authToken");
+            console.log('Reopening store:', { storeId, username: user.username });
+
+            const result = await reopenStore(storeId, token, user.username);
+            console.log('Reopen store result:', result);
+            return result;
+        } catch (err) {
+            console.error("Failed to reopen store:", err);
+            const errorMsg = err?.errorMessage || err?.message || "Failed to reopen store";
+            setError(errorMsg);
+            throw new Error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -104,6 +192,8 @@ export function useStoreOperations(user) {
         handleCreateStore,
         handleUpdateStore,
         handleToggleStoreStatus,
+        handleCloseStore,
+        handleReopenStore,
         isLoading,
         error
     };
