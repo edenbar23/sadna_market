@@ -275,7 +275,8 @@ public class StoreController {
             @RequestParam String username) {
 
         logger.info("Getting orders for store: {} by user: {}", storeId, username);
-        Response<List<OrderDTO>> response = getStorePurchaseHistory(username, token, storeId);
+
+        Response<List<OrderDTO>> response = storeService.getStoreOrders(username, token, storeId);
 
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

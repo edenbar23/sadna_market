@@ -54,6 +54,62 @@ export default function StoreManagePage() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [appointmentType, setAppointmentType] = useState("owner"); // "owner" or "manager"
 
+    // State for collapsible order sections
+    const [openOrderSections, setOpenOrderSections] = useState({
+        all: false,
+        pending: false,
+        paid: false,
+        cancelled: false,
+        delivered: false
+    });
+
+    // Helper function to format dates
+    const formatOrderDate = (dateStr) => {
+        if (!dateStr) return 'No date available';
+
+        try {
+            let date;
+            if (Array.isArray(dateStr)) {
+                // If it's an array like [2024, 1, 15, 10, 30, 0], convert to Date
+                const [year, month, day, hour = 0, minute = 0, second = 0] = dateStr;
+                date = new Date(year, month - 1, day, hour, minute, second);
+            } else {
+                date = new Date(dateStr);
+            }
+
+            if (isNaN(date.getTime())) {
+                console.warn("Invalid date:", dateStr);
+                return 'Invalid date';
+            }
+
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error("Date formatting error:", error, dateStr);
+            return 'Date format error';
+        }
+    };
+
+    const getProductName = (productId) => {
+        if (!products || products.length === 0) return `Product ID: ${productId.substring(0, 8)}...`;
+
+        const product = products.find(p => p.productId === productId);
+        return product ? product.name : `Unknown Product (${productId.substring(0, 8)}...)`;
+    };
+
+    const toggleOrderSection = (sectionName) => {
+        setOpenOrderSections(prev => ({
+            ...prev,
+            [sectionName]: !prev[sectionName]
+        }));
+    };
+
     // Transform ownerUsernames and managerUsernames into personnel array
     const getPersonnel = () => {
         if (!store) return [];
@@ -154,11 +210,18 @@ export default function StoreManagePage() {
             } else {
                 await handleAppointManager(username, permissions);
             }
+
+            // Close modal and reload data only after successful appointment
             setShowAppointUserModal(false);
-            // Reload store data to get updated personnel
             loadStoreData();
+
+            // Success feedback
+            alert(`${appointmentType === "owner" ? "Owner" : "Manager"} appointed successfully!`);
+
         } catch (err) {
             console.error(`Failed to appoint ${appointmentType}:`, err);
+            // Don't close modal on error, let user try again
+            throw err; // Re-throw so modal can handle the error
         }
     };
 
@@ -312,98 +375,158 @@ export default function StoreManagePage() {
             <section className="store-section">
                 <h2 className="store-section-title">Store Orders</h2>
 
-                {/* Pending Orders */}
-                <div className="order-subsection">
-                    <h3 className="order-subsection-title">Pending Orders</h3>
-                    <div className="orders-scroll">
-                        {orders.filter(o => o.status === "Pending").length > 0 ? (
-                            orders.filter(o => o.status === "Pending").map(order => (
-                                <div key={order.id} className="order-card">
-                                    <div className="order-header">
-                                        <span className="order-date">{order.orderedAt}</span>
-                                        <span className="order-buyer">Buyer: {order.buyer}</span>
-                                    </div>
-                                    <ul className="order-items">
-                                        {order.items.map((item, idx) => (
-                                            <li key={idx}>
-                                                {item.product} - Qty: {item.quantity}, ${item.price}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <div className="order-footer">
-                                        <span className="order-total">Total: ${order.total.toFixed(2)}</span>
-                                        <div className="order-actions">
-                                            <button className="btn-approve">Approve</button>
-                                            <button className="btn-decline">Decline</button>
+                {/* Debug info */}
+                <div className="debug-info" style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', marginBottom: '20px', fontSize: '12px' }}>
+                    <p>Store ID: {storeId}</p>
+                    <p>Orders loaded: {orders ? orders.length : 'null'}</p>
+                    <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+                    {error && <p>Error: {error}</p>}
+                </div>
+
+                {isLoading ? (
+                    <div className="loading-indicator">Loading orders...</div>
+                ) : orders && orders.length > 0 ? (
+                    <div className="orders-container">
+                        {/* All Orders */}
+                        <div className="order-subsection">
+                            <div
+                                className="order-subsection-header"
+                                onClick={() => toggleOrderSection('all')}
+                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.all ? '0' : '10px', backgroundColor: '#f8f9fa' }}
+                            >
+                                <h3>All Orders ({orders.length})</h3>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                                    {openOrderSections.all ? '▼' : '▶'}
+                                </span>
+                            </div>
+
+                            {openOrderSections.all && (
+                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                                    {orders.map(order => (
+                                        <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
+                                            <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+                                                <span>Order: {order.orderId}</span>
+                                                <span>{formatOrderDate(order.orderDate)}</span>
+                                                <span>Buyer: {order.userName}</span>
+                                            </div>
+
+                                            <div className="order-products" style={{ marginBottom: '10px' }}>
+                                                <h4 style={{ fontSize: '14px', marginBottom: '5px' }}>Products:</h4>
+                                                {order.products && Object.keys(order.products).length > 0 ? (
+                                                    Object.entries(order.products).map(([productId, quantity]) => (
+                                                        <div key={productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '2px 0' }}>
+                                                            <span>{getProductName(productId)}</span>
+                                                            <span>Qty: {quantity}</span>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <p style={{ fontSize: '12px', color: '#888' }}>No products found</p>
+                                                )}
+                                            </div>
+
+                                            <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                                                <div>
+                                                    <span style={{ marginRight: '15px' }}>Total: ${order.totalPrice?.toFixed(2) || '0.00'}</span>
+                                                    <span style={{ marginRight: '15px' }}>Final: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
+                                                </div>
+                                                <span style={{
+                                                    padding: '2px 8px',
+                                                    borderRadius: '12px',
+                                                    backgroundColor: order.status === 'PAID' ? '#d4edda' : order.status === 'PENDING' ? '#fff3cd' : '#f8d7da',
+                                                    color: order.status === 'PAID' ? '#155724' : order.status === 'PENDING' ? '#856404' : '#721c24'
+                                                }}>
+                                                    {order.status || 'Unknown'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-muted">No pending orders.</p>
-                        )}
-                    </div>
-                </div>
+                            )}
+                        </div>
 
-                {/* In Process Orders */}
-                <div className="order-subsection">
-                    <h3 className="order-subsection-title">In Process</h3>
-                    <div className="orders-scroll">
-                        {orders.filter(o => o.status !== "Complete" && o.status !== "Pending").length > 0 ? (
-                            orders.filter(o => o.status !== "Complete" && o.status !== "Pending").map(order => (
-                                <div key={order.id} className="order-card">
-                                    <div className="order-header">
-                                        <span className="order-date">{order.orderedAt}</span>
-                                        <span className="order-buyer">Buyer: {order.buyer}</span>
-                                    </div>
-                                    <ul className="order-items">
-                                        {order.items.map((item, idx) => (
-                                            <li key={idx}>
-                                                {item.product} - Qty: {item.quantity}, ${item.price}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <div className="order-footer">
-                                        <span className="order-total">Total: ${order.total.toFixed(2)}</span>
-                                        <span className="order-status">Status: In Process</span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-muted">No in-process orders.</p>
-                        )}
-                    </div>
-                </div>
+                        {/* Pending Orders */}
+                        <div className="order-subsection">
+                            <div
+                                className="order-subsection-header"
+                                onClick={() => toggleOrderSection('pending')}
+                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.pending ? '0' : '10px', backgroundColor: '#fff3cd' }}
+                            >
+                                <h3>Pending Orders ({orders.filter(o => o.status === "PENDING").length})</h3>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                                    {openOrderSections.pending ? '▼' : '▶'}
+                                </span>
+                            </div>
 
-                {/* Completed Orders */}
-                <div className="order-subsection">
-                    <h3 className="order-subsection-title">Completed</h3>
-                    <div className="orders-scroll">
-                        {orders.filter(o => o.status === "Complete").length > 0 ? (
-                            orders.filter(o => o.status === "Complete").map(order => (
-                                <div key={order.id} className="order-card">
-                                    <div className="order-header">
-                                        <span className="order-date">{order.orderedAt}</span>
-                                        <span className="order-buyer">Buyer: {order.buyer}</span>
-                                    </div>
-                                    <ul className="order-items">
-                                        {order.items.map((item, idx) => (
-                                            <li key={idx}>
-                                                {item.product} - Qty: {item.quantity}, ${item.price}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <div className="order-footer">
-                                        <span className="order-total">Total: ${order.total.toFixed(2)}</span>
-                                        <span className="order-status">Status: Completed</span>
-                                    </div>
+                            {openOrderSections.pending && (
+                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                                    {orders.filter(o => o.status === "PENDING").length > 0 ? (
+                                        orders.filter(o => o.status === "PENDING").map(order => (
+                                            <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
+                                                <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+                                                    <span>{formatOrderDate(order.orderDate)}</span>
+                                                    <span>Buyer: {order.userName}</span>
+                                                </div>
+                                                <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span>Total: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
+                                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                                        <button style={{ padding: '5px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                                                            Approve
+                                                        </button>
+                                                        <button style={{ padding: '5px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                                                            Decline
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No pending orders.</p>
+                                    )}
                                 </div>
-                            ))
-                        ) : (
-                            <p className="text-muted">No completed orders.</p>
-                        )}
+                            )}
+                        </div>
+
+                        {/* Paid Orders */}
+                        <div className="order-subsection">
+                            <div
+                                className="order-subsection-header"
+                                onClick={() => toggleOrderSection('paid')}
+                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.paid ? '0' : '10px', backgroundColor: '#d4edda' }}
+                            >
+                                <h3>Paid Orders ({orders.filter(o => o.status === "PAID").length})</h3>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                                    {openOrderSections.paid ? '▼' : '▶'}
+                                </span>
+                            </div>
+
+                            {openOrderSections.paid && (
+                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                                    {orders.filter(o => o.status === "PAID").length > 0 ? (
+                                        orders.filter(o => o.status === "PAID").map(order => (
+                                            <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
+                                                <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
+                                                    <span>{formatOrderDate(order.orderDate)}</span>
+                                                    <span>Buyer: {order.userName}</span>
+                                                </div>
+                                                <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span>Total: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
+                                                    <span style={{ color: '#155724', fontWeight: 'bold' }}>PAID</span>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No paid orders.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="no-data-message">
+                        <p>No orders found for this store.</p>
+                        <button onClick={loadStoreData} className="btn">Refresh Orders</button>
+                    </div>
+                )}
             </section>
 
             {/* Modals */}

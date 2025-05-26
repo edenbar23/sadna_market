@@ -287,6 +287,49 @@ public class StoreService {
             return Response.error("Failed to get store status: " + e.getMessage());
         }
     }
+
+    public Response<List<OrderDTO>> getStoreOrders(String username, String token, UUID storeId) {
+        logger.info("Getting orders for store: {} requested by user: {}", storeId, username);
+
+        try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            // Check if user has permission to view store orders
+            // User must be store owner, manager, or founder
+            Optional<Store> storeOpt = storeRepository.findById(storeId);
+            if (storeOpt.isEmpty()) {
+                return Response.error("Store not found");
+            }
+
+            Store store = storeOpt.get();
+
+            // Check permissions
+            boolean hasPermission = store.getFounder().getUsername().equals(username) ||
+                    store.isStoreOwner(username) ||
+                    store.isStoreManager(username);
+
+            if (!hasPermission) {
+                return Response.error("You don't have permission to view orders for this store");
+            }
+
+            // Get orders for this store
+            List<Order> storeOrders = orderRepository.findByStoreId(storeId);
+
+            // Convert to DTOs and sort by date (newest first)
+            List<OrderDTO> orderDTOs = storeOrders.stream()
+                    .map(OrderDTO::new)
+                    .sorted(Comparator.comparing(OrderDTO::getOrderDate).reversed())
+                    .collect(Collectors.toList());
+
+            logger.info("Found {} orders for store: {}", orderDTOs.size(), storeId);
+            return Response.success(orderDTOs);
+
+        } catch (Exception e) {
+            logger.error("Error getting store orders: {}", e.getMessage(), e);
+            return Response.error("Failed to get store orders: " + e.getMessage());
+        }
+    }
     
 
     private StoreDTO convertToDTO(Store store) {

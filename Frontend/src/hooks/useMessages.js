@@ -33,9 +33,12 @@ export const useMessages = () => {
 
     const replyToStoreMessage = useCallback(async (messageId, content) => {
         if (!user || !token) {
+            console.error("User not logged in for reply");
             setError('You must be logged in to reply to messages');
-            return null;
+            return false;
         }
+
+        console.log("useMessages: Sending reply...", { messageId, content, username: user.username });
 
         setLoading(true);
         setError(null);
@@ -46,10 +49,21 @@ export const useMessages = () => {
                 content,
                 token
             );
-            return response;
+
+            console.log("useMessages: Reply response:", response);
+
+            // Check if response indicates success
+            if (response && (response.data === true || response.success !== false)) {
+                return true;
+            } else {
+                console.error("useMessages: Reply failed - unexpected response:", response);
+                setError('Reply failed - unexpected response');
+                return false;
+            }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to reply to message');
-            throw err;
+            console.error("useMessages: Reply error:", err);
+            setError(err.response?.data?.message || err.message || 'Failed to reply to message');
+            return false;
         } finally {
             setLoading(false);
         }
@@ -106,15 +120,18 @@ export const useMessages = () => {
         setLoading(true);
         setError(null);
         try {
-            // Using the fixed getStoreMessages API function
+            console.log("useMessages: Fetching store messages for:", storeId);
+
             const response = await messageAPI.getStoreMessages(
                 storeId,
                 user.username,
                 token
             );
+
+            console.log("useMessages: Store messages response:", response);
             return response;
         } catch (err) {
-            console.error("Failed to get store messages:", err);
+            console.error("useMessages: Failed to get store messages:", err);
             console.error("Error details:", {
                 endpoint: `/stores/${storeId}/messages`,
                 storeId,

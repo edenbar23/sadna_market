@@ -36,3 +36,26 @@ export async function getOrderStatus(orderId) {
     const response = await fetch(`${BASE_URL}/${orderId}/status`);
     return handleResponse(response);
 }
+
+export const fetchStoreOrders = async (storeId, token, username) => {
+    console.log("API: Fetching store orders", { storeId, username });
+
+    try {
+        const response = await apiClient.get(`/stores/${storeId}/orders`, {
+            headers: { Authorization: token },
+            params: { username }
+        });
+
+        console.log("API: Store orders response:", response);
+
+        // The response should have the structure: { error: false, data: [...], errorMessage: null }
+        if (response.error) {
+            throw new Error(response.errorMessage || 'Failed to fetch store orders');
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("API: Error fetching store orders:", error);
+        throw error;
+    }
+};
