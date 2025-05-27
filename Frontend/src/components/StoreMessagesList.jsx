@@ -39,8 +39,8 @@ export default function StoreMessagesList({ storeId }) {
                 const sorted = data
                     .filter(msg => msg && msg.timestamp)
                     .sort((a, b) => {
-                        const timeA = new Date(msg.timestamp);
-                        const timeB = new Date(msg.timestamp);
+                        const timeA = new Date(a.timestamp);
+                        const timeB = new Date(b.timestamp);
                         return timeB - timeA; // newest first
                     });
 

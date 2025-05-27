@@ -16,7 +16,22 @@ import StoreManagementPage from "./pages/StoreManagementPage";
 import StoreManagePage from "./pages/StoreManagePage";
 
 function App() {
-    const { user } = useAuthContext();
+    const { user, loading } = useAuthContext();
+
+    // Show loading while validating authentication
+    if (loading) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                fontSize: '18px'
+            }}>
+                Validating session...
+            </div>
+        );
+    }
 
     return (
         <Router>

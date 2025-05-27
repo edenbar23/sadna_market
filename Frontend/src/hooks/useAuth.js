@@ -5,7 +5,7 @@ import { useAuthContext } from '../context/AuthContext';
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { setUser, setToken, user, token } = useAuthContext();
+  const { setUser, setToken, user, token, login: contextLogin, logout: contextLogout } = useAuthContext();
 
   const register = useCallback(async (userData) => {
     setLoading(true);
@@ -25,67 +25,30 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await userAPI.loginUser(username, password);
-
-      if (response && response.data) {
-        const tokenValue = response.data;
-
-        // Set the token in context and localStorage
-        setToken(tokenValue);
-
-        // After successful login, fetch user info to get roles and stores
-        const userInfoResponse = await userAPI.returnInfo(username, tokenValue);
-
-        // Create a complete user object with all the necessary info
-        const userObject = {
-          username,
-          token: tokenValue,
-          role: userInfoResponse?.data?.role || 'user',
-          stores: userInfoResponse?.data?.stores || [],
-          // Add other user details as needed
-        };
-
-        // Update auth context with complete user data
-        setUser(userObject);
-        return response;
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      const response = await contextLogin(username, password);
+      return response;
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Login failed');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [setToken, setUser]);
+  }, [contextLogin]);
 
   const logout = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Only call API if we have a logged in user
-      if (user && token) {
-        await userAPI.logoutUser(user.username, token);
-      }
-
-      // Always clear user data from context and localStorage
-      setToken(null);
-      setUser(null);
-
+      await contextLogout();
       return true;
     } catch (err) {
       console.error("Logout error:", err);
-
-      // Even if API fails, still clear user data
-      setToken(null);
-      setUser(null);
-
       setError(err.response?.data?.message || 'Logout failed');
       return false;
     } finally {
       setLoading(false);
     }
-  }, [user, token, setToken, setUser]);
+  }, [contextLogout]);
 
   return {
     register,
