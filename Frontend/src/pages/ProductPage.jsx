@@ -79,7 +79,6 @@ export default function ProductPage() {
 
   const handleRateProduct = async (rating) => {
     if (!user || !token) {
-      // Prompt user to login
       alert("Please login to rate products");
       return;
     }
@@ -87,13 +86,14 @@ export default function ProductPage() {
     try {
       const rateData = {
         productId,
+        storeId: product.storeId,
         username: user.username,
         rating
       };
 
-      await rateProduct(token, rateData);
+      await rateProduct(rateData, token);
 
-      // Update the product rating in the UI
+      // Optionally update UI
       setProduct(prev => ({
         ...prev,
         rating

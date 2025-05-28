@@ -88,13 +88,23 @@ export const getProductInfo = async (productId) => {
 
 /**
  * Rate a product
- * @param {Object} rateRequest - Rating data including productId, username and rating
- * @returns {Promise<Object>} - Rating result
+ * @param {Object} rateRequest - includes productId, storeId, username, and rating
+ * @param {string} token - JWT token
  */
-export const rateProduct = async (rateRequest) => {
+export const rateProduct = async (rateRequest, token) => {
     try {
         ensureValidUUID(rateRequest.productId);
-        return await apiClient.post(`/products/rate`, rateRequest);
+        ensureValidUUID(rateRequest.storeId);
+
+        return await apiClient.post(
+            `/products/rate`,
+            rateRequest,
+            {
+                headers: {
+                    Authorization: token
+                }
+            }
+        );
     } catch (error) {
         console.error(`Error rating product:`, error);
         throw error;
