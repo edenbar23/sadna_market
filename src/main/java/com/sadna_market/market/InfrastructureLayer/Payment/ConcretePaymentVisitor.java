@@ -1,126 +1,125 @@
 package com.sadna_market.market.InfrastructureLayer.Payment;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 
+import com.sadna_market.market.InfrastructureLayer.ExternalAPI.ExternalAPIException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+/**
+ * Concrete implementation of PaymentVisitor that processes different payment methods
+ * through the external payment API. Focuses on payment processing, delegates validation
+ * to PaymentValidator.
+ */
+@Component
 public class ConcretePaymentVisitor implements PaymentVisitor {
-    private ExternalPaymentAPI api = new ExternalPaymentAPI();
+    private static final Logger logger = LoggerFactory.getLogger(ConcretePaymentVisitor.class);
+
+    private final ExternalPaymentAPI api;
+    private final PaymentValidator validator;
+
+    @Autowired
+    public ConcretePaymentVisitor(ExternalPaymentAPI api, PaymentValidator validator) {
+        this.api = api;
+        this.validator = validator;
+        logger.info("ConcretePaymentVisitor initialized with external API integration");
+    }
 
     @Override
-    public boolean visit(CreditCardDTO card, double amount) {
-        System.out.println("Visitor: Processing credit card...");
+    public PaymentResult visit(CreditCardDTO card, double amount) {
+        logger.info("Processing credit card payment for amount: {}", amount);
 
-        // Validate CVV
-        if (!isValidCvv(card.cvv)) {
-            throw new IllegalArgumentException("Card validation failed: Invalid CVV");
+        // Validate payment details
+        ValidationResult validation = validator.validateCreditCard(card, amount);
+        if (!validation.isValid()) {
+            logger.error("Credit card validation failed: {}", validation.getErrorMessage());
+            return PaymentResult.failure(validation.getErrorMessage(), card, amount);
         }
 
-        // Validate expiry date
-        if (!isValidExpiryDate(card.expiryDate)) {
-            throw new IllegalArgumentException("Card validation failed: Invalid or expired expiry date");
+        // Process payment through external API
+        return processExternalPayment(() ->
+                        api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount),
+                card, amount, "Credit Card"
+        );
+    }
+
+    @Override
+    public PaymentResult visit(BankAccountDTO account, double amount) {
+        logger.info("Processing bank account payment for amount: {}", amount);
+
+        // Validate payment details
+        ValidationResult validation = validator.validateBankAccount(account, amount);
+        if (!validation.isValid()) {
+            logger.error("Bank account validation failed: {}", validation.getErrorMessage());
+            return PaymentResult.failure(validation.getErrorMessage(), account, amount);
         }
-        return api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount); // validation passed
 
+        // Process payment through external API
+        return processExternalPayment(() ->
+                        api.sendBankPayment(account.accountNumber, account.bankName, amount),
+                account, amount, "Bank Account"
+        );
+    }
 
-//        try {
-//            String prefix = card.getCardPrefix();
-//            URL url = new URL("https://lookup.binlist.net/" + prefix);
-//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setRequestMethod("GET");
-//
-//            int responseCode = conn.getResponseCode();
-//            if (responseCode != 200) {
-//                //System.out.println("Card validation failed: bad response");
-//                throw new IllegalArgumentException("Card validation failed: invalid card number");
-//
-//            }
-//
-//            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//            String inputLine;
-//            StringBuilder response = new StringBuilder();
-//            while ((inputLine = in.readLine()) != null) {
-//                response.append(inputLine);
-//            }
-//            in.close();
-//
-//            // Simple check: just print info
-//            //System.out.println("Binlist response: " + response.toString());
-//
-//            System.out.println("approved");
-//            // Optional: parse and act on the JSON using org.json or manual parsing
-//
-//            return api.sendCreditCardPayment(card.cardNumber, card.cardHolderName, card.expiryDate, card.cvv, amount); // validation passed
-//        } catch (Exception e) {
-//            throw new IllegalArgumentException("Card validation failed: invalid card number");
-//        }
+    @Override
+    public PaymentResult visit(PayPalDTO paypal, double amount) {
+        logger.info("Processing PayPal payment for amount: {} with email: {}", amount, paypal.email);
+
+        // Validate payment details
+        ValidationResult validation = validator.validatePayPal(paypal, amount);
+        if (!validation.isValid()) {
+            logger.error("PayPal validation failed: {}", validation.getErrorMessage());
+            return PaymentResult.failure(validation.getErrorMessage(), paypal, amount);
+        }
+
+        // Note: External API doesn't specify PayPal integration
+        // Using mock implementation for now
+        logger.info("PayPal payment processed successfully (simulated)");
+        int mockTransactionId = generateMockTransactionId();
+        return PaymentResult.success(mockTransactionId, paypal, amount);
     }
 
     /**
-     * Validates the credit card CVV
-     * @param cvv The CVV to validate
-     * @return true if the CVV is valid, false otherwise
+     * Common method to process external payment API calls
+     * Handles all the exception catching and result conversion logic
      */
-    private boolean isValidCvv(String cvv) {
-        if (cvv == null) {
-            return false;
-        }
-
-        // CVV should be 3-4 digits
-        return cvv.matches("^[0-9]{3,4}$");
-    }
-
-    /**
-     * Validates the credit card expiry date
-     * @param expiryDate The expiry date in MM/YY format
-     * @return true if the date is valid and not expired, false otherwise
-     */
-    private boolean isValidExpiryDate(String expiryDate) {
-        if (expiryDate == null) {
-            return false;
-        }
-
-        // Check format MM/YY
-        if (!expiryDate.matches("^(0[1-9]|1[0-2])/[0-9]{2}$")) {
-            return false;
-        }
-
+    private PaymentResult processExternalPayment(PaymentAPICall apiCall,
+                                                 PaymentMethod method,
+                                                 double amount,
+                                                 String paymentType) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MM/yy");
-            sdf.setLenient(false);
+            int transactionId = apiCall.call();
 
-            // Parse the expiry date
-            Date expiry = sdf.parse(expiryDate);
+            if (transactionId == -1) {
+                String error = paymentType + " payment was declined by external system";
+                logger.error(error);
+                return PaymentResult.failure(error, method, amount);
+            }
 
-            // Add one day to the last day of the month
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(expiry);
-            cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
-            cal.add(Calendar.DAY_OF_MONTH, 1);
-            expiry = cal.getTime();
+            logger.info("{} payment successful - Transaction ID: {}", paymentType, transactionId);
+            return PaymentResult.success(transactionId, method, amount);
 
-            // Compare with current date
-            return !expiry.before(new Date());
-        } catch (ParseException e) {
-            return false;
+        } catch (ExternalAPIException e) {
+            logger.error("External API error during {} payment", paymentType, e);
+            return PaymentResult.failure("Payment processing failed: " + e.getMessage(), method, amount);
+        } catch (Exception e) {
+            logger.error("Unexpected error during {} payment", paymentType, e);
+            return PaymentResult.failure("Unexpected payment error: " + e.getMessage(), method, amount);
         }
     }
 
-    @Override
-    public boolean visit(BankAccountDTO account, double amount) {
-        System.out.println("Visitor: Processing bank account...");
-        return api.sendBankPayment(account.accountNumber, account.bankName, amount);
+    /**
+     * Functional interface for payment API calls
+     */
+    @FunctionalInterface
+    private interface PaymentAPICall {
+        int call() throws ExternalAPIException;
     }
 
-    @Override
-    public boolean visit(PayPalDTO paypal, double amount) {
-        System.out.println("Visitor: Processing PayPal payment for " + paypal.email + "...");
-        return true; // simulate success
+    /**
+     * Generates a mock transaction ID for PayPal (since external API doesn't support it)
+     */
+    private int generateMockTransactionId() {
+        return 10000 + (int)(Math.random() * 90000);
     }
 }
-
-
