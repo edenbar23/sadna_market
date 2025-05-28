@@ -32,9 +32,6 @@ public class SupplyService {
      * @return SupplyResult containing transaction ID and status
      */
     public SupplyResult processShipment(SupplyMethod method, ShipmentDetails shipmentDetails, double weight) {
-        logger.info("Processing shipment {} using method: {}",
-                shipmentDetails.getShipmentId(), method.getClass().getSimpleName());
-
         if (method == null) {
             logger.error("Supply method cannot be null");
             return SupplyResult.failure("Supply method cannot be null", method, shipmentDetails);
@@ -44,6 +41,9 @@ public class SupplyService {
             logger.error("Shipment details cannot be null");
             return SupplyResult.failure("Shipment details cannot be null", method, shipmentDetails);
         }
+
+        logger.info("Processing shipment {} using method: {}",
+                shipmentDetails.getShipmentId(), method.getClass().getSimpleName());
 
         if (weight <= 0) {
             logger.error("Package weight must be positive: {}", weight);

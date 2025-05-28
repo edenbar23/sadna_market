@@ -186,7 +186,7 @@ public class ExternalPaymentAPI {
      *
      * @param response Raw response string
      * @return Transaction ID or result code
-     * @throws ExternalAPIException if response cannot be parsed
+     * @throws ExternalAPIException if the response cannot be parsed
      */
     private int parseTransactionResponse(String response) throws ExternalAPIException {
         try {

@@ -236,7 +236,7 @@ public class PaymentValidator {
             if (alternate) {
                 digit *= 2;
                 if (digit > 9) {
-                    digit = (digit % 10) + 1;
+                    digit = (digit / 10) + (digit % 10);
                 }
             }
 
@@ -245,5 +245,17 @@ public class PaymentValidator {
         }
 
         return (sum % 10) == 0;
+    }
+
+    /**
+     * main method for testing purposes
+     */
+
+    public static void main(String[] args) throws ParseException {
+        PaymentValidator validator = new PaymentValidator();
+        System.out.println(validator.isValidLuhn("4111111111111111"));
+        System.out.println(new SimpleDateFormat("MM/yy").parse("12/25"));
+
+
     }
 }

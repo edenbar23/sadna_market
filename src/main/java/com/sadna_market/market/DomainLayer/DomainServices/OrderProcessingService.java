@@ -28,12 +28,13 @@ public class OrderProcessingService {
             IStoreRepository storeRepository,
             IOrderRepository orderRepository,
             IUserRepository userRepository,
-            IProductRepository productRepository) {
+            IProductRepository productRepository,
+            PaymentService paymentService) {
         this.storeRepository = storeRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.paymentService = new PaymentService(); // This would ideally be injected too
+        this.paymentService = paymentService ;
 
         logger.info("OrderProcessingService initialized");
     }
@@ -160,13 +161,13 @@ public class OrderProcessingService {
 
         for (Order order : orders) {
             try {
-                UUID paymentId = order.getPaymentId();
-                if (paymentId != null) {
-                    paymentService.refund(paymentId);
-                    logger.info("Successfully rolled back payment {}", paymentId);
+                int transactionId = order.getTransactionId();
+                if (transactionId != -1) { //-1 indicates some error in payment processing
+                    paymentService.refund(transactionId);
+                    logger.info("Successfully rolled back payment {}", transactionId);
                 }
             } catch (Exception e) {
-                logger.error("Failed to rollback payment {}: {}", order.getPaymentId(), e.getMessage());
+                logger.error("Failed to rollback payment {}: {}", order.getTransactionId(), e.getMessage());
             }
         }
     }
@@ -217,14 +218,14 @@ public class OrderProcessingService {
                 totalPrice, // No discounts in Version 1
                 LocalDateTime.now(),
                 OrderStatus.PENDING,
-                null // Payment ID will be set later
+                -1 // Transaction ID will be set later
         );
 
         // Simulate payment processing (in Version 1, assume payment always succeeds)
-        UUID paymentId = operatePayment(username, totalPrice, paymentMethod);
+        int transactionId = operatePayment(username, totalPrice, paymentMethod);
 
         // Update order with payment ID and status
-        orderRepository.setDeliveryId(orderId, paymentId);
+        //orderRepository.setDeliveryId(orderId, transactionId); //TODO: understand what to do (maybe use supply)
         orderRepository.updateOrderStatus(orderId, OrderStatus.PAID);
 
         // Update inventory after successful payment
@@ -291,15 +292,15 @@ public class OrderProcessingService {
                 totalPrice, // No discounts in Version 1
                 LocalDateTime.now(),
                 OrderStatus.PENDING,
-                null // Payment ID will be set later
+                -1 // Payment ID will be set later
         );
 
         //Payment processing
-        UUID paymentId = operatePayment(guestId, totalPrice, paymentMethod);
+        int transactionId = operatePayment(guestId, totalPrice, paymentMethod);
         //throws error if failed
 
         // Update order with payment ID and status
-        orderRepository.setDeliveryId(orderId, paymentId);
+        //orderRepository.setDeliveryId(orderId, transactionId);// TODO: understand what to do (maybe use supply)
         orderRepository.updateOrderStatus(orderId, OrderStatus.PAID);
 
         // Update inventory after successful payment
@@ -348,14 +349,14 @@ public class OrderProcessingService {
         return total;
     }
 
-    private UUID operatePayment(String username, double amount, PaymentMethod paymentMethod) {
-        UUID paymentId = UUID.randomUUID();
+    private int operatePayment(String username, double amount, PaymentMethod paymentMethod) {
+        int transactionId = -1;// TODO: Need to understand how to generate unique transaction IDs
         if (!paymentService.pay(paymentMethod, amount)) {
             logger.error("Payment failed for user {} amount {}", username, amount);
             throw new IllegalStateException("Payment failed");
         }
-        logger.info("Payment successful for user {} amount {} with ID {}", username, amount, paymentId);
-        return paymentId;
+        logger.info("Payment successful for user {} amount {} with ID {}", username, amount, transactionId);
+        return transactionId;
     }
 
     private void rollbackOrders(List<Order> orders) {
@@ -416,9 +417,9 @@ public class OrderProcessingService {
         orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
 
         // Refund payment if any
-        UUID paymentId = order.getPaymentId();
-        if (paymentId != null) {
-            paymentService.refund(paymentId);
+        int transactionId = order.getTransactionId();
+        if (transactionId != -1) {
+            paymentService.refund(transactionId);
         }
 
         // Restore inventory

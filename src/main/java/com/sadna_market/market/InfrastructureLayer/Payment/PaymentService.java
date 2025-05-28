@@ -31,12 +31,12 @@ public class PaymentService {
      * @return PaymentResult containing transaction ID and status
      */
     public PaymentResult processPayment(PaymentMethod method, double amount) {
-        logger.info("Processing payment for amount: {} using method: {}", amount, method.getClass().getSimpleName());
-
         if (method == null) {
             logger.error("Payment method cannot be null");
             return PaymentResult.failure("Payment method cannot be null", method, amount);
         }
+
+        logger.info("Processing payment for amount: {} using method: {}", amount, method.getClass().getSimpleName());
 
         if (amount <= 0) {
             logger.error("Payment amount must be positive: {}", amount);
@@ -69,7 +69,7 @@ public class PaymentService {
     public boolean cancelPayment(int transactionId) {
         logger.info("Cancelling payment transaction: {}", transactionId);
 
-        if (transactionId <= 0) {
+        if (transactionId <= 10000 || transactionId > 100000) {
             logger.error("Invalid transaction ID for cancellation: {}", transactionId);
             return false;
         }

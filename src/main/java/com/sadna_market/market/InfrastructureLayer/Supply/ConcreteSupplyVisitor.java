@@ -24,16 +24,14 @@ public class ConcreteSupplyVisitor implements SupplyVisitor {
 
     @Override
     public SupplyResult visit(StandardShippingDTO standardShipping, ShipmentDetails shipmentDetails, double weight) {
-        logger.info("Processing standard shipping with carrier: {} for shipment: {}",
-                standardShipping.carrier, shipmentDetails.getShipmentId());
-
         try {
             // Validate shipping details
             validateShipmentDetails(shipmentDetails);
             validateWeight(weight);
 
             // Log shipping details for tracking
-            logShipmentInfo("Standard Shipping", standardShipping.carrier, shipmentDetails, weight);
+            logger.info("Processing standard shipping with carrier: {} for shipment: {}, weight: {} kg",
+                    standardShipping.carrier, shipmentDetails.getShipmentId(), weight);
 
             // Process shipping through external API
             int transactionId = api.sendStandardShippingRequest(

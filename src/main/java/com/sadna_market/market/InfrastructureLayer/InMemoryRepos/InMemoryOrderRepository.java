@@ -79,7 +79,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
     @Override
     public UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                             double totalPrice, double finalPrice, LocalDateTime orderDate,
-                            OrderStatus status, UUID paymentId) {
+                            OrderStatus status, int transactionId){
         // Validate input parameters
         if (storeId == null) {
             logger.error("Cannot create order with null store ID");
@@ -112,7 +112,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
         HashMap<UUID, Integer> productsCopy = new HashMap<>(products);
 
         Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice,
-                orderDate, status, paymentId);
+                orderDate, status, transactionId);
 
         orders.put(order.getOrderId(), order);
         logger.info("Order created with ID: {}", order.getOrderId());
