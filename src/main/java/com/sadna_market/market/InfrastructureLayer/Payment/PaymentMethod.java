@@ -1,9 +1,23 @@
 package com.sadna_market.market.InfrastructureLayer.Payment;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Interface for payment methods using visitor pattern
  * Updated to return PaymentResult instead of boolean
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type"
+)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = CreditCardDTO.class, name = "creditCard"),
+        @JsonSubTypes.Type(value = BankAccountDTO.class, name = "bankAccount"),
+        @JsonSubTypes.Type(value = PayPalDTO.class, name = "paypal")
+})
+
 public interface PaymentMethod {
 
     /**

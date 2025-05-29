@@ -118,9 +118,9 @@ public class Bridge {
         return userService.updateCart(cart, storeId, productId, quantity);
     }
 
-    public Response<String> buyGuestCart(CartRequest cart, PaymentMethod paymentMethod){
-        return userService.checkout(cart, paymentMethod);
-    }
+//    public Response<String> buyGuestCart(CartRequest cart, PaymentMethod paymentMethod){
+//        return userService.checkout(cart, paymentMethod);
+//    }
 
     /** Registered User Methods */
     public Response<String> addProductToUserCart(String userName, String token, UUID storeId, UUID productId, int quantity){
@@ -139,9 +139,9 @@ public class Bridge {
         return userService.updateCart(userName, token, storeId, productId, quantity);
     }
 
-    public Response<String> buyUserCart(String userName, String token, PaymentMethod paymentMethod){
-        return userService.checkout(userName, token, paymentMethod);
-    }
+//    public Response<String> buyUserCart(String userName, String token, PaymentMethod paymentMethod){
+//        return userService.checkout(userName, token, paymentMethod);
+//    }
 
     public Response<ProductRatingDTO> rateProduct(String token, ProductRateRequest request){
         return productService.rateProduct(token, request);
