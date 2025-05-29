@@ -92,28 +92,6 @@ public class PaymentService {
     }
 
     /**
-     * Refunds a payment transaction (alias for cancelPayment for backward compatibility)
-     *
-     * @param transactionId The transaction ID to refund
-     * @return true if refund was successful, false otherwise
-     */
-    public boolean refund(int transactionId) {
-        logger.info("Processing refund for transaction: {}", transactionId);
-        return cancelPayment(transactionId);
-    }
-
-    /**
-     * Legacy method for backward compatibility
-     * @deprecated Use processPayment() instead which returns PaymentResult
-     */
-    @Deprecated
-    public boolean pay(PaymentMethod method, double amount) {
-        logger.warn("pay() method is deprecated. Use processPayment() for better transaction tracking.");
-        PaymentResult result = processPayment(method, amount);
-        return result.isSuccess();
-    }
-
-    /**
      * Tests connectivity to the external payment API
      *
      * @return true if payment API is available
