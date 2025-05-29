@@ -1,18 +1,113 @@
 package com.sadna_market.market.InfrastructureLayer.Payment;
 
-import java.util.UUID;
+import com.sadna_market.market.InfrastructureLayer.ExternalAPI.ExternalAPIException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+/**
+ * Service for processing payments with transaction tracking and rollback capabilities
+ */
+@Service
 public class PaymentService {
-    private PaymentVisitor visitor = new ConcretePaymentVisitor();
+    private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 
-    public boolean pay(PaymentMethod method, double amount) {
-        return method.accept(visitor, amount);
+    private final PaymentVisitor visitor;
+    private final ExternalPaymentAPI externalPaymentAPI;
+
+    @Autowired
+    public PaymentService(ConcretePaymentVisitor visitor, ExternalPaymentAPI externalPaymentAPI) {
+        this.visitor = visitor;
+        this.externalPaymentAPI = externalPaymentAPI;
+        logger.info("PaymentService initialized with transaction support");
     }
 
-    public void refund(UUID paymentId) {
-        // Logic to refund the payment
-        // This could involve calling the payment gateway's API to process the refund
-        // For simplicity, we'll just print a message here
-        System.out.println("Refunding payment with ID: " + paymentId);
+    /**
+     * Processes a payment and returns detailed result information
+     *
+     * @param method The payment method to use
+     * @param amount The payment amount
+     * @return PaymentResult containing transaction ID and status
+     */
+    public PaymentResult processPayment(PaymentMethod method, double amount) {
+        if (method == null) {
+            logger.error("Payment method cannot be null");
+            return PaymentResult.failure("Payment method cannot be null", method, amount);
+        }
+
+        logger.info("Processing payment for amount: {} using method: {}", amount, method.getClass().getSimpleName());
+
+        if (amount <= 0) {
+            logger.error("Payment amount must be positive: {}", amount);
+            return PaymentResult.failure("Payment amount must be positive", method, amount);
+        }
+
+        try {
+            PaymentResult result = method.accept(visitor, amount);
+
+            if (result.isSuccess()) {
+                logger.info("Payment processed successfully - Transaction ID: {}", result.getTransactionId());
+            } else {
+                logger.error("Payment failed: {}", result.getErrorMessage());
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Unexpected error during payment processing", e);
+            return PaymentResult.failure("Unexpected error: " + e.getMessage(), method, amount);
+        }
+    }
+
+    /**
+     * Cancels a payment transaction using the transaction ID
+     *
+     * @param transactionId The transaction ID to cancel
+     * @return true if cancellation was successful, false otherwise
+     */
+    public boolean cancelPayment(int transactionId) {
+        logger.info("Cancelling payment transaction: {}", transactionId);
+
+        if (transactionId <= 10000 || transactionId > 100000) {
+            logger.error("Invalid transaction ID for cancellation: {}", transactionId);
+            return false;
+        }
+
+        try {
+            int result = externalPaymentAPI.cancelPayment(transactionId);
+
+            if (result == 1) {
+                logger.info("Payment cancellation successful for transaction: {}", transactionId);
+                return true;
+            } else {
+                logger.error("Payment cancellation failed for transaction: {}", transactionId);
+                return false;
+            }
+
+        } catch (ExternalAPIException e) {
+            logger.error("Error cancelling payment transaction: {}", transactionId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Tests connectivity to the external payment API
+     *
+     * @return true if payment API is available
+     */
+    public boolean testPaymentAPI() {
+        logger.info("Testing payment API connectivity");
+        return externalPaymentAPI.testConnection();
+    }
+
+    /**
+     * Gets payment service status information
+     *
+     * @return Status information about the payment service
+     */
+    public String getServiceStatus() {
+        boolean apiAvailable = testPaymentAPI();
+        return String.format("PaymentService[API Available: %s]", apiAvailable);
     }
 }

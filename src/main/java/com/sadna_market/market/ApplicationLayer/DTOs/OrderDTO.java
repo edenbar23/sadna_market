@@ -27,7 +27,7 @@ public class OrderDTO {
     @Getter
     private OrderStatus status;
     @Getter
-    private UUID paymentId;
+    private int transactionId;
     @Getter
     private UUID deliveryId;
 
@@ -40,13 +40,13 @@ public class OrderDTO {
         this.finalPrice = order.getFinalPrice();
         this.orderDate = order.getOrderDate();
         this.status = order.getStatus();
-        this.paymentId = order.getPaymentId();
+        this.transactionId = order.getTransactionId();
         this.deliveryId = order.getDeliveryId();
     }
 
     public OrderDTO(UUID orderId, UUID storeId, String userName, Map<UUID, Integer> products,
-            double totalPrice, double finalPrice, LocalDateTime orderDate, OrderStatus status,
-            UUID paymentId, UUID deliveryId) {
+                    double totalPrice, double finalPrice, LocalDateTime orderDate, OrderStatus status,
+                    int transactionId, UUID deliveryId) {
         this.orderId = orderId;
         this.storeId = storeId;
         this.userName = userName;
@@ -55,7 +55,7 @@ public class OrderDTO {
         this.finalPrice = finalPrice;
         this.orderDate = orderDate;
         this.status = status;
-        this.paymentId = paymentId;
+        this.transactionId = transactionId;
         this.deliveryId = deliveryId;
     }
 

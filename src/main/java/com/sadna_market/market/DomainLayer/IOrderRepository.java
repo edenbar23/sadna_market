@@ -60,13 +60,13 @@ public interface IOrderRepository {
      * @param finalPrice The final price after discounts
      * @param orderDate The date and time when the order was placed
      * @param status The initial status of the order
-     * @param paymentId The payment transaction ID (if any)
+     * @param transactionId The payment transaction ID (if any)
      * @return The ID of the newly created order
      */
 
     UUID createOrder(UUID storeId, String userName, Map<UUID, Integer> products,
                  double totalPrice, double finalPrice, LocalDateTime orderDate, 
-                 OrderStatus status, UUID paymentId);
+                 OrderStatus status, int transactionId);
     
     /**
      * Updates the status of an order

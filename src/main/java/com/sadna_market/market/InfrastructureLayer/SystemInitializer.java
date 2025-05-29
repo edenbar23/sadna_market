@@ -295,7 +295,7 @@ public class SystemInitializer implements CommandLineRunner {
                     smartphone.getPrice(),
                     java.time.LocalDateTime.now(),
                     OrderStatus.PAID,
-                    UUID.randomUUID()
+                    10000 // Example payment ID
             );
             orderRepository.save(order);
 
@@ -316,7 +316,7 @@ public class SystemInitializer implements CommandLineRunner {
                     laptop.getPrice(),
                     java.time.LocalDateTime.now(),
                     OrderStatus.PAID,
-                    UUID.randomUUID()
+                    10001
             );
             orderRepository.save(order);
 
@@ -338,7 +338,7 @@ public class SystemInitializer implements CommandLineRunner {
                     tshirt.getPrice() * 2,
                     java.time.LocalDateTime.now(),
                     OrderStatus.PAID,
-                    UUID.randomUUID()
+                    10002
             );
             orderRepository.save(order);
 

@@ -1,5 +1,9 @@
 package com.sadna_market.market.InfrastructureLayer.Supply;
 
+/**
+ * DTO for express shipping method
+ * Updated to return SupplyResult
+ */
 public class ExpressShippingDTO implements SupplyMethod {
     public String carrier;
     public int priorityLevel;
@@ -10,7 +14,12 @@ public class ExpressShippingDTO implements SupplyMethod {
     }
 
     @Override
-    public boolean accept(SupplyVisitor visitor, ShipmentDetails shipmentDetails, double weight) {
+    public SupplyResult accept(SupplyVisitor visitor, ShipmentDetails shipmentDetails, double weight) {
         return visitor.visit(this, shipmentDetails, weight);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ExpressShipping[carrier=%s, priorityLevel=%d]", carrier, priorityLevel);
     }
 }

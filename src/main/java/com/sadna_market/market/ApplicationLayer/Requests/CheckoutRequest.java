@@ -1,56 +1,43 @@
 package com.sadna_market.market.ApplicationLayer.Requests;
 
-import java.util.UUID;
-
-import com.sadna_market.market.DomainLayer.Cart;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
+import com.sadna_market.market.InfrastructureLayer.Supply.SupplyMethod;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+/**
+ * Request object for registered user checkout
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class CheckoutRequest {
-    private String buyerUsername;
-    private UUID storeId;
-    private Cart cart;
+
+    /**
+     * Payment method selected by user
+     */
     private PaymentMethod paymentMethod;
 
-    // Constructors
-    public CheckoutRequest() {}
+    /**
+     * Supply/shipping method selected by user
+     */
+    private SupplyMethod supplyMethod;
 
-    public CheckoutRequest(String buyerUsername, UUID storeId, Cart cart, PaymentMethod paymentMethod) {
-        this.buyerUsername = buyerUsername;
-        this.storeId = storeId;
-        this.cart = cart;
-        this.paymentMethod = paymentMethod;
-    }
 
-    // Getters and Setters
-    public String getBuyerUsername() {
-        return buyerUsername;
-    }
+    private String shippingAddress;
 
-    public void setBuyerUsername(String buyerUsername) {
-        this.buyerUsername = buyerUsername;
-    }
+    /**
+     * Special delivery instructions
+     */
+    private String deliveryInstructions;
 
-    public UUID getStoreId() {
-        return storeId;
-    }
-
-    public void setStoreId(UUID storeId) {
-        this.storeId = storeId;
-    }
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
+    @Override
+    public String toString() {
+        return String.format("CheckoutRequest[paymentMethod=%s, supplyMethod=%s]",
+                paymentMethod != null ? paymentMethod.getClass().getSimpleName() : "null",
+                supplyMethod != null ? supplyMethod.getClass().getSimpleName() : "null");
     }
 }
