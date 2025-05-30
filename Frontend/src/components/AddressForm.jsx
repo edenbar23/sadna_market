@@ -12,7 +12,7 @@ export default function AddressForm({
         addressLine1: initialData.addressLine1 || '',
         addressLine2: initialData.addressLine2 || '',
         city: initialData.city || '',
-        state: initialData.state || '',
+        state: initialData.state || 'N/A', // Default to 'N/A' instead of empty string
         postalCode: initialData.postalCode || '',
         country: initialData.country || 'Israel', // Default to Israel
         phoneNumber: initialData.phoneNumber || '',
@@ -24,22 +24,26 @@ export default function AddressForm({
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => {
+            const newData = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            };
 
-        // Clear state field when changing to a country that doesn't use states
-        if (name === 'country') {
-            const countriesWithStates = ['United States', 'Canada', 'Australia'];
-            if (!countriesWithStates.includes(value)) {
-                setFormData(prev => ({
-                    ...prev,
-                    [name]: value,
-                    state: '' // Clear state when switching to country without states
-                }));
+            // Handle state field based on country
+            if (name === 'country') {
+                const countriesWithStates = ['United States', 'Canada', 'Australia'];
+                if (!countriesWithStates.includes(value)) {
+                    // For countries without states, set state to 'N/A'
+                    newData.state = 'N/A';
+                } else if (prev.state === 'N/A') {
+                    // If switching to a country with states and current state is 'N/A', clear it
+                    newData.state = '';
+                }
             }
-        }
+
+            return newData;
+        });
 
         // Clear error when user starts typing
         if (errors[name]) {
@@ -65,11 +69,13 @@ export default function AddressForm({
             newErrors.city = 'City is required';
         }
 
-        // Only validate state for countries that have states
+        // Only validate state for countries that have states AND require non-empty state
         const countriesWithStates = ['United States', 'Canada', 'Australia'];
-        if (countriesWithStates.includes(formData.country) && !formData.state.trim()) {
-            const stateLabel = formData.country === 'Canada' ? 'Province' : 'State';
-            newErrors.state = `${stateLabel} is required`;
+        if (countriesWithStates.includes(formData.country)) {
+            if (!formData.state.trim() || formData.state === 'N/A') {
+                const stateLabel = formData.country === 'Canada' ? 'Province' : 'State';
+                newErrors.state = `${stateLabel} is required`;
+            }
         }
 
         if (!formData.postalCode.trim()) {
@@ -88,7 +94,14 @@ export default function AddressForm({
         e.preventDefault();
 
         if (validateForm()) {
-            onSubmit(formData);
+            // Ensure state is never empty - backend requires it
+            const submissionData = {
+                ...formData,
+                state: formData.state.trim() || 'N/A'
+            };
+
+            console.log('Submitting address data:', submissionData);
+            onSubmit(submissionData);
         }
     };
 
@@ -200,7 +213,7 @@ export default function AddressForm({
                                 type="text"
                                 id="state"
                                 name="state"
-                                value={formData.state}
+                                value={formData.state === 'N/A' ? '' : formData.state}
                                 onChange={handleChange}
                                 className={errors.state ? 'error' : ''}
                                 placeholder={`Enter ${formData.country === 'Canada' ? 'province' : 'state'}`}
@@ -242,6 +255,14 @@ export default function AddressForm({
                         </select>
                     </div>
                 </div>
+
+                {!showStateField && (
+                    <div className="form-note">
+                        <small style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                            * For {formData.country}, state/province is not required
+                        </small>
+                    </div>
+                )}
 
                 <div className="form-group checkbox-group">
                     <label className="checkbox-label">
