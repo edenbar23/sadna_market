@@ -378,22 +378,22 @@ export default function CartPage() {
         // Debug: Log the entire response to see the structure
         console.log("Full checkout response:", response);
         console.log("Checkout result data:", checkoutResult);
-        console.log("All keys in checkoutResult:", Object.keys(checkoutResult));
 
-        // Try multiple possible field names for order ID
-        const orderId = checkoutResult.orderId ||
-            checkoutResult.orderNumber ||
-            checkoutResult.id ||
-            checkoutResult.orderUuid ||
-            checkoutResult.orderReference ||
-            checkoutResult.transactionId;
+        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
+        let orderIds = [];
 
-        if (!orderId) {
-          console.error("No order ID found in response. Available fields:", Object.keys(checkoutResult));
-          console.error("CheckoutResult content:", checkoutResult);
-          alert("Checkout completed but order ID not found. Please check your order history.");
+        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
+          orderIds = checkoutResult.orderIds;
+        }
+
+        if (orderIds.length === 0) {
+          console.error("No order IDs found in response:", checkoutResult);
+          console.error("orderIds field:", checkoutResult.orderIds);
+          alert("Checkout completed but no order IDs found. Please check your order history.");
           return;
         }
+
+        console.log("Order IDs created:", orderIds);
 
         // Clear cart
         setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
@@ -403,11 +403,18 @@ export default function CartPage() {
           localStorage.removeItem("guestCart");
         }
 
-        // Show success message with order ID
-        alert(`Checkout successful! Order ID: ${orderId}`);
-
-        // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${orderId}`;
+        // Show success message with all order IDs
+        if (orderIds.length === 1) {
+          alert(`Checkout successful! Order ID: ${orderIds[0]}`);
+          // Redirect to single order confirmation
+          window.location.href = `/order-confirmation/${orderIds[0]}`;
+        } else {
+          // Multiple orders created
+          const orderList = orderIds.map((id, index) => `${index + 1}. ${id}`).join('\n');
+          alert(`Checkout successful! ${orderIds.length} orders created:\n\n${orderList}\n\nYou can view all orders in your order history.`);
+          // Redirect to order history instead of single order
+          window.location.href = `/orders`;
+        }
       } else {
         // Handle error response from your Response<T> structure
         const errorMessage = response.errorMessage || "Unknown error occurred";
@@ -475,22 +482,28 @@ export default function CartPage() {
         // Debug: Log the entire response to see the structure
         console.log("Full checkout response:", response);
         console.log("Checkout result data:", checkoutResult);
-        console.log("All keys in checkoutResult:", Object.keys(checkoutResult));
 
-        // Try multiple possible field names for order ID
-        const orderId = checkoutResult.orderId ||
-            checkoutResult.orderNumber ||
-            checkoutResult.id ||
-            checkoutResult.orderUuid ||
-            checkoutResult.orderReference ||
-            checkoutResult.transactionId;
+        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
+        let orderId = null;
+
+        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
+          // Use the first order ID if multiple orders were created
+          orderId = checkoutResult.orderIds[0];
+
+          if (checkoutResult.orderIds.length > 1) {
+            console.log("Multiple orders created:", checkoutResult.orderIds);
+            // You might want to handle multiple orders differently
+          }
+        }
 
         if (!orderId) {
-          console.error("No order ID found in response. Available fields:", Object.keys(checkoutResult));
-          console.error("CheckoutResult content:", checkoutResult);
-          alert("Checkout completed but order ID not found. Please check your order history.");
+          console.error("No order IDs found in response:", checkoutResult);
+          console.error("orderIds field:", checkoutResult.orderIds);
+          alert("Checkout completed but no order IDs found. Please check your order history.");
           return;
         }
+
+        console.log("Using order ID:", orderId);
 
         // Remove checked out items from cart
         const updatedCart = { ...cart };
@@ -623,16 +636,21 @@ export default function CartPage() {
         console.log("Store checkout response:", response);
         console.log("Store checkout result:", checkoutResult);
 
-        const orderId = checkoutResult.orderId ||
-            checkoutResult.orderNumber ||
-            checkoutResult.id ||
-            checkoutResult.orderUuid ||
-            checkoutResult.orderReference ||
-            checkoutResult.transactionId;
+        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
+        let orderId = null;
+
+        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
+          orderId = checkoutResult.orderIds[0];
+
+          if (checkoutResult.orderIds.length > 1) {
+            console.log("Multiple orders created:", checkoutResult.orderIds);
+          }
+        }
 
         if (!orderId) {
-          console.error("No order ID found in store checkout response:", checkoutResult);
-          alert("Checkout completed but order ID not found. Please check your order history.");
+          console.error("No order IDs found in store checkout response:", checkoutResult);
+          console.error("orderIds field:", checkoutResult.orderIds);
+          alert("Checkout completed but no order IDs found. Please check your order history.");
           return;
         }
 
