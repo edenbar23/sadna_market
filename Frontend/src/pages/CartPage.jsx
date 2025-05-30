@@ -257,7 +257,6 @@ export default function CartPage() {
       type: "standardShipping",
       carrier: "Standard",
       estimatedDays: 3,
-      address: formatShippingAddress(shippingDetails)
     };
   };
 
@@ -291,17 +290,17 @@ export default function CartPage() {
       return {
         paymentMethod: createPaymentMethod(paymentDetails),
         supplyMethod: createSupplyMethod(shippingDetails),
-        shippingAddress: formatShippingAddress(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails), // Address goes here, not in supply method
         deliveryInstructions: ""
       };
-    } 
+    }
     // For guests
     else {
       return {
         cartItems: formatGuestCartItems(cart),
         paymentMethod: createPaymentMethod(paymentDetails),
         supplyMethod: createSupplyMethod(shippingDetails),
-        shippingAddress: formatShippingAddress(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails), // Address goes here, not in supply method
         contactEmail: shippingDetails.data.email || "guest@example.com",
         contactPhone: shippingDetails.data.phone || "",
         deliveryInstructions: ""
@@ -360,6 +359,8 @@ export default function CartPage() {
       // Prepare checkout data
       const checkoutData = prepareCheckoutData(cart, shippingDetails, paymentDetails);
 
+      console.log("Sending checkout data:", checkoutData); // Debug log
+
       // Call appropriate API based on user status
       let response;
       if (isGuest) {
@@ -368,8 +369,32 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // Handle successful checkout
-      if (response && response.data) {
+      console.log("Checkout response:", response); // Debug log
+
+      // FIXED: Handle your Response<CheckoutResultDTO> structure
+      if (response && !response.error && response.data) {
+        const checkoutResult = response.data;
+
+        // Debug: Log the entire response to see the structure
+        console.log("Full checkout response:", response);
+        console.log("Checkout result data:", checkoutResult);
+        console.log("All keys in checkoutResult:", Object.keys(checkoutResult));
+
+        // Try multiple possible field names for order ID
+        const orderId = checkoutResult.orderId ||
+            checkoutResult.orderNumber ||
+            checkoutResult.id ||
+            checkoutResult.orderUuid ||
+            checkoutResult.orderReference ||
+            checkoutResult.transactionId;
+
+        if (!orderId) {
+          console.error("No order ID found in response. Available fields:", Object.keys(checkoutResult));
+          console.error("CheckoutResult content:", checkoutResult);
+          alert("Checkout completed but order ID not found. Please check your order history.");
+          return;
+        }
+
         // Clear cart
         setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
 
@@ -378,15 +403,31 @@ export default function CartPage() {
           localStorage.removeItem("guestCart");
         }
 
-        // Show success message
-        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+        // Show success message with order ID
+        alert(`Checkout successful! Order ID: ${orderId}`);
 
         // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${response.data.orderId}`;
+        window.location.href = `/order-confirmation/${orderId}`;
+      } else {
+        // Handle error response from your Response<T> structure
+        const errorMessage = response.errorMessage || "Unknown error occurred";
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Checkout failed:", error);
-      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+
+      // Extract error message
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        // Your Response<T> error structure
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Checkout failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -427,8 +468,30 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // Handle successful checkout
-      if (response && response.data) {
+      // FIXED: Handle your Response<CheckoutResultDTO> structure
+      if (response && !response.error && response.data) {
+        const checkoutResult = response.data;
+
+        // Debug: Log the entire response to see the structure
+        console.log("Full checkout response:", response);
+        console.log("Checkout result data:", checkoutResult);
+        console.log("All keys in checkoutResult:", Object.keys(checkoutResult));
+
+        // Try multiple possible field names for order ID
+        const orderId = checkoutResult.orderId ||
+            checkoutResult.orderNumber ||
+            checkoutResult.id ||
+            checkoutResult.orderUuid ||
+            checkoutResult.orderReference ||
+            checkoutResult.transactionId;
+
+        if (!orderId) {
+          console.error("No order ID found in response. Available fields:", Object.keys(checkoutResult));
+          console.error("CheckoutResult content:", checkoutResult);
+          alert("Checkout completed but order ID not found. Please check your order history.");
+          return;
+        }
+
         // Remove checked out items from cart
         const updatedCart = { ...cart };
         selectedProducts.forEach(productId => {
@@ -465,14 +528,27 @@ export default function CartPage() {
         }
 
         // Show success message
-        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+        alert(`Checkout successful! Order ID: ${orderId}`);
 
         // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${response.data.orderId}`;
+        window.location.href = `/order-confirmation/${orderId}`;
+      } else {
+        const errorMessage = response.errorMessage || "Unknown error occurred";
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Checkout failed:", error);
-      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Checkout failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -540,7 +616,26 @@ export default function CartPage() {
       }
 
       // Handle successful checkout
-      if (response && response.data) {
+      if (response && !response.error && response.data) {
+        const checkoutResult = response.data;
+
+        // Debug: Log the response
+        console.log("Store checkout response:", response);
+        console.log("Store checkout result:", checkoutResult);
+
+        const orderId = checkoutResult.orderId ||
+            checkoutResult.orderNumber ||
+            checkoutResult.id ||
+            checkoutResult.orderUuid ||
+            checkoutResult.orderReference ||
+            checkoutResult.transactionId;
+
+        if (!orderId) {
+          console.error("No order ID found in store checkout response:", checkoutResult);
+          alert("Checkout completed but order ID not found. Please check your order history.");
+          return;
+        }
+
         // Remove checked out items from cart
         const updatedCart = { ...cart };
 
@@ -588,14 +683,27 @@ export default function CartPage() {
         }
 
         // Show success message
-        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+        alert(`Checkout successful! Order ID: ${orderId}`);
 
         // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${response.data.orderId}`;
+        window.location.href = `/order-confirmation/${orderId}`;
+      } else {
+        const errorMessage = response.errorMessage || "Unknown error occurred";
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error("Checkout failed:", error);
-      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+      console.error("Store checkout failed:", error);
+
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Store checkout failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

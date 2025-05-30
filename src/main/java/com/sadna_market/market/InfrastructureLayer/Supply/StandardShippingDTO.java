@@ -1,16 +1,31 @@
 package com.sadna_market.market.InfrastructureLayer.Supply;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for standard shipping method
  * Updated to return SupplyResult
  */
 public class StandardShippingDTO implements SupplyMethod {
+    @JsonProperty("carrier")
     public String carrier;
+
+    @JsonProperty("estimatedDays")
     public int estimatedDays;
 
-    public StandardShippingDTO(String carrier, int estimatedDays) {
+    @JsonCreator
+    public StandardShippingDTO(
+            @JsonProperty("carrier") String carrier,
+            @JsonProperty("estimatedDays") int estimatedDays) {
         this.carrier = carrier;
         this.estimatedDays = estimatedDays;
+    }
+
+    // Default constructor for JSON deserialization
+    public StandardShippingDTO() {
+        this.carrier = "Standard";
+        this.estimatedDays = 3;
     }
 
     @Override
