@@ -19,23 +19,42 @@ export default function ProductInfo({ product, onRate, canRate }) {
         setQuantity(prev => (prev > 1 ? prev - 1 : 1));
     };
 
-    const handleAddToCart = async () => {
-        setAddingToCart(true);
-        setError(null);
+  const handleAddToCart = async () => {
+    setAddingToCart(true);
+    setError(null);
 
-        try {
-            // Add to cart using the useCart hook (which will use CartContext for guests)
+    try {
+        // If user is logged in, use user cart, otherwise use guest cart
+        if (user) {
             await addToCart(product.storeId, product.productId, quantity);
+        } else {
+            // Get guest cart from localStorage or create new one
+            let guestCart = JSON.parse(localStorage.getItem('guestCart')) || { baskets: {} };
 
-            // Show success feedback
-            alert(`Added ${quantity} ${product.name} to cart`);
-        } catch (err) {
-            console.error("Error adding to cart:", err);
-            setError("Failed to add to cart. Please try again.");
-        } finally {
-            setAddingToCart(false);
+            // Check if store exists in baskets
+            if (!guestCart.baskets[product.storeId]) {
+                guestCart.baskets[product.storeId] = {};
+            }
+
+            // Add or update product quantity
+            guestCart.baskets[product.storeId][product.productId] = quantity;
+
+            // Save updated cart to localStorage
+            localStorage.setItem('guestCart', JSON.stringify(guestCart));
         }
-    };
+
+        // *** ADD THIS LINE ***
+        window.dispatchEvent(new Event('cartUpdated'));
+
+        // Show success feedback
+        alert(`Added ${quantity} ${product.name} to cart`);
+    } catch (err) {
+        console.error("Error adding to cart:", err);
+        setError("Failed to add to cart. Please try again.");
+    } finally {
+        setAddingToCart(false);
+    }
+};
 
     const renderStars = (rating) => {
         const stars = [];

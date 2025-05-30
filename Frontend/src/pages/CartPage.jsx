@@ -225,6 +225,8 @@ export default function CartPage() {
       console.error("Failed to update quantity:", error);
       setError("Failed to update quantity");
     }
+    window.dispatchEvent(new Event('cartUpdated'));
+
   };
 
   const handleRemoveProduct = async (storeId, productId) => {
@@ -272,6 +274,8 @@ export default function CartPage() {
       console.error("Failed to remove product:", error);
       setError("Failed to remove product");
     }
+    window.dispatchEvent(new Event('cartUpdated'));
+
   };
 
   // Checkout handlers
