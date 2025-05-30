@@ -15,6 +15,7 @@ import ProductPage from "./pages/ProductPage";
 import StorePage from "./pages/StorePage";
 import StoreManagementPage from "./pages/StoreManagementPage";
 import StoreManagePage from "./pages/StoreManagePage";
+import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 
 function App() {
     const { user, loading } = useAuthContext();
@@ -77,6 +78,7 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
                         <Route path="*" element={<div>404 Not Found</div>} />
                     </Routes>
                 </ErrorBoundary>

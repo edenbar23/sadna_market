@@ -91,12 +91,14 @@ export const removeFromCartGuest = async (cart, storeId, productId) => {
     return response;
 };
 
-export const checkoutGuest = async (cart, paymentMethod) => {
-    const response = await apiClient.post('/guest/checkout', {
-        cart,
-        paymentMethod
+export const checkoutGuest = async (checkoutData) => {
+    const response = await axios.post('http://localhost:8081/api/checkout/guest', checkoutData, {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        timeout: 10000
     });
-    return response;
+    return response.data;
 };
 
 // User cart management APIs
@@ -148,17 +150,19 @@ export const updateCart = async (username, token, storeId, productId, newQuantit
     return response;
 };
 
-export const checkout = async (username, token, paymentMethod) => {
-    const response = await apiClient.post(
-        `/${username}/checkout`,
+export const checkout = async (username, token, checkoutData) => {
+    const response = await axios.post(
+        `http://localhost:8081/api/checkout/user/${username}`,
+        checkoutData,
         {
-            paymentMethod
-        },
-        {
-            headers: { Authorization: token }
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': token 
+            },
+            timeout: 10000
         }
     );
-    return response;
+    return response.data;
 };
 
 // User profile management APIs

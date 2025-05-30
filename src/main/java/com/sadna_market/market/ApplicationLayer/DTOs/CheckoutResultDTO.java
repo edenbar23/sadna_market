@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO representing the result of a checkout operation
@@ -17,7 +18,7 @@ public class CheckoutResultDTO {
     /**
      * List of order IDs created during checkout
      */
-    private List<String> orderIds;
+    private List<UUID> orderIds;
 
     /**
      * Payment transaction ID

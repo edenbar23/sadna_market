@@ -3,6 +3,7 @@ import StoreCart from "../components/Cart/StoreCart";
 import ShippingForm from "../components/Cart/ShippingForm";
 import PaymentForm from "../components/Cart/PaymentForm";
 import { useAuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import {
   viewCartGuest,
   updateCartGuest,
@@ -10,12 +11,15 @@ import {
   viewCart,
   updateCart,
   removeFromCart,
+  checkout,
+  checkoutGuest,
 } from "../api/user";
 import { fetchStoreById } from "../api/store";
 import { getProductInfo } from "../api/product";
 import "../styles/cart.css"
 
 export default function CartPage() {
+  const navigate = useNavigate();
   const [cart, setCart] = useState({ baskets: {}, totalItems: 0, totalPrice: 0 });
   const [selectedProducts, setSelectedProducts] = useState([]);
   const { user, token } = useAuthContext();
@@ -27,6 +31,14 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isGuest = !username || !token;
+
+  // For guest users - simple form data
+  const [guestFormData, setGuestFormData] = useState({
+    fullName: "",
+    address: "",
+    city: "",
+    postalCode: ""
+  });
 
   // Fetch the cart from API
   useEffect(() => {
@@ -278,25 +290,449 @@ export default function CartPage() {
 
   };
 
-  // Checkout handlers
-  const handleCheckoutAll = () => {
-    alert("Checkout all items logic here");
+  // Helper functions for checkout
+  const createPaymentMethod = (paymentDetails) => {
+    return {
+      type: "creditCard",
+      cardNumber: paymentDetails.cardNumber,
+      expiryDate: paymentDetails.expiryDate,
+      cvv: paymentDetails.cvv,
+      cardHolderName: paymentDetails.cardHolder
+    };
   };
 
-  const handleCheckoutSelected = () => {
+  const createSupplyMethod = (shippingDetails) => {
+    return {
+      type: "standardShipping",
+      carrier: "Standard",
+      estimatedDays: 3,
+    };
+  };
+
+  const formatShippingAddress = (shippingDetails) => {
+    if (shippingDetails.type === 'guest') {
+      const address = shippingDetails.data;
+      return `${address.fullName}, ${address.address}, ${address.city}, ${address.postalCode}`;
+    } else {
+      const address = shippingDetails.data;
+      return `${address.fullName}, ${address.addressLine1}, ${address.city}, ${address.state} ${address.postalCode}`;
+    }
+  };
+
+  const formatGuestCartItems = (cart) => {
+    const formattedItems = {};
+
+    Object.entries(cart.baskets).forEach(([storeId, storeData]) => {
+      formattedItems[storeId] = {};
+
+      Object.entries(storeData.products).forEach(([productId, productData]) => {
+        formattedItems[storeId][productId] = productData.quantity;
+      });
+    });
+
+    return formattedItems;
+  };
+
+  const prepareCheckoutData = (cart, shippingDetails, paymentDetails) => {
+    // For registered users
+    if (!isGuest) {
+      return {
+        paymentMethod: createPaymentMethod(paymentDetails),
+        supplyMethod: createSupplyMethod(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails),
+        deliveryInstructions: ""
+      };
+    }
+    // For guests
+    else {
+      return {
+        cartItems: formatGuestCartItems(cart),
+        paymentMethod: createPaymentMethod(paymentDetails),
+        supplyMethod: createSupplyMethod(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails),
+        contactEmail: shippingDetails.data.email || "guest@example.com",
+        contactPhone: shippingDetails.data.phone || "",
+        deliveryInstructions: ""
+      };
+    }
+  };
+
+  const filterCartBySelectedProducts = (cart, selectedProducts) => {
+    const filteredCart = { baskets: {}, totalItems: 0, totalPrice: 0 };
+
+    Object.entries(cart.baskets).forEach(([storeId, storeData]) => {
+      const filteredProducts = {};
+      let storeTotalQuantity = 0;
+      let storeTotalPrice = 0;
+
+      Object.entries(storeData.products).forEach(([productId, productData]) => {
+        if (selectedProducts.includes(productId)) {
+          filteredProducts[productId] = productData;
+          storeTotalQuantity += productData.quantity;
+          storeTotalPrice += productData.price * productData.quantity;
+          filteredCart.totalItems += productData.quantity;
+          filteredCart.totalPrice += productData.price * productData.quantity;
+        }
+      });
+
+      if (Object.keys(filteredProducts).length > 0) {
+        filteredCart.baskets[storeId] = {
+          ...storeData,
+          products: filteredProducts,
+          totalQuantity: storeTotalQuantity,
+          totalPrice: storeTotalPrice
+        };
+      }
+    });
+
+    return filteredCart;
+  };
+
+  // FIXED: Common checkout success handler with UUID support
+  const handleCheckoutSuccess = (response, checkoutType = "all") => {
+    if (response && !response.error && response.data) {
+      const checkoutResult = response.data;
+
+      console.log("=== CHECKOUT SUCCESS DEBUG ===");
+      console.log("Checkout type:", checkoutType);
+      console.log("Full response:", response);
+      console.log("Checkout result:", checkoutResult);
+
+      // Extract order IDs from response
+      let orderIds = [];
+      if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds)) {
+        orderIds = checkoutResult.orderIds.map(id => {
+          // Handle different formats of UUID
+          if (typeof id === 'object' && id !== null) {
+            return id.toString();
+          }
+          return String(id);
+        });
+
+        console.log("✅ Extracted order IDs:", orderIds);
+      }
+
+      if (orderIds.length === 0) {
+        console.error("❌ No order IDs found in response");
+        alert("Checkout completed but no order confirmation available. Please check your order history.");
+        navigate('/orders');
+        return false;
+      }
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const invalidIds = orderIds.filter(id => !uuidRegex.test(id));
+
+      if (invalidIds.length > 0) {
+        console.error("❌ Invalid UUID formats:", invalidIds);
+        alert("Order created but with invalid ID format. Please check your order history.");
+        navigate('/orders');
+        return false;
+      }
+
+      // Clear cart immediately
+      setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
+      setSelectedProducts([]);
+
+      // Clear guest cart if applicable
+      if (isGuest) {
+        localStorage.removeItem("guestCart");
+      }
+
+      console.log("🧹 Cart cleared, redirecting to confirmation...");
+
+      // Navigate to confirmation page
+      if (orderIds.length === 1) {
+        // Single order - simple URL
+        console.log("🎯 Single order redirect:", orderIds[0]);
+        navigate(`/order-confirmation/${orderIds[0]}`);
+      } else {
+        // Multiple orders - pass all IDs via URL params
+        console.log("📦 Multiple orders redirect:", orderIds);
+        const orderIdsParam = encodeURIComponent(JSON.stringify(orderIds));
+        navigate(`/order-confirmation/${orderIds[0]}?orderIds=${orderIdsParam}`);
+      }
+
+      return true;
+    } else {
+      // Handle error response
+      console.error("=== CHECKOUT ERROR ===");
+      console.error("Response:", response);
+
+      const errorMessage = response?.errorMessage || response?.message || "Unknown checkout error";
+      throw new Error(errorMessage);
+    }
+  };
+
+  // Checkout handlers
+  const handleCheckoutAll = async () => {
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Prepare checkout data
+      const checkoutData = prepareCheckoutData(cart, shippingDetails, paymentDetails);
+
+      console.log("Sending checkout data:", checkoutData);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      console.log("Checkout response:", response);
+
+      // FIXED: Use common success handler
+      handleCheckoutSuccess(response, "all");
+
+    } catch (error) {
+      console.error("Checkout failed:", error);
+
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Checkout failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckoutSelected = async () => {
     if (selectedProducts.length === 0) {
       alert("Please select items to checkout");
       return;
     }
-    alert(`Checkout ${selectedProducts.length} selected items for $${totalSelectedPrice.toFixed(2)}`);
+
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Filter cart to only include selected products
+      const filteredCart = filterCartBySelectedProducts(cart, selectedProducts);
+
+      // Prepare checkout data with filtered cart
+      const checkoutData = prepareCheckoutData(filteredCart, shippingDetails, paymentDetails);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      // FIXED: Use common success handler
+      if (handleCheckoutSuccess(response, "selected")) {
+        // Remove checked out items from cart
+        const updatedCart = { ...cart };
+        selectedProducts.forEach(productId => {
+          Object.keys(updatedCart.baskets).forEach(storeId => {
+            if (updatedCart.baskets[storeId].products[productId]) {
+              const product = updatedCart.baskets[storeId].products[productId];
+              updatedCart.baskets[storeId].totalQuantity -= product.quantity;
+              updatedCart.baskets[storeId].totalPrice -= product.price * product.quantity;
+              updatedCart.totalItems -= product.quantity;
+              updatedCart.totalPrice -= product.price * product.quantity;
+              delete updatedCart.baskets[storeId].products[productId];
+
+              // Remove store if empty
+              if (Object.keys(updatedCart.baskets[storeId].products).length === 0) {
+                delete updatedCart.baskets[storeId];
+              }
+            }
+          });
+        });
+
+        setCart(updatedCart);
+        setSelectedProducts([]);
+
+        // Update local storage for guest cart if needed
+        if (isGuest) {
+          const guestCart = { baskets: {} };
+          Object.entries(updatedCart.baskets).forEach(([storeId, storeData]) => {
+            guestCart.baskets[storeId] = {};
+            Object.entries(storeData.products).forEach(([productId, productData]) => {
+              guestCart.baskets[storeId][productId] = productData.quantity;
+            });
+          });
+          localStorage.setItem("guestCart", JSON.stringify(guestCart));
+        }
+      }
+
+    } catch (error) {
+      console.error("Checkout failed:", error);
+
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Checkout failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCheckoutStore = (storeId, productIds) => {
+  const handleCheckoutStore = async (storeId, selectedProductIds) => {
     const store = cart.baskets[storeId];
-    if (productIds) {
-      alert(`Checkout selected items from ${store.storeName}`);
-    } else {
-      alert(`Checkout entire store: ${store.storeName} for $${store.totalPrice.toFixed(2)}`);
+
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create a filtered cart with only the selected store
+      const filteredCart = { baskets: {}, totalItems: 0, totalPrice: 0 };
+      filteredCart.baskets[storeId] = { ...store };
+
+      // If specific products are selected, filter those
+      if (selectedProductIds && selectedProductIds.length > 0) {
+        const filteredProducts = {};
+        let storeTotalQuantity = 0;
+        let storeTotalPrice = 0;
+
+        Object.entries(store.products).forEach(([productId, productData]) => {
+          if (selectedProductIds.includes(productId)) {
+            filteredProducts[productId] = productData;
+            storeTotalQuantity += productData.quantity;
+            storeTotalPrice += productData.price * productData.quantity;
+            filteredCart.totalItems += productData.quantity;
+            filteredCart.totalPrice += productData.price * productData.quantity;
+          }
+        });
+
+        filteredCart.baskets[storeId] = {
+          ...store,
+          products: filteredProducts,
+          totalQuantity: storeTotalQuantity,
+          totalPrice: storeTotalPrice
+        };
+      } else {
+        // Use the entire store
+        filteredCart.totalItems += store.totalQuantity;
+        filteredCart.totalPrice += store.totalPrice;
+      }
+
+      // Prepare checkout data with filtered cart
+      const checkoutData = prepareCheckoutData(filteredCart, shippingDetails, paymentDetails);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      // FIXED: Use common success handler
+      if (handleCheckoutSuccess(response, "store")) {
+        // Remove checked out items from cart
+        const updatedCart = { ...cart };
+
+        if (selectedProductIds && selectedProductIds.length > 0) {
+          // Remove only selected products
+          selectedProductIds.forEach(productId => {
+            if (updatedCart.baskets[storeId].products[productId]) {
+              const product = updatedCart.baskets[storeId].products[productId];
+              updatedCart.baskets[storeId].totalQuantity -= product.quantity;
+              updatedCart.baskets[storeId].totalPrice -= product.price * product.quantity;
+              updatedCart.totalItems -= product.quantity;
+              updatedCart.totalPrice -= product.price * product.quantity;
+              delete updatedCart.baskets[storeId].products[productId];
+            }
+          });
+
+          // Remove store if empty
+          if (Object.keys(updatedCart.baskets[storeId].products).length === 0) {
+            delete updatedCart.baskets[storeId];
+          }
+        } else {
+          // Remove entire store
+          updatedCart.totalItems -= store.totalQuantity;
+          updatedCart.totalPrice -= store.totalPrice;
+          delete updatedCart.baskets[storeId];
+        }
+
+        setCart(updatedCart);
+
+        // Update selected products list
+        if (selectedProductIds && selectedProductIds.length > 0) {
+          setSelectedProducts(prev => prev.filter(id => !selectedProductIds.includes(id)));
+        }
+
+        // Update local storage for guest cart if needed
+        if (isGuest) {
+          const guestCart = { baskets: {} };
+          Object.entries(updatedCart.baskets).forEach(([storeId, storeData]) => {
+            guestCart.baskets[storeId] = {};
+            Object.entries(storeData.products).forEach(([productId, productData]) => {
+              guestCart.baskets[storeId][productId] = productData.quantity;
+            });
+          });
+          localStorage.setItem("guestCart", JSON.stringify(guestCart));
+        }
+      }
+
+    } catch (error) {
+      console.error("Store checkout failed:", error);
+
+      let errorMessage = "Unknown error";
+      if (error.response?.data?.errorMessage) {
+        errorMessage = error.response.data.errorMessage;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(`Store checkout failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
   };
 
