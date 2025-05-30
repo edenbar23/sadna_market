@@ -1,61 +1,117 @@
-// src/api/order.js
-const BASE_URL = "/orders"; // Adjust if your backend API prefix differs
+import axios from 'axios';
+import { getProductInfo } from './product'; 
 
-// Helper to parse JSON response and handle errors
-async function handleResponse(response) {
-    const data = await response.json();
-    if (!response.ok) {
-        // Backend sends { success: false, error: "..."} or HTTP error code
-        throw new Error(data.error || "API request failed");
+const API_URL = 'http://localhost:8081/api/orders';
+
+// Create axios instance
+const orderApiClient = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    timeout: 10000
+});
+
+// Add request interceptor for token
+orderApiClient.interceptors.request.use(config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = token;
     }
-    return data.data; // Assuming your backend wraps data in { success, data, error }
-}
+    return config;
+});
 
-// Get order details by orderId (UUID string)
-export async function getOrder(orderId) {
-    const response = await fetch(`${BASE_URL}/${orderId}`);
-    return handleResponse(response);
-}
-
-// Cancel order by orderId
-export async function cancelOrder(orderId) {
-    const response = await fetch(`${BASE_URL}/${orderId}/cancel`, {
-        method: "POST",
-    });
-    return handleResponse(response);
-}
-
-// Get order history for a user by username
-export async function getUserOrderHistory(username) {
-    const response = await fetch(`${BASE_URL}/history/${encodeURIComponent(username)}`);
-    return handleResponse(response);
-}
-
-// Get order status by orderId
-export async function getOrderStatus(orderId) {
-    const response = await fetch(`${BASE_URL}/${orderId}/status`);
-    return handleResponse(response);
-}
-
-export const fetchStoreOrders = async (storeId, token, username) => {
-    console.log("API: Fetching store orders", { storeId, username });
-
-    try {
-        const response = await apiClient.get(`/stores/${storeId}/orders`, {
-            headers: { Authorization: token },
-            params: { username }
-        });
-
-        console.log("API: Store orders response:", response);
-
-        // The response should have the structure: { error: false, data: [...], errorMessage: null }
-        if (response.error) {
-            throw new Error(response.errorMessage || 'Failed to fetch store orders');
-        }
-
-        return response.data;
-    } catch (error) {
-        console.error("API: Error fetching store orders:", error);
-        throw error;
+// Add response interceptor for error handling
+orderApiClient.interceptors.response.use(
+    response => response.data,
+    error => {
+        console.error('Order API Error:', error.response?.data || error.message);
+        return Promise.reject(error.response?.data || error);
     }
+);
+
+/**
+ * Fetch order by ID
+ * @param {string} orderId
+ * @returns {Promise<Response<OrderDTO>>}
+ */
+export const fetchOrderById = async (orderId) => {
+    const response = await orderApiClient.get(`/${orderId}`);
+    return response;
+};
+
+/**
+ * Fetch user order history
+ * @param {string} username
+ * @param {string} token
+ * @returns {Promise<Response<List<OrderDTO>>>}
+ */
+export const fetchOrderHistory = async (username) => {
+  const token = localStorage.getItem('token');
+
+  const res = await axios.get(`${API_URL}/history/${username}`, {
+    headers: {
+      Authorization: token,
+    },
+  });
+
+  const orders = res.data.data;
+  console.log("Raw response data:", orders);
+
+  // Transform the orders to fit what OrderCard expects
+  return await Promise.all(
+    orders.map(async (order) => {
+      const productEntries = Object.entries(order.products); // [[productId, quantity], ...]
+
+      // Fetch product info for each product
+      const products = await Promise.all(
+        productEntries.map(async ([productId, quantity]) => {
+          try {
+            const productRes = await getProductInfo(productId);
+            console.log("Product response:", productRes);
+            console.log("Product ID:", productId, "Quantity:", quantity);
+
+            // Make sure to access the nested data property
+            return {
+              productId,
+              name: productRes.data.name, // Fix: Access name from productRes.data.name
+              description: productRes.data.description,
+              price: productRes.data.price,
+              category: productRes.data.category,
+              quantity,
+            };
+          } catch (err) {
+            console.error("Failed to fetch product:", productId, err);
+            return null;
+          }
+        })
+      );
+
+      // Filter out any null products (failed fetches)
+      const validProducts = products.filter(product => product !== null);
+
+      // Return the transformed order
+      return {
+        orderId: order.orderId,
+        orderDate: order.orderDate,
+        status: order.status,
+        totalPrice: order.totalPrice,
+        finalPrice: order.finalPrice,
+        products: validProducts,
+        storeId: order.storeId,
+        paymentId: order.paymentId,
+        deliveryId: order.deliveryId,
+        userName: order.userName,
+      };
+    })
+  );
+};
+/**
+ * Fetch order status by order ID
+ * @param {string} orderId
+ * @returns {Promise<Response<OrderStatus>>}
+ */
+export const fetchOrderStatus = async (orderId) => {
+    const response = await orderApiClient.get(`/${orderId}/status`);
+    return response;
 };
