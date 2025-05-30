@@ -363,7 +363,7 @@
 }
 
 /* High Contrast Mode Support */
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
     .payment-section {
         border: 2px solid #000;
     }
