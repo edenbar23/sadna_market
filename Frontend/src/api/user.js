@@ -138,12 +138,13 @@ export const removeFromCart = async (username, token, storeId, productId) => {
 export const updateCart = async (username, token, storeId, productId, newQuantity) => {
     const response = await apiClient.put(
         `/${username}/cart`,
+        null, // No request body needed
         {
-            storeId,
-            productId,
-            quantity: newQuantity
-        },
-        {
+            params: {
+                storeId,
+                productId,
+                quantity: newQuantity
+            },
             headers: { Authorization: token }
         }
     );

@@ -5,7 +5,7 @@
     object-fit: cover;
     border-radius: 50%;
   }
-  
+
   /* Button Styles */
   .button {
     border-radius: 8px;
@@ -28,7 +28,7 @@
   .button {
     background-color: #f9f9f9;
   }
-  
+
 
   /* Card component */
   .card {
@@ -38,14 +38,14 @@
     padding: 20px;
     margin: 20px 0;
   }
-  
+
   /* Search bar styles */
   .search-bar-container {
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
-  
+
   .search-input {
     flex: 1;
     padding: 0.5rem;
@@ -56,7 +56,7 @@
 
   /* Logo in the center */
 .logo-container {
-  position: absolute; 
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
   justify-content: center;
@@ -1527,36 +1527,36 @@ h2 {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .product-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-  
+
   .product-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
     width: 100%;
   }
-  
+
   .rate-product-btn.inline {
     margin-left: 0;
     align-self: flex-end;
   }
-  
+
   .rating-modal {
     width: 95%;
     margin: 10px;
   }
-  
+
   .modal-header,
   .modal-body,
   .modal-footer {
     padding: 15px;
   }
-  
+
   .star {
     font-size: 25px;
   }
@@ -1566,22 +1566,49 @@ h2 {
   .product-item {
     padding: 8px 10px;
   }
-  
+
   .products-section h4 {
     font-size: 14px;
   }
-  
+
   .product-name {
     font-size: 14px;
   }
-  
+
   .product-quantity,
   .product-price {
     font-size: 12px;
   }
-  
+
   .rate-product-btn {
     font-size: 11px;
     padding: 4px 8px;
   }
 }
+.quantity-controls button {
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.quantity-controls button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Warning state for '-' button when quantity is 1 */
+.quantity-btn-warning {
+  background-color: #f8d7da !important;
+  border-color: #f5c6cb !important;
+  color: #721c24 !important;
+}
+
+.quantity-btn-warning:hover {
+  background-color: #f1b0b7 !important;
+  border-color: #ef5370 !important;
+}
+
+
