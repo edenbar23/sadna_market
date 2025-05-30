@@ -10,6 +10,8 @@ import {
   viewCart,
   updateCart,
   removeFromCart,
+  checkout,
+  checkoutGuest,
 } from "../api/user";
 import "../styles/cart.css"
 
@@ -239,25 +241,363 @@ export default function CartPage() {
     }
   };
 
-  // Checkout handlers
-  const handleCheckoutAll = () => {
-    alert("Checkout all items logic here");
+  // Helper functions for checkout
+  const createPaymentMethod = (paymentDetails) => {
+    return {
+      type: "creditCard",
+      cardNumber: paymentDetails.cardNumber,
+      expiryDate: paymentDetails.expiryDate,
+      cvv: paymentDetails.cvv,
+      cardHolderName: paymentDetails.cardHolder
+    };
   };
 
-  const handleCheckoutSelected = () => {
+  const createSupplyMethod = (shippingDetails) => {
+    return {
+      type: "standardShipping",
+      carrier: "Standard",
+      estimatedDays: 3,
+      address: formatShippingAddress(shippingDetails)
+    };
+  };
+
+  const formatShippingAddress = (shippingDetails) => {
+    if (shippingDetails.type === 'guest') {
+      const address = shippingDetails.data;
+      return `${address.fullName}, ${address.address}, ${address.city}, ${address.postalCode}`;
+    } else {
+      const address = shippingDetails.data;
+      return `${address.fullName}, ${address.addressLine1}, ${address.city}, ${address.state} ${address.postalCode}`;
+    }
+  };
+
+  const formatGuestCartItems = (cart) => {
+    const formattedItems = {};
+
+    Object.entries(cart.baskets).forEach(([storeId, storeData]) => {
+      formattedItems[storeId] = {};
+
+      Object.entries(storeData.products).forEach(([productId, productData]) => {
+        formattedItems[storeId][productId] = productData.quantity;
+      });
+    });
+
+    return formattedItems;
+  };
+
+  const prepareCheckoutData = (cart, shippingDetails, paymentDetails) => {
+    // For registered users
+    if (!isGuest) {
+      return {
+        paymentMethod: createPaymentMethod(paymentDetails),
+        supplyMethod: createSupplyMethod(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails),
+        deliveryInstructions: ""
+      };
+    } 
+    // For guests
+    else {
+      return {
+        cartItems: formatGuestCartItems(cart),
+        paymentMethod: createPaymentMethod(paymentDetails),
+        supplyMethod: createSupplyMethod(shippingDetails),
+        shippingAddress: formatShippingAddress(shippingDetails),
+        contactEmail: shippingDetails.data.email || "guest@example.com",
+        contactPhone: shippingDetails.data.phone || "",
+        deliveryInstructions: ""
+      };
+    }
+  };
+
+  const filterCartBySelectedProducts = (cart, selectedProducts) => {
+    const filteredCart = { baskets: {}, totalItems: 0, totalPrice: 0 };
+
+    Object.entries(cart.baskets).forEach(([storeId, storeData]) => {
+      const filteredProducts = {};
+      let storeTotalQuantity = 0;
+      let storeTotalPrice = 0;
+
+      Object.entries(storeData.products).forEach(([productId, productData]) => {
+        if (selectedProducts.includes(productId)) {
+          filteredProducts[productId] = productData;
+          storeTotalQuantity += productData.quantity;
+          storeTotalPrice += productData.price * productData.quantity;
+          filteredCart.totalItems += productData.quantity;
+          filteredCart.totalPrice += productData.price * productData.quantity;
+        }
+      });
+
+      if (Object.keys(filteredProducts).length > 0) {
+        filteredCart.baskets[storeId] = {
+          ...storeData,
+          products: filteredProducts,
+          totalQuantity: storeTotalQuantity,
+          totalPrice: storeTotalPrice
+        };
+      }
+    });
+
+    return filteredCart;
+  };
+
+  // Checkout handlers
+  const handleCheckoutAll = async () => {
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Prepare checkout data
+      const checkoutData = prepareCheckoutData(cart, shippingDetails, paymentDetails);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      // Handle successful checkout
+      if (response && response.data) {
+        // Clear cart
+        setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
+
+        // Clear local storage for guest cart if needed
+        if (isGuest) {
+          localStorage.removeItem("guestCart");
+        }
+
+        // Show success message
+        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+
+        // Redirect to order confirmation page
+        window.location.href = `/order-confirmation/${response.data.orderId}`;
+      }
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckoutSelected = async () => {
     if (selectedProducts.length === 0) {
       alert("Please select items to checkout");
       return;
     }
-    alert(`Checkout ${selectedProducts.length} selected items for $${totalSelectedPrice.toFixed(2)}`);
+
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Filter cart to only include selected products
+      const filteredCart = filterCartBySelectedProducts(cart, selectedProducts);
+
+      // Prepare checkout data with filtered cart
+      const checkoutData = prepareCheckoutData(filteredCart, shippingDetails, paymentDetails);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      // Handle successful checkout
+      if (response && response.data) {
+        // Remove checked out items from cart
+        const updatedCart = { ...cart };
+        selectedProducts.forEach(productId => {
+          Object.keys(updatedCart.baskets).forEach(storeId => {
+            if (updatedCart.baskets[storeId].products[productId]) {
+              const product = updatedCart.baskets[storeId].products[productId];
+              updatedCart.baskets[storeId].totalQuantity -= product.quantity;
+              updatedCart.baskets[storeId].totalPrice -= product.price * product.quantity;
+              updatedCart.totalItems -= product.quantity;
+              updatedCart.totalPrice -= product.price * product.quantity;
+              delete updatedCart.baskets[storeId].products[productId];
+
+              // Remove store if empty
+              if (Object.keys(updatedCart.baskets[storeId].products).length === 0) {
+                delete updatedCart.baskets[storeId];
+              }
+            }
+          });
+        });
+
+        setCart(updatedCart);
+        setSelectedProducts([]);
+
+        // Update local storage for guest cart if needed
+        if (isGuest) {
+          const guestCart = { baskets: {} };
+          Object.entries(updatedCart.baskets).forEach(([storeId, storeData]) => {
+            guestCart.baskets[storeId] = {};
+            Object.entries(storeData.products).forEach(([productId, productData]) => {
+              guestCart.baskets[storeId][productId] = productData.quantity;
+            });
+          });
+          localStorage.setItem("guestCart", JSON.stringify(guestCart));
+        }
+
+        // Show success message
+        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+
+        // Redirect to order confirmation page
+        window.location.href = `/order-confirmation/${response.data.orderId}`;
+      }
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCheckoutStore = (storeId, productIds) => {
+  const handleCheckoutStore = async (storeId, selectedProductIds) => {
     const store = cart.baskets[storeId];
-    if (productIds) {
-      alert(`Checkout selected items from ${store.storeName}`);
-    } else {
-      alert(`Checkout entire store: ${store.storeName} for $${store.totalPrice.toFixed(2)}`);
+
+    if (!shippingDetails) {
+      alert("Please provide shipping information");
+      setShowShipping(true);
+      return;
+    }
+
+    if (!paymentDetails) {
+      alert("Please provide payment information");
+      setShowPayment(true);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create a filtered cart with only the selected store
+      const filteredCart = { baskets: {}, totalItems: 0, totalPrice: 0 };
+      filteredCart.baskets[storeId] = { ...store };
+
+      // If specific products are selected, filter those
+      if (selectedProductIds && selectedProductIds.length > 0) {
+        const filteredProducts = {};
+        let storeTotalQuantity = 0;
+        let storeTotalPrice = 0;
+
+        Object.entries(store.products).forEach(([productId, productData]) => {
+          if (selectedProductIds.includes(productId)) {
+            filteredProducts[productId] = productData;
+            storeTotalQuantity += productData.quantity;
+            storeTotalPrice += productData.price * productData.quantity;
+            filteredCart.totalItems += productData.quantity;
+            filteredCart.totalPrice += productData.price * productData.quantity;
+          }
+        });
+
+        filteredCart.baskets[storeId] = {
+          ...store,
+          products: filteredProducts,
+          totalQuantity: storeTotalQuantity,
+          totalPrice: storeTotalPrice
+        };
+      } else {
+        // Use the entire store
+        filteredCart.totalItems += store.totalQuantity;
+        filteredCart.totalPrice += store.totalPrice;
+      }
+
+      // Prepare checkout data with filtered cart
+      const checkoutData = prepareCheckoutData(filteredCart, shippingDetails, paymentDetails);
+
+      // Call appropriate API based on user status
+      let response;
+      if (isGuest) {
+        response = await checkoutGuest(checkoutData);
+      } else {
+        response = await checkout(username, token, checkoutData);
+      }
+
+      // Handle successful checkout
+      if (response && response.data) {
+        // Remove checked out items from cart
+        const updatedCart = { ...cart };
+
+        if (selectedProductIds && selectedProductIds.length > 0) {
+          // Remove only selected products
+          selectedProductIds.forEach(productId => {
+            if (updatedCart.baskets[storeId].products[productId]) {
+              const product = updatedCart.baskets[storeId].products[productId];
+              updatedCart.baskets[storeId].totalQuantity -= product.quantity;
+              updatedCart.baskets[storeId].totalPrice -= product.price * product.quantity;
+              updatedCart.totalItems -= product.quantity;
+              updatedCart.totalPrice -= product.price * product.quantity;
+              delete updatedCart.baskets[storeId].products[productId];
+            }
+          });
+
+          // Remove store if empty
+          if (Object.keys(updatedCart.baskets[storeId].products).length === 0) {
+            delete updatedCart.baskets[storeId];
+          }
+        } else {
+          // Remove entire store
+          updatedCart.totalItems -= store.totalQuantity;
+          updatedCart.totalPrice -= store.totalPrice;
+          delete updatedCart.baskets[storeId];
+        }
+
+        setCart(updatedCart);
+
+        // Update selected products list
+        if (selectedProductIds && selectedProductIds.length > 0) {
+          setSelectedProducts(prev => prev.filter(id => !selectedProductIds.includes(id)));
+        }
+
+        // Update local storage for guest cart if needed
+        if (isGuest) {
+          const guestCart = { baskets: {} };
+          Object.entries(updatedCart.baskets).forEach(([storeId, storeData]) => {
+            guestCart.baskets[storeId] = {};
+            Object.entries(storeData.products).forEach(([productId, productData]) => {
+              guestCart.baskets[storeId][productId] = productData.quantity;
+            });
+          });
+          localStorage.setItem("guestCart", JSON.stringify(guestCart));
+        }
+
+        // Show success message
+        alert(`Checkout successful! Order ID: ${response.data.orderId}`);
+
+        // Redirect to order confirmation page
+        window.location.href = `/order-confirmation/${response.data.orderId}`;
+      }
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      alert(`Checkout failed: ${error.message || "Unknown error"}`);
+    } finally {
+      setLoading(false);
     }
   };
 
