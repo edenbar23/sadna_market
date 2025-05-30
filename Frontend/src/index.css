@@ -8,6 +8,7 @@
 @import './styles/themes.css';
 @import './styles/messages.css';
 @import './styles/modal-form-styles.css';
+@import './styles/cart.css';
 
 /* Additional styles specific to this app (optional) */
 body {
