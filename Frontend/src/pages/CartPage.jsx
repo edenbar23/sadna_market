@@ -28,6 +28,14 @@ export default function CartPage() {
   const [error, setError] = useState(null);
   const isGuest = !username || !token;
 
+  // For guest users - simple form data
+  const [guestFormData, setGuestFormData] = useState({
+    fullName: "",
+    address: "",
+    city: "",
+    postalCode: ""
+  });
+
   // Fetch the cart from API
   useEffect(() => {
     const fetchCart = async () => {
@@ -290,7 +298,7 @@ export default function CartPage() {
       return {
         paymentMethod: createPaymentMethod(paymentDetails),
         supplyMethod: createSupplyMethod(shippingDetails),
-        shippingAddress: formatShippingAddress(shippingDetails), // Address goes here, not in supply method
+        shippingAddress: formatShippingAddress(shippingDetails),
         deliveryInstructions: ""
       };
     }
@@ -300,7 +308,7 @@ export default function CartPage() {
         cartItems: formatGuestCartItems(cart),
         paymentMethod: createPaymentMethod(paymentDetails),
         supplyMethod: createSupplyMethod(shippingDetails),
-        shippingAddress: formatShippingAddress(shippingDetails), // Address goes here, not in supply method
+        shippingAddress: formatShippingAddress(shippingDetails),
         contactEmail: shippingDetails.data.email || "guest@example.com",
         contactPhone: shippingDetails.data.phone || "",
         deliveryInstructions: ""
@@ -339,6 +347,101 @@ export default function CartPage() {
     return filteredCart;
   };
 
+  // FIXED: Common checkout success handler with UUID support
+  const handleCheckoutSuccess = (response, checkoutType = "all") => {
+    if (response && !response.error && response.data) {
+      const checkoutResult = response.data;
+
+      console.log("=== CHECKOUT DEBUG INFO ===");
+      console.log("Checkout type:", checkoutType);
+      console.log("Full checkout response:", response);
+      console.log("Checkout result data:", checkoutResult);
+
+      // FIXED: Handle orderIds as List<UUID> from CheckoutResultDTO
+      let orderIds = [];
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+      if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
+        // Handle UUID objects from backend
+        orderIds = checkoutResult.orderIds.map(id => {
+          if (typeof id === 'object' && id !== null) {
+            // UUID object - convert to string
+            return id.toString();
+          } else if (typeof id === 'string') {
+            // Already a string
+            return id;
+          } else {
+            console.warn("Unexpected order ID format:", id, typeof id);
+            return String(id);
+          }
+        });
+        console.log("✅ Order IDs extracted:", orderIds);
+
+        // Validate each UUID
+        orderIds.forEach((orderId, index) => {
+          console.log(`Order ID ${index}: ${orderId} (${typeof orderId})`);
+          console.log(`Valid UUID: ${uuidRegex.test(orderId)}`);
+        });
+      }
+
+      if (orderIds.length === 0) {
+        console.error("❌ No order IDs found in response:", checkoutResult);
+        console.error("Available fields:", Object.keys(checkoutResult));
+        alert("Checkout completed but no order IDs found. Please check your order history.");
+        window.location.href = `/orders`;
+        return false;
+      }
+
+      console.log("📋 Final order IDs to process:", orderIds);
+
+      // Clear cart
+      setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
+
+      // Clear local storage for guest cart if needed
+      if (isGuest) {
+        localStorage.removeItem("guestCart");
+      }
+
+      // Handle single vs multiple orders
+      if (orderIds.length === 1) {
+        const orderId = orderIds[0];
+        console.log("🎯 Single order - redirecting to confirmation:", orderId);
+
+        // Validate UUID format
+        if (!uuidRegex.test(orderId)) {
+          console.error("❌ Invalid UUID format:", orderId);
+          alert(`Order created but ID format is invalid: ${orderId}\nPlease check your order history.`);
+          window.location.href = `/orders`;
+          return false;
+        }
+
+        alert(`Checkout successful! Order ID: ${orderId}`);
+        setTimeout(() => {
+          console.log("🚀 Redirecting to order confirmation page...");
+          window.location.href = `/order-confirmation/${orderId}`;
+        }, 100);
+      } else {
+        // Multiple orders
+        console.log("📦 Multiple orders - showing summary");
+        const orderList = orderIds.map((id, index) => `${index + 1}. ${id}`).join('\n');
+        alert(`Checkout successful! ${orderIds.length} orders created:\n\n${orderList}\n\nYou can view all orders in your order history.`);
+        setTimeout(() => {
+          console.log("🚀 Redirecting to orders history page...");
+          window.location.href = `/orders`;
+        }, 100);
+      }
+      return true;
+    } else {
+      console.error("=== CHECKOUT ERROR DEBUG ===");
+      console.error("Full response:", response);
+      console.error("Response error field:", response?.error);
+      console.error("Response errorMessage:", response?.errorMessage);
+
+      const errorMessage = response?.errorMessage || "Unknown error occurred";
+      throw new Error(errorMessage);
+    }
+  };
+
   // Checkout handlers
   const handleCheckoutAll = async () => {
     if (!shippingDetails) {
@@ -359,7 +462,7 @@ export default function CartPage() {
       // Prepare checkout data
       const checkoutData = prepareCheckoutData(cart, shippingDetails, paymentDetails);
 
-      console.log("Sending checkout data:", checkoutData); // Debug log
+      console.log("Sending checkout data:", checkoutData);
 
       // Call appropriate API based on user status
       let response;
@@ -369,64 +472,16 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      console.log("Checkout response:", response); // Debug log
+      console.log("Checkout response:", response);
 
-      // FIXED: Handle your Response<CheckoutResultDTO> structure
-      if (response && !response.error && response.data) {
-        const checkoutResult = response.data;
+      // FIXED: Use common success handler
+      handleCheckoutSuccess(response, "all");
 
-        // Debug: Log the entire response to see the structure
-        console.log("Full checkout response:", response);
-        console.log("Checkout result data:", checkoutResult);
-
-        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
-        let orderIds = [];
-
-        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
-          orderIds = checkoutResult.orderIds;
-        }
-
-        if (orderIds.length === 0) {
-          console.error("No order IDs found in response:", checkoutResult);
-          console.error("orderIds field:", checkoutResult.orderIds);
-          alert("Checkout completed but no order IDs found. Please check your order history.");
-          return;
-        }
-
-        console.log("Order IDs created:", orderIds);
-
-        // Clear cart
-        setCart({ baskets: {}, totalItems: 0, totalPrice: 0 });
-
-        // Clear local storage for guest cart if needed
-        if (isGuest) {
-          localStorage.removeItem("guestCart");
-        }
-
-        // Show success message with all order IDs
-        if (orderIds.length === 1) {
-          alert(`Checkout successful! Order ID: ${orderIds[0]}`);
-          // Redirect to single order confirmation
-          window.location.href = `/order-confirmation/${orderIds[0]}`;
-        } else {
-          // Multiple orders created
-          const orderList = orderIds.map((id, index) => `${index + 1}. ${id}`).join('\n');
-          alert(`Checkout successful! ${orderIds.length} orders created:\n\n${orderList}\n\nYou can view all orders in your order history.`);
-          // Redirect to order history instead of single order
-          window.location.href = `/orders`;
-        }
-      } else {
-        // Handle error response from your Response<T> structure
-        const errorMessage = response.errorMessage || "Unknown error occurred";
-        throw new Error(errorMessage);
-      }
     } catch (error) {
       console.error("Checkout failed:", error);
 
-      // Extract error message
       let errorMessage = "Unknown error";
       if (error.response?.data?.errorMessage) {
-        // Your Response<T> error structure
         errorMessage = error.response.data.errorMessage;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -475,36 +530,8 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // FIXED: Handle your Response<CheckoutResultDTO> structure
-      if (response && !response.error && response.data) {
-        const checkoutResult = response.data;
-
-        // Debug: Log the entire response to see the structure
-        console.log("Full checkout response:", response);
-        console.log("Checkout result data:", checkoutResult);
-
-        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
-        let orderId = null;
-
-        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
-          // Use the first order ID if multiple orders were created
-          orderId = checkoutResult.orderIds[0];
-
-          if (checkoutResult.orderIds.length > 1) {
-            console.log("Multiple orders created:", checkoutResult.orderIds);
-            // You might want to handle multiple orders differently
-          }
-        }
-
-        if (!orderId) {
-          console.error("No order IDs found in response:", checkoutResult);
-          console.error("orderIds field:", checkoutResult.orderIds);
-          alert("Checkout completed but no order IDs found. Please check your order history.");
-          return;
-        }
-
-        console.log("Using order ID:", orderId);
-
+      // FIXED: Use common success handler
+      if (handleCheckoutSuccess(response, "selected")) {
         // Remove checked out items from cart
         const updatedCart = { ...cart };
         selectedProducts.forEach(productId => {
@@ -539,16 +566,8 @@ export default function CartPage() {
           });
           localStorage.setItem("guestCart", JSON.stringify(guestCart));
         }
-
-        // Show success message
-        alert(`Checkout successful! Order ID: ${orderId}`);
-
-        // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${orderId}`;
-      } else {
-        const errorMessage = response.errorMessage || "Unknown error occurred";
-        throw new Error(errorMessage);
       }
+
     } catch (error) {
       console.error("Checkout failed:", error);
 
@@ -628,32 +647,8 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // Handle successful checkout
-      if (response && !response.error && response.data) {
-        const checkoutResult = response.data;
-
-        // Debug: Log the response
-        console.log("Store checkout response:", response);
-        console.log("Store checkout result:", checkoutResult);
-
-        // FIXED: Handle orderIds as List<String> from CheckoutResultDTO
-        let orderId = null;
-
-        if (checkoutResult.orderIds && Array.isArray(checkoutResult.orderIds) && checkoutResult.orderIds.length > 0) {
-          orderId = checkoutResult.orderIds[0];
-
-          if (checkoutResult.orderIds.length > 1) {
-            console.log("Multiple orders created:", checkoutResult.orderIds);
-          }
-        }
-
-        if (!orderId) {
-          console.error("No order IDs found in store checkout response:", checkoutResult);
-          console.error("orderIds field:", checkoutResult.orderIds);
-          alert("Checkout completed but no order IDs found. Please check your order history.");
-          return;
-        }
-
+      // FIXED: Use common success handler
+      if (handleCheckoutSuccess(response, "store")) {
         // Remove checked out items from cart
         const updatedCart = { ...cart };
 
@@ -699,16 +694,8 @@ export default function CartPage() {
           });
           localStorage.setItem("guestCart", JSON.stringify(guestCart));
         }
-
-        // Show success message
-        alert(`Checkout successful! Order ID: ${orderId}`);
-
-        // Redirect to order confirmation page
-        window.location.href = `/order-confirmation/${orderId}`;
-      } else {
-        const errorMessage = response.errorMessage || "Unknown error occurred";
-        throw new Error(errorMessage);
       }
+
     } catch (error) {
       console.error("Store checkout failed:", error);
 

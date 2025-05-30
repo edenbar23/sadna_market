@@ -1,4 +1,4 @@
-// Fixed order.js API to work with your Response<T> structure
+// Fixed order.js API to work with UUID format
 import axios from 'axios';
 import { getProductInfo } from './product';
 
@@ -22,10 +22,10 @@ orderApiClient.interceptors.request.use(config => {
     return config;
 });
 
-// FIXED: Response interceptor to handle your Response<T> structure
+// Response interceptor to handle your Response<T> structure
 orderApiClient.interceptors.response.use(
     response => {
-        console.log('Raw API response:', response.data); // Debug log
+        console.log('Raw Order API response:', response.data);
 
         // Your backend returns Response<T> structure: { error: boolean, data: T, errorMessage: string }
         if (response.data && typeof response.data === 'object') {
@@ -63,24 +63,55 @@ orderApiClient.interceptors.response.use(
 );
 
 /**
- * Fetch order by ID
- * @param {string} orderId
+ * Validate UUID format
+ * @param {string} id - The UUID string to validate
+ * @returns {boolean} - Whether the string is a valid UUID
+ */
+function isValidUUID(id) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+}
+
+/**
+ * Fetch order by ID (ensures UUID format)
+ * @param {string} orderId - The order UUID as string
  * @returns {Promise<OrderDTO>}
  */
 export const fetchOrderById = async (orderId) => {
     try {
-        console.log('Fetching order by ID:', orderId);
+        console.log('fetchOrderById called with:', orderId);
+        console.log('Order ID type:', typeof orderId);
+
+        if (!orderId) {
+            throw new Error('Order ID is required');
+        }
+
+        // Validate UUID format
+        if (!isValidUUID(orderId)) {
+            console.error('Invalid UUID format:', orderId);
+            throw new Error(`Invalid order ID format: ${orderId}. Expected UUID format.`);
+        }
+
+        console.log('✅ UUID format validated, calling API...');
+
         const response = await orderApiClient.get(`/${orderId}`);
         console.log('fetchOrderById response:', response.data);
         return response;
     } catch (error) {
         console.error('fetchOrderById error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            orderId: orderId,
+            isValidUUID: isValidUUID(orderId || ''),
+            responseStatus: error.response?.status,
+            responseData: error.response?.data
+        });
         throw error;
     }
 };
 
 /**
- * FIXED: Fetch user order history with your Response<List<OrderDTO>> structure
+ * Fetch user order history with UUID handling
  * @param {string} username
  * @returns {Promise<Array<OrderDTO>>}
  */
@@ -119,6 +150,11 @@ export const fetchOrderHistory = async (username) => {
                 try {
                     console.log('Processing order:', order.orderId);
 
+                    // Validate order ID format
+                    if (order.orderId && !isValidUUID(order.orderId)) {
+                        console.warn('Order has invalid UUID format:', order.orderId);
+                    }
+
                     // Handle products - your OrderDTO should have products as a Map<String, Integer>
                     if (!order.products || typeof order.products !== 'object') {
                         console.warn('Order has no products or invalid products structure:', order.orderId);
@@ -140,6 +176,12 @@ export const fetchOrderHistory = async (username) => {
                         productEntries.map(async ([productId, quantity]) => {
                             try {
                                 console.log('Fetching product info for:', productId);
+
+                                // Validate product ID UUID format
+                                if (!isValidUUID(productId)) {
+                                    console.warn('Product ID has invalid UUID format:', productId);
+                                }
+
                                 const productRes = await getProductInfo(productId);
                                 console.log('Product response for', productId, ':', productRes);
 
@@ -231,13 +273,23 @@ export const fetchOrderHistory = async (username) => {
 };
 
 /**
- * Fetch order status by order ID
- * @param {string} orderId
+ * Fetch order status by order ID (with UUID validation)
+ * @param {string} orderId - The order UUID as string
  * @returns {Promise<OrderStatus>}
  */
 export const fetchOrderStatus = async (orderId) => {
     try {
         console.log('Fetching order status for:', orderId);
+
+        if (!orderId) {
+            throw new Error('Order ID is required');
+        }
+
+        // Validate UUID format
+        if (!isValidUUID(orderId)) {
+            throw new Error(`Invalid order ID format: ${orderId}. Expected UUID format.`);
+        }
+
         const response = await orderApiClient.get(`/${orderId}/status`);
         console.log('fetchOrderStatus response:', response.data);
         return response;

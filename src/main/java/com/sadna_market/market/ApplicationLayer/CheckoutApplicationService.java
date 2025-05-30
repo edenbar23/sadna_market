@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * Application Service responsible for orchestrating the complete checkout process.
  * This service coordinates between domain services and infrastructure services
@@ -360,9 +362,7 @@ public class CheckoutApplicationService {
      * Creates checkout result DTO
      */
     private CheckoutResultDTO createCheckoutResult(List<Order> orders, PaymentResult paymentResult, List<SupplyResult> supplyResults) {
-        List<String> orderIds = orders.stream()
-                .map(order -> order.getOrderId().toString())
-                .toList();
+        List<UUID> orderIds = orders.stream().map(Order::getOrderId).collect(toList());
 
         List<String> trackingNumbers = supplyResults.stream()
                 .map(SupplyResult::getTrackingInfo)
