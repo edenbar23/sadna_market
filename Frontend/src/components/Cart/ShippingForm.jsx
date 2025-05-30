@@ -15,19 +15,13 @@ export default function ShippingForm({ onComplete }) {
     const { user } = useAuthContext();
     const isGuest = !user?.username;
 
-    // For guest users - simple form data
-    const [guestFormData, setGuestFormData] = useState({
-        fullName: "",
-        address: "",
-        city: "",
-        postalCode: ""
-    });
-
     useEffect(() => {
         if (!isGuest) {
             loadUserAddresses();
         } else {
             setLoading(false);
+            // For guests, default to showing the address form
+            setSelectedOption('new');
         }
     }, [isGuest, user]);
 
@@ -84,21 +78,23 @@ export default function ShippingForm({ onComplete }) {
         }
     };
 
-    const handleGuestChange = (e) => {
-        const { name, value } = e.target;
-        setGuestFormData({ ...guestFormData, [name]: value });
-    };
+    const handleGuestSubmit = async (formData) => {
+        try {
+            setSaving(true);
+            setError(null);
 
-    const handleGuestSubmit = (e) => {
-        e.preventDefault();
-        const allFilled = Object.values(guestFormData).every((val) => val.trim() !== "");
-        if (allFilled) {
+            // For guests, directly use the form data
             onComplete({
                 type: 'guest',
-                data: guestFormData
+                data: formData
             });
-        } else {
-            alert("Please fill in all fields.");
+
+            setShowNewAddressForm(false);
+        } catch (error) {
+            console.error('Error processing guest address:', error);
+            setError('Error processing address: ' + (error.message || 'Unknown error'));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -151,7 +147,7 @@ export default function ShippingForm({ onComplete }) {
 
         } catch (error) {
             console.error('Error saving new address:', error);
-            alert('Error saving address: ' + (error.message || 'Unknown error'));
+            setError('Error saving address: ' + (error.message || 'Unknown error'));
         } finally {
             setSaving(false);
         }
@@ -187,41 +183,33 @@ export default function ShippingForm({ onComplete }) {
         );
     }
 
-    // Guest user form - simple version
+    // Guest user form - now using the nice AddressForm component
     if (isGuest) {
         return (
-            <form className="shipping-form" onSubmit={handleGuestSubmit}>
-                <h3>Shipping Address</h3>
-                <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Full Name"
-                    value={guestFormData.fullName}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="address"
-                    placeholder="Address"
-                    value={guestFormData.address}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={guestFormData.city}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="postalCode"
-                    placeholder="Postal Code"
-                    value={guestFormData.postalCode}
-                    onChange={handleGuestChange}
-                />
-                <button type="submit">Save Shipping</button>
-            </form>
+            <div className="shipping-form-container">
+                {showNewAddressForm ? (
+                    <div className="guest-address-form">
+                        <AddressForm
+                            title="Shipping Address"
+                            onSubmit={handleGuestSubmit}
+                            onCancel={() => setShowNewAddressForm(false)}
+                            isLoading={saving}
+                        />
+                    </div>
+                ) : (
+                    <div className="guest-address-prompt">
+                        <h3>Shipping Address</h3>
+                        <p>Please provide your shipping address to continue with checkout.</p>
+                        <button
+                            onClick={() => setShowNewAddressForm(true)}
+                            className="btn btn-primary"
+                            style={{ marginTop: '1rem' }}
+                        >
+                            Add Shipping Address
+                        </button>
+                    </div>
+                )}
+            </div>
         );
     }
 
@@ -293,7 +281,7 @@ export default function ShippingForm({ onComplete }) {
                                                     <div className="address-preview">
                                                         {address.fullName}<br />
                                                         {address.addressLine1}<br />
-                                                        {address.city}, {address.state} {address.postalCode}
+                                                        {address.city}, {address.state && `${address.state} `}{address.postalCode}
                                                     </div>
                                                 </div>
                                             </div>

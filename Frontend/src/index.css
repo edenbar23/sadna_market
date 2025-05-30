@@ -10,9 +10,10 @@
 @import './styles/modal-form-styles.css';
 @import './styles/cart.css';
 @import './styles/cartBadge.css';
-@import './styles/address.css'; /* Add this line */
+@import './styles/address.css';
+@import './styles/payment-form.css';
 
-/* Additional styles specific to this app (optional) */
+
 body {
   font-family: 'Arial', sans-serif;
 }
