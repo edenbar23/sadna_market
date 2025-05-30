@@ -29,6 +29,7 @@ public class User extends IUser {
     private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
     private ArrayList<UUID> ordersHistory; // List of order IDs
     private ArrayList<UUID> myReports;
+    private List<UUID> addressIds = new ArrayList<>();
 
     public User(String userName, String password, String email, String firstName, String lastName) {
         this.userName = userName;
@@ -40,6 +41,7 @@ public class User extends IUser {
         this.userStoreRoles = new ArrayList<>();
         this.ordersHistory = new ArrayList<>();
         this.myReports = new ArrayList<>();
+        this.addressIds = new ArrayList<>();
     }
 
     @Override
@@ -155,6 +157,27 @@ public class User extends IUser {
             ids.add(storeId);
         }
         return ids;
+    }
+
+    public void addAddressId(UUID addressId) {
+        if (addressId != null && !addressIds.contains(addressId)) {
+            addressIds.add(addressId);
+            logger.info("Address {} added to user {}", addressId, userName);
+        }
+    }
+
+    public void removeAddressId(UUID addressId) {
+        if (addressIds.remove(addressId)) {
+            logger.info("Address {} removed from user {}", addressId, userName);
+        }
+    }
+
+    public List<UUID> getAddressIds() {
+        return new ArrayList<>(addressIds);
+    }
+
+    public boolean hasAddress(UUID addressId) {
+        return addressIds.contains(addressId);
     }
 
 

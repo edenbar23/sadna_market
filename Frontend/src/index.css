@@ -9,6 +9,7 @@
 @import './styles/messages.css';
 @import './styles/modal-form-styles.css';
 @import './styles/cart.css';
+@import './styles/address.css'; /* Add this line */
 
 /* Additional styles specific to this app (optional) */
 body {
