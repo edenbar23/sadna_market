@@ -4,6 +4,7 @@ import { getStoreProducts } from "../api/product";
 import { fetchStoreById } from "../api/store";
 import ProductCard from "../components/ProductCard";
 import StoreActionPanel from "../components/StoreActionPanel";
+import SearchBar from "../components/SearchBar";
 import "../index.css";
 
 export default function StorePage() {
@@ -67,6 +68,7 @@ export default function StorePage() {
 
     return (
         <div className="store-page">
+            <SearchBar storeId={storeId} />
             <div className="store-header">
                 <img
                     src={store.logo || "/assets/blank_store.png"}
