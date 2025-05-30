@@ -1,28 +1,20 @@
 package com.sadna_market.market.ApplicationLayer.DTOs;
 
-import com.sadna_market.market.DomainLayer.Cart;
-import java.util.HashMap;
+import lombok.Getter;
 import java.util.Map;
 import java.util.UUID;
-import lombok.Getter;
 
 public class CartDTO {
     @Getter
-    private Map<UUID, ShoppingBasketDTO> baskets;
+    private Map<UUID, StoreCartDTO> baskets;
     @Getter
     private int totalItems;
+    @Getter
+    private double totalPrice;
 
-    public CartDTO(Cart cart) {
-        this.baskets = new HashMap<>();
-        cart.getShoppingBaskets().forEach((storeId, basket) -> {
-            baskets.put(storeId, new ShoppingBasketDTO(basket));
-        });
-        this.totalItems = cart.getTotalItems();
-    }
-
-    public CartDTO(Map<UUID, ShoppingBasketDTO> baskets, int totalItems) {
-        this.baskets = new HashMap<>(baskets);
+    public CartDTO(Map<UUID, StoreCartDTO> baskets, int totalItems, double totalPrice) {
+        this.baskets = baskets;
         this.totalItems = totalItems;
+        this.totalPrice = totalPrice;
     }
 }
-

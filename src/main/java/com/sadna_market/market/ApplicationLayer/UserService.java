@@ -12,14 +12,20 @@ import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementSer
 import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
+import com.sadna_market.market.ApplicationLayer.DTOs.CartProductDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.StoreCartDTO;
+import com.sadna_market.market.DomainLayer.IProductRepository;
+import com.sadna_market.market.DomainLayer.IStoreRepository;
+import com.sadna_market.market.DomainLayer.Store;
+import com.sadna_market.market.DomainLayer.Product;
+import com.sadna_market.market.DomainLayer.ShoppingBasket;
+
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class UserService {
@@ -29,16 +35,22 @@ public class UserService {
     private final UserAccessService userAccessService;
     private final InventoryManagementService inventoryManagementService;
     private final OrderProcessingService orderProcessingService;
+    private IProductRepository productRepository;
+    private IStoreRepository storeRepository;
 
     @Autowired
     public UserService(AuthenticationAdapter authentication,
                        UserAccessService userAccessService,
                        InventoryManagementService inventoryManagementService,
-                       OrderProcessingService orderProcessingService) {
+                       OrderProcessingService orderProcessingService,
+                       IProductRepository productRepository,
+                       IStoreRepository storeRepository) {
         this.authentication = authentication;
         this.userAccessService = userAccessService;
         this.inventoryManagementService = inventoryManagementService;
         this.orderProcessingService = orderProcessingService;
+        this.productRepository = productRepository;
+        this.storeRepository = storeRepository;
     }
 
     // ==================== USER REGISTRATION & AUTHENTICATION ====================
@@ -118,8 +130,10 @@ public class UserService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
             logger.info("Viewing cart for user with username: {}", username);
+
             Cart cart = userAccessService.getCart(username);
-            CartDTO cartDTO = new CartDTO(cart);
+            CartDTO cartDTO = buildCartDTO(cart);
+
             logger.info("Cart viewed successfully");
             return Response.success(cartDTO);
         } catch (Exception e) {
@@ -134,8 +148,10 @@ public class UserService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
             logger.info("Updating product with ID: {} in user with username: {}", productId, username);
+
             Cart updatedCart = userAccessService.updateCart(username, storeId, productId, quantity);
-            CartDTO cartDTO = new CartDTO(updatedCart);
+            CartDTO cartDTO = buildCartDTO(updatedCart);
+
             logger.info("Product updated in cart successfully");
             return Response.success(cartDTO);
         } catch (Exception e) {
@@ -150,8 +166,10 @@ public class UserService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
             logger.info("Removing product with ID: {} from user with username: {}", productId, username);
+
             Cart cartUpdated = userAccessService.removeFromCart(username, storeId, productId);
-            CartDTO cartDTO = new CartDTO(cartUpdated);
+            CartDTO cartDTO = buildCartDTO(cartUpdated);
+
             logger.info("Product removed from cart successfully");
             return Response.success(cartDTO);
         } catch (Exception e) {
@@ -164,27 +182,28 @@ public class UserService {
      * Gets user's cart for checkout preparation
      * This can be used by frontend before calling checkout API
      */
-    public Response<CartDTO> getCartForCheckout(String username, String token) {
-        try {
-            logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username, token);
-
-            logger.info("Getting cart for checkout for user: {}", username);
-            Cart cart = userAccessService.getCart(username);
-
-            if (cart.isEmpty()) {
-                return Response.error("Cannot checkout with empty cart");
-            }
-
-            CartDTO cartDTO = new CartDTO(cart);
-            logger.info("Cart prepared for checkout for user: {}", username);
-            return Response.success(cartDTO);
-
-        } catch (Exception e) {
-            logger.error("Error getting cart for checkout: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
+    //TODO:Understand if this is needed
+//    public Response<CartDTO> getCartForCheckout(String username, String token) {
+//        try {
+//            logger.info("Validating token for user with username: {}", username);
+//            authentication.validateToken(username, token);
+//
+//            logger.info("Getting cart for checkout for user: {}", username);
+//            Cart cart = userAccessService.getCart(username);
+//
+//            if (cart.isEmpty()) {
+//                return Response.error("Cannot checkout with empty cart");
+//            }
+//
+//            CartDTO cartDTO = new CartDTO(cart);
+//            logger.info("Cart prepared for checkout for user: {}", username);
+//            return Response.success(cartDTO);
+//
+//        } catch (Exception e) {
+//            logger.error("Error getting cart for checkout: {}", e.getMessage());
+//            return Response.error(e.getMessage());
+//        }
+//    }
 
     // ==================== CART OPERATIONS FOR GUESTS ====================
 
@@ -470,5 +489,72 @@ public class UserService {
     public void clear() {
         authentication.clear();
         userAccessService.clear();
+    }
+
+    private CartDTO buildCartDTO(Cart cart) {
+        Map<UUID, StoreCartDTO> storeCartDTOs = new HashMap<>();
+        int totalItems = 0;
+        double totalPrice = 0.0;
+
+        for (Map.Entry<UUID, ShoppingBasket> entry : cart.getShoppingBaskets().entrySet()) {
+            UUID storeId = entry.getKey();
+            ShoppingBasket basket = entry.getValue();
+
+            String storeName = "Store";
+            try {
+                Optional<Store> storeOpt = storeRepository.findById(storeId);
+                if (storeOpt.isPresent()) {
+                    storeName = storeOpt.get().getName();
+                }
+            } catch (Exception e) {
+                logger.warn("Could not fetch store name for store {}: {}", storeId, e.getMessage());
+            }
+
+            Map<UUID, CartProductDTO> cartProducts = new HashMap<>();
+            int storeQuantity = 0;
+            double storePrice = 0.0;
+
+            for (Map.Entry<UUID, Integer> productEntry : basket.getProductsList().entrySet()) {
+                UUID productId = productEntry.getKey();
+                Integer quantity = productEntry.getValue();
+
+                try {
+                    Optional<Product> productOpt = productRepository.findById(productId);
+                    if (productOpt.isPresent()) {
+                        Product product = productOpt.get();
+
+                        CartProductDTO cartProductDTO = new CartProductDTO(
+                                productId,
+                                product.getName(),
+                                product.getPrice(),
+                                quantity,
+                                product.getDescription(),
+                                product.getCategory(),
+                                "/assets/blank_product.png"
+                        );
+
+                        cartProducts.put(productId, cartProductDTO);
+                        storeQuantity += quantity;
+                        storePrice += product.getPrice() * quantity;
+                    }
+                } catch (Exception e) {
+                    logger.warn("Could not fetch product details for product {}: {}", productId, e.getMessage());
+                }
+            }
+
+            StoreCartDTO storeCartDTO = new StoreCartDTO(
+                    storeId,
+                    storeName,
+                    cartProducts,
+                    storeQuantity,
+                    storePrice
+            );
+
+            storeCartDTOs.put(storeId, storeCartDTO);
+            totalItems += storeQuantity;
+            totalPrice += storePrice;
+        }
+
+        return new CartDTO(storeCartDTOs, totalItems, totalPrice);
     }
 }
