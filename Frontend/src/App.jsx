@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthContext } from './context/AuthContext';
+import { CartProvider } from './context/CartContext.jsx';
 
 import MainPage from "./pages/MainPage";
 import CartPage from "./pages/CartPage";
@@ -34,51 +35,53 @@ function App() {
     }
 
     return (
-        <Router>
-            <ErrorBoundary>
-                <HeaderBar />
-                <Routes>
-                    <Route path="/" element={<MainPage />} />
-                    <Route path="/cart" element={<CartPage />} />
-                    <Route
-                        path="/orders"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <OrdersPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/messages"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <MessagesPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="/search" element={<SearchResultsPage />} />
-                    <Route path="/product/:productId" element={<ProductPage />} />
-                    <Route path="/store/:storeId" element={<StorePage />} />
-                    <Route
-                        path="/my-stores"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <StoreManagementPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/store-manage/:storeId"
-                        element={
-                            <ProtectedRoute user={user}>
-                                <StoreManagePage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route path="*" element={<div>404 Not Found</div>} />
-                </Routes>
-            </ErrorBoundary>
-        </Router>
+        <CartProvider>
+            <Router>
+                <ErrorBoundary>
+                    <HeaderBar />
+                    <Routes>
+                        <Route path="/" element={<MainPage />} />
+                        <Route path="/cart" element={<CartPage />} />
+                        <Route
+                            path="/orders"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <OrdersPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/messages"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <MessagesPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/search" element={<SearchResultsPage />} />
+                        <Route path="/product/:productId" element={<ProductPage />} />
+                        <Route path="/store/:storeId" element={<StorePage />} />
+                        <Route
+                            path="/my-stores"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <StoreManagementPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/store-manage/:storeId"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <StoreManagePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="*" element={<div>404 Not Found</div>} />
+                    </Routes>
+                </ErrorBoundary>
+            </Router>
+        </CartProvider>
     );
 }
 
