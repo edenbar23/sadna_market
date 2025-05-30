@@ -9,6 +9,13 @@ export default function MessageModal({ store, onClose }) {
     const { user, token, isAuthenticated } = useContext(AuthContext);
 
     const handleSubmit = async () => {
+        console.log("=== MessageModal handleSubmit ===");
+        console.log("store object received:", store);
+        console.log("store.storeId",store.storeId)
+    console.log("store.id:", store.id);
+    console.log("user.username:", user.username);
+    console.log("message:", message);
+    console.log("token:", token);
         if (!message.trim()) return;
         if (!isAuthenticated) {
             alert("You must be logged in to send a message.");

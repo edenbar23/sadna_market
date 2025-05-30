@@ -315,7 +315,7 @@ public class SystemInitializer implements CommandLineRunner {
                     laptop.getPrice(),
                     laptop.getPrice(),
                     java.time.LocalDateTime.now(),
-                    OrderStatus.PAID,
+                    OrderStatus.COMPLETED,
                     10001
             );
             orderRepository.save(order);
