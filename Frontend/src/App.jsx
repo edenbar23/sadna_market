@@ -78,6 +78,7 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
                         <Route path="*" element={<div>404 Not Found</div>} />
                     </Routes>
                 </ErrorBoundary>
