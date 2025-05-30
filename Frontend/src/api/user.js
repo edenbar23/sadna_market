@@ -64,29 +64,26 @@ export const logoutUser = async (username, token) => {
 
 // Guest cart management APIs
 export const addToCartGuest = async (cart, storeId, productId, quantity) => {
-    const response = await apiClient.post('/guest/cart', null, {
-        params: { storeId, productId, quantity },
-        data: cart
+    const response = await apiClient.post('/guest/cart', cart, {
+        params: { storeId, productId, quantity }
     });
     return response;
 };
 
 export const viewCartGuest = async (cart) => {
-    const response = await apiClient.get('/guest/cart', {
-        data: cart
-    });
+    const response = await apiClient.post('/guest/cart', cart);
     return response;
 };
 
 export const updateCartGuest = async (cart, storeId, productId, newQuantity) => {
-    const response = await apiClient.put('/guest/cart', null, {
-        params: { storeId, productId, newQuantity },
-        data: cart
+    const response = await apiClient.put('/guest/cart', cart, {
+        params: { storeId, productId, quantity: newQuantity }
     });
     return response;
 };
 
 export const removeFromCartGuest = async (cart, storeId, productId) => {
+    // For DELETE requests with a body, we need to use a special config
     const response = await apiClient.delete('/guest/cart', {
         params: { storeId, productId },
         data: cart

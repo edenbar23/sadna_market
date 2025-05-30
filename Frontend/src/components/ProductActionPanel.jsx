@@ -27,24 +27,8 @@ export default function ProductActionPanel({ product }) {
         setError(null);
 
         try {
-            // If user is logged in, use user cart, otherwise use guest cart
-            if (user) {
-                await addToCart(product.storeId, product.productId, quantity);
-            } else {
-                // Get guest cart from localStorage or create new one
-                let guestCart = JSON.parse(localStorage.getItem('guestCart')) || { baskets: {} };
-
-                // Check if store exists in baskets
-                if (!guestCart.baskets[product.storeId]) {
-                    guestCart.baskets[product.storeId] = {};
-                }
-
-                // Add or update product quantity
-                guestCart.baskets[product.storeId][product.productId] = quantity;
-
-                // Save updated cart to localStorage
-                localStorage.setItem('guestCart', JSON.stringify(guestCart));
-            }
+            // Add to cart using the useCart hook (which will use CartContext for guests)
+            await addToCart(product.storeId, product.productId, quantity);
 
             // Show success feedback
             alert(`Added ${quantity} ${product.name} to cart`);

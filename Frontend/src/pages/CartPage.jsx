@@ -11,6 +11,8 @@ import {
   updateCart,
   removeFromCart,
 } from "../api/user";
+import { fetchStoreById } from "../api/store";
+import { getProductInfo } from "../api/product";
 import "../styles/cart.css"
 
 export default function CartPage() {
@@ -43,29 +45,62 @@ export default function CartPage() {
               totalPrice: 0
             };
 
-            Object.entries(parsedCart.baskets || {}).forEach(([storeId, products]) => {
+            // Process each store in the cart
+            for (const [storeId, products] of Object.entries(parsedCart.baskets || {})) {
+              // Fetch store details to get the actual store name
+              let storeName = `Store ${storeId.substring(0, 8)}...`;
+              try {
+                const storeResponse = await fetchStoreById(storeId);
+                if (storeResponse && storeResponse.name) {
+                  storeName = storeResponse.name;
+                }
+              } catch (storeError) {
+                console.error(`Failed to fetch store details for ${storeId}:`, storeError);
+              }
+
               transformedCart.baskets[storeId] = {
                 storeId,
-                storeName: `Store ${storeId.substring(0, 8)}...`,
+                storeName,
                 products: {},
                 totalQuantity: 0,
                 totalPrice: 0
               };
 
-              Object.entries(products).forEach(([productId, quantity]) => {
+              // Process each product in the store
+              for (const [productId, quantity] of Object.entries(products)) {
+                // Default product values
+                let productName = `Product ${productId.substring(0, 8)}...`;
+                let productPrice = 10.00;
+                let productImage = "/assets/blank_product.png";
+
+                // Fetch product details to get the actual product name and price
+                try {
+                  const productResponse = await getProductInfo(productId);
+                  if (productResponse && productResponse.data) {
+                    productName = productResponse.data.name;
+                    productPrice = productResponse.data.price;
+                    if (productResponse.data.imageUrl) {
+                      productImage = productResponse.data.imageUrl;
+                    }
+                  }
+                } catch (productError) {
+                  console.error(`Failed to fetch product details for ${productId}:`, productError);
+                }
+
                 transformedCart.baskets[storeId].products[productId] = {
                   productId,
-                  name: `Product ${productId.substring(0, 8)}...`,
-                  price: 10.00,
+                  name: productName,
+                  price: productPrice,
                   quantity,
-                  image: "/assets/blank_product.png"
+                  image: productImage
                 };
+
                 transformedCart.baskets[storeId].totalQuantity += quantity;
-                transformedCart.baskets[storeId].totalPrice += 10.00 * quantity;
+                transformedCart.baskets[storeId].totalPrice += productPrice * quantity;
                 transformedCart.totalItems += quantity;
-                transformedCart.totalPrice += 10.00 * quantity;
-              });
-            });
+                transformedCart.totalPrice += productPrice * quantity;
+              }
+            }
 
             setCart(transformedCart);
           }
