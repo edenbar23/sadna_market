@@ -1,0 +1,65 @@
+/* Cart Badge Styles */
+.cart-link {
+  position: relative;
+  text-decoration: none;
+}
+
+.cart-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #dc3545; /* Red color */
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+/* For larger numbers, make the badge slightly oval */
+.cart-badge:has-text {
+  border-radius: 10px;
+  min-width: 24px;
+}
+
+/* Animation for when the count changes */
+.cart-badge {
+  animation: cartBadgePulse 0.3s ease-in-out;
+}
+
+@keyframes cartBadgePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .cart-badge {
+    top: -6px;
+    right: -6px;
+    font-size: 0.7rem;
+    min-width: 100px;
+    height: 100px;
+  }
+}

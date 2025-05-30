@@ -26,6 +26,8 @@ export default function ProductCard({ product }) {
     try {
       // Add to cart using the useCart hook (which will use CartContext for guests)
       await addToCart(product.storeId, product.productId, quantity);
+      window.dispatchEvent(new Event('cartUpdated'));
+
 
       // Show success feedback (you could add a toast notification here)
       alert(`Added ${quantity} ${product.name} to cart`);
