@@ -305,7 +305,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
         logger.info("Found {} orders for user {}", orders.size(), username);
         for (Order order : orders) {
             logger.info("Checking order {} with status {}", order.getOrderId(), order.getStatus());
-            if (order.getProductsMap().containsKey(productId) && order.getStatus() == OrderStatus.PAID) {
+            if (order.getProductsMap().containsKey(productId) && order.getStatus() == OrderStatus.COMPLETED) {
                 logger.info("User {} has purchased product {}", username, productId);
                 return true;
             }
