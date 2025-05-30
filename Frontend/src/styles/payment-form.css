@@ -378,3 +378,371 @@
         border: 2px solid #000;
     }
 }
+
+/* Add this to your src/styles/payment-form.css */
+
+/* Payment Method Selection */
+.payment-method-option {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.payment-method-option:hover {
+    border-color: #3b82f6;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    margin-bottom: 1rem;
+}
+
+.radio-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #3b82f6;
+}
+
+/* Saved Cards List */
+.saved-cards-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.saved-card-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.saved-card-option:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.saved-card-option.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.card-selection {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.card-selection input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #3b82f6;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.card-primary-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.card-nickname {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.card-number {
+    color: #6b7280;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.card-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.card-expiry,
+.card-holder {
+    white-space: nowrap;
+}
+
+/* Card Actions */
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-edit-nickname,
+.btn-delete-card {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-nickname {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-edit-nickname:hover {
+    background: #e5e7eb;
+    transform: scale(1.05);
+}
+
+.btn-delete-card {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-delete-card:hover {
+    background: #fecaca;
+    transform: scale(1.05);
+}
+
+/* Nickname Editing */
+.nickname-edit {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nickname-input {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #3b82f6;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1f2937;
+    background: white;
+    min-width: 150px;
+}
+
+.nickname-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Security Information */
+.security-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #ecfdf5;
+    border: 1px solid #d1fae5;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.security-icon {
+    color: #10b981;
+    font-size: 1.25rem;
+}
+
+.security-text {
+    font-size: 0.875rem;
+    color: #065f46;
+    font-weight: 500;
+}
+
+/* Card Type Visual Indicators Enhancement */
+.card-type-icon.visa::before {
+    content: "VISA";
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #1A1F71;
+    background: linear-gradient(135deg, #1A1F71 0%, #1A1F71 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.card-type-icon.mastercard::before {
+    content: "MC";
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #EB001B;
+}
+
+.card-type-icon.amex::before {
+    content: "AMEX";
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #006FCF;
+}
+
+.card-type-icon.discover::before {
+    content: "DISC";
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #FF6000;
+}
+
+/* Enhanced Help Text */
+.help-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+/* Loading State for Cards */
+.cards-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    color: #6b7280;
+}
+
+.cards-loading::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top: 2px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error States */
+.card-error {
+    color: #dc2626;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design for Saved Cards */
+@media (max-width: 768px) {
+    .saved-card-option {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .card-selection {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .card-primary-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .card-details {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .card-actions {
+        align-self: flex-end;
+        margin-top: 0.5rem;
+    }
+
+    .nickname-input {
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .saved-cards-list {
+        gap: 0.5rem;
+    }
+
+    .saved-card-option {
+        padding: 0.75rem;
+    }
+
+    .card-info {
+        gap: 0.5rem;
+    }
+
+    .card-actions {
+        gap: 0.25rem;
+    }
+
+    .btn-edit-nickname,
+    .btn-delete-card {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+}
+
+/* Focus Indicators for Accessibility */
+.saved-card-option:focus-within {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.btn-edit-nickname:focus-visible,
+.btn-delete-card:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: more) {
+    .saved-card-option {
+        border: 2px solid #000;
+    }
+
+    .saved-card-option.selected {
+        background: #fff;
+        border: 3px solid #000;
+    }
+
+    .btn-edit-nickname,
+    .btn-delete-card {
+        border: 1px solid #000;
+    }
+}
