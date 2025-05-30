@@ -24,7 +24,7 @@ public class OrderUnitTest {
     private double finalPrice;
     private LocalDateTime orderDate;
     private OrderStatus initialStatus;
-    private UUID paymentId;
+    private int transactionId;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +49,7 @@ public class OrderUnitTest {
         finalPrice = 85.0; // After a 15% discount
         orderDate = LocalDateTime.now();
         initialStatus = OrderStatus.PENDING;
-        paymentId = UUID.randomUUID();
+        transactionId = 123456; // Example transaction ID
 
         System.out.println("Test order details:");
         System.out.println("- Total price: $" + totalPrice);
@@ -58,7 +58,7 @@ public class OrderUnitTest {
 
         // Create the order
         order = new Order(storeId, userName, products, totalPrice, finalPrice,
-                orderDate, initialStatus, paymentId);
+                orderDate, initialStatus, transactionId);
 
         orderId = order.getOrderId();
         System.out.println("Order created with ID: " + orderId);
@@ -131,9 +131,9 @@ public class OrderUnitTest {
     @Test
     void testOrderPaymentIdIsSetCorrectly() {
         System.out.println("TEST: Verifying payment ID is set correctly");
-        System.out.println("Expected: " + paymentId);
-        System.out.println("Actual: " + order.getPaymentId());
-        assertEquals(paymentId, order.getPaymentId());
+        System.out.println("Expected: " + transactionId);
+        System.out.println("Actual: " + order.getTransactionId());
+        assertEquals(transactionId, order.getTransactionId());
         System.out.println("✓ Payment ID correctly set");
     }
 
@@ -545,7 +545,7 @@ public class OrderUnitTest {
 
         System.out.println("Creating order with full constructor and delivery ID: " + deliveryId);
         Order fullOrder = new Order(orderId, storeId, userName, products, totalPrice, finalPrice,
-                orderDate, OrderStatus.PAID, paymentId, deliveryId);
+                orderDate, OrderStatus.PAID, transactionId, deliveryId);
 
         System.out.println("Verifying all fields are set correctly");
         assertEquals(orderId, fullOrder.getOrderId());
@@ -555,7 +555,7 @@ public class OrderUnitTest {
         assertEquals(finalPrice, fullOrder.getFinalPrice());
         assertEquals(orderDate, fullOrder.getOrderDate());
         assertEquals(OrderStatus.PAID, fullOrder.getStatus());
-        assertEquals(paymentId, fullOrder.getPaymentId());
+        assertEquals(transactionId, fullOrder.getTransactionId());
         assertEquals(deliveryId, fullOrder.getDeliveryId());
 
         System.out.println("✓ Full constructor sets all fields correctly");

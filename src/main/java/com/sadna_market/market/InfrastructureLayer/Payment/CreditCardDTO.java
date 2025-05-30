@@ -1,5 +1,9 @@
 package com.sadna_market.market.InfrastructureLayer.Payment;
 
+/**
+ * DTO for credit card payment information
+ * Updated to return PaymentResult
+ */
 public class CreditCardDTO implements PaymentMethod {
     public String cardNumber;
     public String cardHolderName;
@@ -18,7 +22,15 @@ public class CreditCardDTO implements PaymentMethod {
     }
 
     @Override
-    public boolean accept(PaymentVisitor visitor, double amount) {
+    public PaymentResult accept(PaymentVisitor visitor, double amount) {
         return visitor.visit(this, amount);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CreditCard[holder=%s, number=****%s, expiry=%s]",
+                cardHolderName,
+                cardNumber.length() > 4 ? cardNumber.substring(cardNumber.length() - 4) : "****",
+                expiryDate);
     }
 }

@@ -2,17 +2,18 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Events.*;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Domain Service responsible for order business logic only.
+ * Payment and supply are handled by CheckoutApplicationService.
+ */
 @Service
 public class OrderProcessingService {
     private static final Logger logger = LoggerFactory.getLogger(OrderProcessingService.class);
@@ -21,7 +22,6 @@ public class OrderProcessingService {
     private final IOrderRepository orderRepository;
     private final IUserRepository userRepository;
     private final IProductRepository productRepository;
-    private final PaymentService paymentService;
 
     @Autowired
     public OrderProcessingService(
@@ -33,56 +33,18 @@ public class OrderProcessingService {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.paymentService = new PaymentService(); // This would ideally be injected too
 
         logger.info("OrderProcessingService initialized");
     }
 
-    @PostConstruct
-    public void subscribeToEvents() {
-        // Subscribe to checkout events
-        DomainEventPublisher.subscribe(CheckoutInitiatedEvent.class, this::handleCheckoutInitiated);
-        logger.info("OrderProcessingService subscribed to events");
-    }
+    // ==================== ORDER CREATION (PENDING STATUS) ====================
 
     /**
-     * Event handler for CheckoutInitiatedEvent
+     * Creates pending orders for a registered user
+     * Called by CheckoutApplicationService before payment processing
      */
-    private void handleCheckoutInitiated(CheckoutInitiatedEvent event) {
-        logger.info("Handling checkout event for {}", event.isGuest() ? "guest" : event.getUsername());
-
-        try {
-            List<Order> orders;
-            if (event.isGuest()) {
-                orders = processGuestPurchase(event.getCart(), event.getPaymentMethod());
-            } else {
-                orders = processPurchase(event.getUsername(), event.getCart(), event.getPaymentMethod());
-                logger.info("Successfully processed purchase for user {}", event.getUsername());
-                // Clear the user's cart if registered user
-                User user = userRepository.findByUsername(event.getUsername())
-                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
-                clearUserCart(user);
-            }
-
-            // Publish event for each processed order
-            for (Order order : orders) {
-                DomainEventPublisher.publish(
-                        new OrderProcessedEvent(
-                                order.getUserName(),
-                                order.getOrderId(),
-                                order.getStoreId()
-                        )
-                );
-            }
-        } catch (Exception e) {
-            logger.error("Error processing checkout: {}", e.getMessage(), e);
-            throw new RuntimeException("Checkout failed: " + e.getMessage(), e);
-            // Could publish a CheckoutFailedEvent here
-        }
-    }
-
-    public List<Order> processPurchase(String username, Cart cart, PaymentMethod paymentMethod) {
-        logger.info("Processing purchase for user: {}", username);
+    public List<Order> createPendingOrders(String username, Cart cart) {
+        logger.info("Creating pending orders for user: {}", username);
 
         // Validate user exists
         User user = userRepository.findByUsername(username)
@@ -90,239 +52,388 @@ public class OrderProcessingService {
 
         // Check if cart is empty
         if (cart.getShoppingBaskets().isEmpty()) {
-            logger.warn("Cannot process empty cart for user: {}", username);
-            throw new IllegalStateException("Cannot process empty cart");
+            logger.warn("Cannot create orders from empty cart for user: {}", username);
+            throw new IllegalStateException("Cannot create orders from empty cart");
         }
 
         List<Order> orders = new ArrayList<>();
 
-        // Process each shopping basket (per store)
+        // Create order for each store in cart
         for (Map.Entry<UUID, ShoppingBasket> entry : cart.getShoppingBaskets().entrySet()) {
             UUID storeId = entry.getKey();
             ShoppingBasket basket = entry.getValue();
 
             try {
-                Order order = processStoreBasket(user, storeId, basket, paymentMethod);
+                Order order = createPendingOrder(username, storeId, basket);
                 orders.add(order);
-                logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
+                logger.info("Created pending order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
-                logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
-                // Rollback any successful orders
-                rollbackOrders(orders);
-                logger.info("Rolled back orders successfully");
-                rollbackPayment(orders);
-                logger.info("Refunded orders successfully");
-                throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
+                logger.error("Failed to create pending order for store {}: {}", storeId, e.getMessage());
+                // Rollback any created orders
+                cancelOrders(orders);
+                throw new RuntimeException("Order creation failed: " + e.getMessage(), e);
             }
         }
 
-        logger.info("Successfully processed {} orders for user {}", orders.size(), username);
+        logger.info("Successfully created {} pending orders for user {}", orders.size(), username);
         return orders;
     }
 
-    public List<Order> processGuestPurchase(Cart cart, PaymentMethod paymentMethod) {
-        logger.info("Processing purchase for guest");
+    /**
+     * Creates pending orders for a guest user
+     * Called by CheckoutApplicationService before payment processing
+     */
+    public List<Order> createGuestPendingOrders(Cart cart) {
+        logger.info("Creating pending orders for guest");
 
         // Check if cart is empty
         if (cart.getShoppingBaskets().isEmpty()) {
-            logger.warn("Cannot process empty cart for guest");
-            throw new IllegalStateException("Cannot process empty cart");
+            logger.warn("Cannot create orders from empty cart for guest");
+            throw new IllegalStateException("Cannot create orders from empty cart");
         }
 
         List<Order> orders = new ArrayList<>();
+        String guestId = "GUEST-" + UUID.randomUUID().toString().substring(0, 8);
 
-        // Process each shopping basket (per store)
+        // Create order for each store in cart
         for (Map.Entry<UUID, ShoppingBasket> entry : cart.getShoppingBaskets().entrySet()) {
             UUID storeId = entry.getKey();
             ShoppingBasket basket = entry.getValue();
 
             try {
-                Order order = processGuestStoreBasket(storeId, basket, paymentMethod);
+                Order order = createPendingOrder(guestId, storeId, basket);
                 orders.add(order);
-                logger.info("Successfully processed order {} for store {}", order.getOrderId(), storeId);
+                logger.info("Created pending order {} for store {}", order.getOrderId(), storeId);
             } catch (Exception e) {
-                logger.error("Failed to process basket for store {}: {}", storeId, e.getMessage());
-                // Rollback any successful orders
-                rollbackOrders(orders);
-                logger.info("Rolled back orders successfully");
-                rollbackPayment(orders);
-                logger.info("Refunded orders successfully");
-                throw new RuntimeException("Purchase failed: " + e.getMessage(), e);
+                logger.error("Failed to create pending order for store {}: {}", storeId, e.getMessage());
+                // Rollback any created orders
+                cancelOrders(orders);
+                throw new RuntimeException("Order creation failed: " + e.getMessage(), e);
             }
         }
 
-        logger.info("Successfully processed {} orders for guest", orders.size());
+        logger.info("Successfully created {} pending orders for guest", orders.size());
         return orders;
     }
 
-    private void rollbackPayment(List<Order> orders) {
-        logger.warn("Rolling back payment for {} orders", orders.size());
+    /**
+     * Creates a single pending order for a specific store
+     */
+    private Order createPendingOrder(String username, UUID storeId, ShoppingBasket basket) {
+        logger.debug("Creating pending order for store: {} and user: {}", storeId, username);
 
-        for (Order order : orders) {
-            try {
-                UUID paymentId = order.getPaymentId();
-                if (paymentId != null) {
-                    paymentService.refund(paymentId);
-                    logger.info("Successfully rolled back payment {}", paymentId);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to rollback payment {}: {}", order.getPaymentId(), e.getMessage());
-            }
-        }
-    }
-
-    private Order processStoreBasket(User user, UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
-        logger.debug("Processing basket for store: {} and user: {}", storeId, user.getUserName());
-        return processBasketCommon(user.getUserName(), storeId, basket, paymentMethod);
-    }
-
-    private Order processGuestStoreBasket(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
-        logger.debug("Processing basket for store: {} and guest", storeId);
-        return processGuestBasketCommon(storeId, basket, paymentMethod);
-    }
-
-    private Order processBasketCommon(String username, UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
-        // Get the store
+        // Get and validate store
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
 
-        // Validate store is active
         if (!store.isActive()) {
-            throw new IllegalStateException("Cannot purchase from inactive store: " + store.getName());
+            throw new IllegalStateException("Cannot create order for inactive store: " + store.getName());
         }
 
-        // Get basket items
+        // Get and validate basket items
         Map<UUID, Integer> items = basket.getProductsList();
         if (items.isEmpty()) {
-            throw new IllegalStateException("Cannot process empty basket");
+            throw new IllegalStateException("Cannot create order from empty basket");
         }
 
-        // Validate inventory
-        Set<String> errors = store.checkCart(items);
-        if (!errors.isEmpty()) {
-            String errorMessage = String.join(", ", errors);
+        // Validate inventory availability
+        Set<String> inventoryErrors = store.checkCart(items);
+        if (!inventoryErrors.isEmpty()) {
+            String errorMessage = String.join(", ", inventoryErrors);
             logger.error("Inventory validation failed: {}", errorMessage);
             throw new IllegalStateException("Inventory validation failed: " + errorMessage);
         }
 
-        // Calculate total price (in Version 1, no discounts)
+        // Calculate total price
         double totalPrice = calculateTotalPrice(items);
 
         // Create order with PENDING status
         UUID orderId = orderRepository.createOrder(
                 storeId,
                 username,
-                items,
+                new HashMap<>(items), // Defensive copy
                 totalPrice,
-                totalPrice, // No discounts in Version 1
+                totalPrice, // TODO: Apply discounts/promotions here
                 LocalDateTime.now(),
                 OrderStatus.PENDING,
-                null // Payment ID will be set later
+                -1 // No transaction ID yet
         );
-
-        // Simulate payment processing (in Version 1, assume payment always succeeds)
-        UUID paymentId = operatePayment(username, totalPrice, paymentMethod);
-
-        // Update order with payment ID and status
-        orderRepository.setDeliveryId(orderId, paymentId);
-        orderRepository.updateOrderStatus(orderId, OrderStatus.PAID);
-
-        // Update inventory after successful payment
-        Set<String> updateErrors = store.updateStockAfterPurchase(items);
-        if (!updateErrors.isEmpty()) {
-            // This shouldn't happen since we validated inventory, but handle it just in case
-            logger.error("Failed to update inventory: {}", String.join(", ", updateErrors));
-            orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
-            throw new IllegalStateException("Failed to update inventory after payment");
-        }
-
-        // Save the updated store
-        storeRepository.save(store);
-
-        // Add order to store's order list
-        store.addOrder(orderId);
-        storeRepository.save(store);
-
-        // Return the created order and save in user order history
-        if (orderRepository.findById(orderId).isPresent()) {
-            Optional<User> user = userRepository.findByUsername(username);
-            if(user.isPresent()) {
-                user.get().addOrderToHistory(orderId);
-                userRepository.update(user.get());
-            }
-            return orderRepository.findById(orderId).get();
-        }
-        throw new IllegalStateException("Order not found: " + orderId);
-    }
-
-    private Order processGuestBasketCommon(UUID storeId, ShoppingBasket basket, PaymentMethod paymentMethod) {
-        // Get the store
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
-
-        // Validate store is active
-        if (!store.isActive()) {
-            throw new IllegalStateException("Cannot purchase from inactive store: " + store.getName());
-        }
-
-        // Get basket items
-        Map<UUID, Integer> items = basket.getProductsList();
-        if (items.isEmpty()) {
-            throw new IllegalStateException("Cannot process empty basket");
-        }
-
-        // Validate inventory
-        Set<String> errors = store.checkCart(items);
-        if (!errors.isEmpty()) {
-            String errorMessage = String.join(", ", errors);
-            logger.error("Inventory validation failed: {}", errorMessage);
-            throw new IllegalStateException("Inventory validation failed: " + errorMessage);
-        }
-
-        // Calculate total price (in Version 1, no discounts)
-        double totalPrice = calculateTotalPrice(items);
-        String guestId = UUID.randomUUID().toString(); // Use a unique guest ID
-        // Create order with PENDING status
-        UUID orderId = orderRepository.createOrder(
-                storeId,
-                guestId,
-                items,
-                totalPrice,
-                totalPrice, // No discounts in Version 1
-                LocalDateTime.now(),
-                OrderStatus.PENDING,
-                null // Payment ID will be set later
-        );
-
-        //Payment processing
-        UUID paymentId = operatePayment(guestId, totalPrice, paymentMethod);
-        //throws error if failed
-
-        // Update order with payment ID and status
-        orderRepository.setDeliveryId(orderId, paymentId);
-        orderRepository.updateOrderStatus(orderId, OrderStatus.PAID);
-
-        // Update inventory after successful payment
-        Set<String> updateErrors = store.updateStockAfterPurchase(items);
-        if (!updateErrors.isEmpty()) {
-            // This shouldn't happen since we validated inventory, but handle it just in case
-            logger.error("Failed to update inventory: {}", String.join(", ", updateErrors));
-            orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
-            throw new IllegalStateException("Failed to update inventory after payment");
-        }
-
-        // Save the updated store
-        storeRepository.save(store);
-
-        // Add order to store's order list
-        store.addOrder(orderId);
-        storeRepository.save(store);
 
         // Return the created order
         return orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalStateException("Order creation failed"));
+                .orElseThrow(() -> new IllegalStateException("Failed to create order"));
     }
 
+    // ==================== ORDER FINALIZATION (AFTER PAYMENT/SUPPLY) ====================
+
+    /**
+     * Finalizes orders after successful payment and supply arrangement
+     * Called by CheckoutApplicationService after payment/supply processing
+     */
+    public void finalizeOrders(List<Order> orders, int paymentTransactionId, List<Integer> supplyTransactionIds) {
+        logger.info("Finalizing {} orders with payment ID: {}", orders.size(), paymentTransactionId);
+
+        for (int i = 0; i < orders.size(); i++) {
+            Order order = orders.get(i);
+            int supplyTransactionId = (i < supplyTransactionIds.size()) ? supplyTransactionIds.get(i) : -1;
+
+            try {
+                // Update order status to PAID
+                orderRepository.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
+
+                // Update inventory (reduce stock)
+                updateInventoryAfterPayment(order);
+
+                // Add order to store's order history
+                addOrderToStore(order);
+
+                // Add order to user's history (if registered user)
+                addOrderToUserHistory(order);
+
+                // Update order status to SHIPPED if supply was arranged
+                if (supplyTransactionId != -1) {
+                    orderRepository.updateOrderStatus(order.getOrderId(), OrderStatus.SHIPPED);
+                }
+
+                logger.info("Successfully finalized order: {}", order.getOrderId());
+
+                // Publish order processed event
+                DomainEventPublisher.publish(
+                        new OrderProcessedEvent(order.getUserName(), order.getOrderId(), order.getStoreId())
+                );
+
+            } catch (Exception e) {
+                logger.error("Failed to finalize order {}: {}", order.getOrderId(), e.getMessage());
+                // Continue with other orders, but log the error
+            }
+        }
+    }
+
+    /**
+     * Updates inventory after successful payment
+     */
+    private void updateInventoryAfterPayment(Order order) {
+        logger.debug("Updating inventory for order: {}", order.getOrderId());
+
+        Store store = storeRepository.findById(order.getStoreId())
+                .orElseThrow(() -> new IllegalStateException("Store not found for order: " + order.getOrderId()));
+
+        // Reduce inventory quantities
+        Map<UUID, Integer> items = order.getProductsMap();
+        Set<String> updateErrors = store.updateStockAfterPurchase(items);
+
+        if (!updateErrors.isEmpty()) {
+            logger.error("Failed to update inventory for order {}: {}", order.getOrderId(),
+                    String.join(", ", updateErrors));
+            throw new IllegalStateException("Failed to update inventory: " + String.join(", ", updateErrors));
+        }
+
+        // Save updated store
+        storeRepository.save(store);
+        logger.debug("Inventory updated successfully for order: {}", order.getOrderId());
+    }
+
+    /**
+     * Adds order to store's order history
+     */
+    private void addOrderToStore(Order order) {
+        try {
+            Store store = storeRepository.findById(order.getStoreId())
+                    .orElseThrow(() -> new IllegalStateException("Store not found"));
+
+            store.addOrder(order.getOrderId());
+            storeRepository.save(store);
+
+            logger.debug("Added order {} to store {}", order.getOrderId(), order.getStoreId());
+        } catch (Exception e) {
+            logger.error("Failed to add order to store: {}", e.getMessage());
+            // Non-critical error, don't fail the entire operation
+        }
+    }
+
+    /**
+     * Adds order to user's order history (if registered user)
+     */
+    private void addOrderToUserHistory(Order order) {
+        // Skip for guest users
+        if (order.getUserName().startsWith("GUEST-")) {
+            return;
+        }
+
+        try {
+            Optional<User> userOpt = userRepository.findByUsername(order.getUserName());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                user.addOrderToHistory(order.getOrderId());
+                userRepository.update(user);
+                logger.debug("Added order {} to user {}", order.getOrderId(), order.getUserName());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to add order to user history: {}", e.getMessage());
+            // Non-critical error, don't fail the entire operation
+        }
+    }
+
+    // ==================== ORDER CANCELLATION & ROLLBACK ====================
+
+    /**
+     * Cancels a single order and restores inventory
+     */
+    public void cancelOrder(UUID orderId) {
+        logger.info("Cancelling order: {}", orderId);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+
+        try {
+            // Update order status to CANCELED
+            orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
+
+            // Restore inventory if order was paid
+            if (order.getStatus() == OrderStatus.PAID || order.getStatus() == OrderStatus.SHIPPED) {
+                restoreInventory(order);
+            }
+
+            logger.info("Successfully cancelled order: {}", orderId);
+
+        } catch (Exception e) {
+            logger.error("Failed to cancel order {}: {}", orderId, e.getMessage());
+            throw new RuntimeException("Failed to cancel order: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Cancels multiple orders (used for rollback)
+     */
+    public void cancelOrders(List<Order> orders) {
+        logger.warn("Cancelling {} orders", orders.size());
+
+        for (Order order : orders) {
+            try {
+                cancelOrder(order.getOrderId());
+            } catch (Exception e) {
+                logger.error("Failed to cancel order {}: {}", order.getOrderId(), e.getMessage());
+                // Continue with other orders
+            }
+        }
+    }
+
+    /**
+     * Restores inventory for a cancelled order
+     */
+    private void restoreInventory(Order order) {
+        logger.debug("Restoring inventory for cancelled order: {}", order.getOrderId());
+
+        try {
+            Store store = storeRepository.findById(order.getStoreId())
+                    .orElseThrow(() -> new IllegalStateException("Store not found"));
+
+            // Restore inventory quantities
+            Map<UUID, Integer> items = order.getProductsMap();
+            for (Map.Entry<UUID, Integer> entry : items.entrySet()) {
+                UUID productId = entry.getKey();
+                int quantity = entry.getValue();
+
+                if (store.hasProduct(productId)) {
+                    int currentQuantity = store.getProductQuantity(productId);
+                    store.updateProductQuantity(productId, currentQuantity + quantity);
+                }
+            }
+
+            storeRepository.save(store);
+            logger.debug("Inventory restored for order: {}", order.getOrderId());
+
+        } catch (Exception e) {
+            logger.error("Failed to restore inventory for order {}: {}", order.getOrderId(), e.getMessage());
+            // Don't throw exception, as order is already cancelled
+        }
+    }
+
+    // ==================== ORDER QUERIES ====================
+
+    /**
+     * Gets order by ID
+     */
+    public Optional<Order> getOrderById(UUID orderId) {
+        return orderRepository.findById(orderId);
+    }
+
+    /**
+     * Gets order status
+     */
+    public OrderStatus getOrderStatus(UUID orderId) {
+        return orderRepository.findById(orderId)
+                .map(Order::getStatus)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+    }
+
+    /**
+     * Gets all orders for a user
+     */
+    public List<Order> getOrdersByUser(String username) {
+        return orderRepository.findByUserName(username);
+    }
+
+    /**
+     * Gets all orders for a store
+     */
+    public List<Order> getOrdersByStore(UUID storeId) {
+        return orderRepository.findByStoreId(storeId);
+    }
+
+    // ==================== ORDER STATUS UPDATES ====================
+
+    /**
+     * Updates order status
+     */
+    public boolean updateOrderStatus(UUID orderId, OrderStatus newStatus) {
+        logger.info("Updating order {} status to {}", orderId, newStatus);
+
+        try {
+            boolean updated = orderRepository.updateOrderStatus(orderId, newStatus);
+
+            if (updated) {
+                logger.info("Order {} status updated to {}", orderId, newStatus);
+            } else {
+                logger.warn("Failed to update order {} status to {}", orderId, newStatus);
+            }
+
+            return updated;
+        } catch (Exception e) {
+            logger.error("Error updating order status: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Marks order as shipped with tracking info
+     */
+    public boolean markOrderAsShipped(UUID orderId, UUID trackingId) {
+        logger.info("Marking order {} as shipped with tracking {}", orderId, trackingId);
+
+        try {
+            boolean statusUpdated = orderRepository.updateOrderStatus(orderId, OrderStatus.SHIPPED);
+            boolean trackingSet = orderRepository.setDeliveryId(orderId, trackingId);
+
+            return statusUpdated && trackingSet;
+        } catch (Exception e) {
+            logger.error("Error marking order as shipped: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Marks order as completed
+     */
+    public boolean markOrderAsCompleted(UUID orderId) {
+        return updateOrderStatus(orderId, OrderStatus.COMPLETED);
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    /**
+     * Calculates total price for order items
+     */
     private double calculateTotalPrice(Map<UUID, Integer> items) {
         logger.debug("Calculating total price for {} items", items.size());
 
@@ -348,96 +459,29 @@ public class OrderProcessingService {
         return total;
     }
 
-    private UUID operatePayment(String username, double amount, PaymentMethod paymentMethod) {
-        UUID paymentId = UUID.randomUUID();
-        if (!paymentService.pay(paymentMethod, amount)) {
-            logger.error("Payment failed for user {} amount {}", username, amount);
-            throw new IllegalStateException("Payment failed");
-        }
-        logger.info("Payment successful for user {} amount {} with ID {}", username, amount, paymentId);
-        return paymentId;
-    }
-
-    private void rollbackOrders(List<Order> orders) {
-        logger.warn("Rolling back {} orders", orders.size());
-
-        for (Order order : orders) {
-            try {
-                orderRepository.updateOrderStatus(order.getOrderId(), OrderStatus.CANCELED);
-                // Restore inventory for this order
-                Store store = storeRepository.findById(order.getStoreId())
-                        .orElse(null);
-
-                if (store != null) {
-                    Map<UUID, Integer> items = order.getProductsMap();
-                    for (Map.Entry<UUID, Integer> entry : items.entrySet()) {
-                        UUID productId = entry.getKey();
-                        int quantity = entry.getValue();
-
-                        // Add back the quantity to inventory
-                        int currentQuantity = store.getProductQuantity(productId);
-                        store.updateProductQuantity(productId, currentQuantity + quantity);
-                    }
-                    storeRepository.save(store);
-                }
-
-                logger.info("Successfully rolled back order {}", order.getOrderId());
-            } catch (Exception e) {
-                logger.error("Failed to rollback order {}: {}", order.getOrderId(), e.getMessage());
+    /**
+     * Validates that all products in the order exist and are available
+     */
+    public boolean validateOrderProducts(Map<UUID, Integer> items) {
+        for (UUID productId : items.keySet()) {
+            Optional<Product> productOpt = productRepository.findById(productId);
+            if (productOpt.isEmpty() || !productOpt.get().isAvailable()) {
+                return false;
             }
         }
+        return true;
     }
 
-    void clearUserCart(User user) {
-        // Clear the user's cart after successful purchase
-        logger.info("Clearing cart for user: {}", user.getUserName());
-        user.clearCart();
-        userRepository.update(user);
-    }
-
-    public OrderStatus getOrderStatus(UUID orderId) {
-        return orderRepository.findById(orderId)
-                .map(Order::getStatus)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-    }
-
-    public Optional<Order> getOrderById(UUID orderId) {
-        return orderRepository.findById(orderId);
-    }
-
-    public void cancelOrder(UUID orderId) {
+    /**
+     * Checks if user can view order (owns the order or has admin privileges)
+     */
+    public boolean canUserViewOrder(String username, UUID orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         if (orderOpt.isEmpty()) {
-            throw new IllegalArgumentException("Order not found");
+            return false;
         }
+
         Order order = orderOpt.get();
-
-        // Update order status to CANCELED
-        orderRepository.updateOrderStatus(orderId, OrderStatus.CANCELED);
-
-        // Refund payment if any
-        UUID paymentId = order.getPaymentId();
-        if (paymentId != null) {
-            paymentService.refund(paymentId);
-        }
-
-        // Restore inventory
-        Store store = storeRepository.findById(order.getStoreId())
-                .orElseThrow(() -> new IllegalStateException("Store not found"));
-
-        Map<UUID, Integer> items = order.getProductsMap();
-        for (var entry : items.entrySet()) {
-            UUID productId = entry.getKey();
-            int quantity = entry.getValue();
-            int currentQty = store.getProductQuantity(productId);
-            store.updateProductQuantity(productId, currentQty + quantity);
-        }
-        storeRepository.save(store);
-
-        logger.info("Order {} cancelled and inventory restored", orderId);
-    }
-
-    public List<Order> getOrdersByUser(String username) {
-        return orderRepository.findByUserName(username);
+        return order.getUserName().equals(username) || "admin".equals(username);
     }
 }

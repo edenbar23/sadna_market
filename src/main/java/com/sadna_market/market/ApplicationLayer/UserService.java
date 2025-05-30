@@ -33,17 +33,18 @@ public class UserService {
     @Autowired
     public UserService(AuthenticationAdapter authentication,
                        UserAccessService userAccessService,
-                       InventoryManagementService inventoryManagementService, OrderProcessingService orderProcessingService) {
+                       InventoryManagementService inventoryManagementService,
+                       OrderProcessingService orderProcessingService) {
         this.authentication = authentication;
         this.userAccessService = userAccessService;
         this.inventoryManagementService = inventoryManagementService;
         this.orderProcessingService = orderProcessingService;
     }
 
-    //Guest functions here:
+    // ==================== USER REGISTRATION & AUTHENTICATION ====================
+
     //req 1.3
     public Response<String> registerUser(RegisterRequest user) {
-        // Here we would implement the logic to register a user
         try {
             logger.info("Registering user with username: {}", user.getUserName());
             userAccessService.registerUser(user.getUserName(), user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
@@ -73,85 +74,8 @@ public class UserService {
             logger.error("Error logging in user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
-        //should return a response object of token
     }
 
-    //req 2.3
-    public Response<CartRequest> addToCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
-        // Here we would implement the logic to add a product to a user's cart
-        logger.info("Adding product with ID: {} to guest cart", productId);
-        //maybe add here a domainService to make sure product in stock
-        try {
-            if (!inventoryManagementService.checkProductAvailability(storeId, productId, quantity)) {
-                return Response.error("Product not available");
-            }
-            cart.addToCartRequest(storeId, productId, quantity);
-            logger.info("Product added to cart successfully");
-            return Response.success(cart);
-        } catch (Exception e) {
-            logger.error("Error processing cart: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    //req 2.4 (a)
-    public Response<CartRequest> viewCart(CartRequest cart) {
-        // Here we would implement the logic to view a user's cart
-        logger.info("Viewing cart for guest");
-        //maybe use a domainService to check all products still in stock and update it if needed
-        try {
-            logger.info("Cart viewed successfully");
-            return Response.success(cart);
-        } catch (Exception e) {
-            logger.error("Error viewing cart: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    //req 2.4 (b)
-    public Response<CartRequest> updateCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
-        // Here we would implement the logic to update a product in a user's cart
-        logger.info("Updating product with ID: {} in guest cart", productId);
-        try {
-            cart.updateItem(storeId, productId, quantity);
-            logger.info("Product updated in cart successfully");
-            return Response.success(cart);
-        } catch (Exception e) {
-            logger.error("Error updating product in cart: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    //req 2.4 (c)
-    public Response<CartRequest> removeFromCart(CartRequest cart, UUID storeId, UUID productId) {
-        // Here we would implement the logic to remove a product from a user's cart
-        logger.info("Removing product with ID: {} from guest cart", productId);
-        try {
-            cart.removeFromCartRequest(storeId, productId);
-            logger.info("Product removed from cart successfully");
-            return Response.success(cart);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    //req 2.5
-    public Response<String> checkout(CartRequest cartReq, PaymentMethod pm) { //checkout of guest:
-        // Here we would implement the logic to checkout a user's cart
-        logger.info("Checking out cart for guest");
-        try {
-            Cart cart = new Cart(cartReq.getBaskets());
-            userAccessService.checkoutGuest(cart, pm);
-            logger.info("checkout successfully");
-            return Response.success("checkout successfully");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    //Registered functions:
     //req 3.1
     public Response<String> logoutUser(String username, String token) {
         try {
@@ -171,7 +95,9 @@ public class UserService {
         }
     }
 
-    //req 2.1 - 2.5 for registered users
+    // ==================== CART OPERATIONS FOR REGISTERED USERS ====================
+
+    //req 2.3 for registered users
     public Response<String> addToCart(String username, String token, UUID storeId, UUID productId, int quantity) {
         try {
             logger.info("Validating token for user with username: {}", username);
@@ -186,6 +112,7 @@ public class UserService {
         }
     }
 
+    //req 2.4 (a) for registered users
     public Response<CartDTO> viewCart(String username, String token) {
         try {
             logger.info("Validating token for user with username: {}", username);
@@ -201,21 +128,7 @@ public class UserService {
         }
     }
 
-    public Response<CartDTO> removeFromCart(String username, String token, UUID storeId, UUID productId) {
-        try {
-            logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username, token);
-            logger.info("Removing product with ID: {} from user with username: {}", productId, username);
-            Cart cartUpdated = userAccessService.removeFromCart(username, storeId, productId);
-            CartDTO cartDTO = new CartDTO(cartUpdated);
-            logger.info("Product removed from cart successfully");
-            return Response.success(cartDTO);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
+    //req 2.4 (b) for registered users
     public Response<CartDTO> updateCart(String username, String token, UUID storeId, UUID productId, int quantity) {
         try {
             logger.info("Validating token for user with username: {}", username);
@@ -231,20 +144,109 @@ public class UserService {
         }
     }
 
-    //checkout of user:
-    public Response<String> checkout(String username, String token, PaymentMethod pm) {
+    //req 2.4 (c) for registered users
+    public Response<CartDTO> removeFromCart(String username, String token, UUID storeId, UUID productId) {
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
-            logger.info("Checking out cart for user with username: {}", username);
-            userAccessService.checkout(username, pm);
-            logger.info("checkout successfully");
-            return Response.success("checkout successfully");
+            logger.info("Removing product with ID: {} from user with username: {}", productId, username);
+            Cart cartUpdated = userAccessService.removeFromCart(username, storeId, productId);
+            CartDTO cartDTO = new CartDTO(cartUpdated);
+            logger.info("Product removed from cart successfully");
+            return Response.success(cartDTO);
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
     }
+
+    /**
+     * Gets user's cart for checkout preparation
+     * This can be used by frontend before calling checkout API
+     */
+    public Response<CartDTO> getCartForCheckout(String username, String token) {
+        try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+
+            logger.info("Getting cart for checkout for user: {}", username);
+            Cart cart = userAccessService.getCart(username);
+
+            if (cart.isEmpty()) {
+                return Response.error("Cannot checkout with empty cart");
+            }
+
+            CartDTO cartDTO = new CartDTO(cart);
+            logger.info("Cart prepared for checkout for user: {}", username);
+            return Response.success(cartDTO);
+
+        } catch (Exception e) {
+            logger.error("Error getting cart for checkout: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    // ==================== CART OPERATIONS FOR GUESTS ====================
+
+    //req 2.3 for guests
+    public Response<CartRequest> addToCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
+        logger.info("Adding product with ID: {} to guest cart", productId);
+        try {
+            if (!inventoryManagementService.checkProductAvailability(storeId, productId, quantity)) {
+                return Response.error("Product not available");
+            }
+            cart.addToCartRequest(storeId, productId, quantity);
+            logger.info("Product added to cart successfully");
+            return Response.success(cart);
+        } catch (Exception e) {
+            logger.error("Error processing cart: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    //req 2.4 (a) for guests
+    public Response<CartRequest> viewCart(CartRequest cart) {
+        logger.info("Viewing cart for guest");
+        try {
+            logger.info("Cart viewed successfully");
+            return Response.success(cart);
+        } catch (Exception e) {
+            logger.error("Error viewing cart: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    //req 2.4 (b) for guests
+    public Response<CartRequest> updateCart(CartRequest cart, UUID storeId, UUID productId, int quantity) {
+        logger.info("Updating product with ID: {} in guest cart", productId);
+        try {
+            cart.updateItem(storeId, productId, quantity);
+            logger.info("Product updated in cart successfully");
+            return Response.success(cart);
+        } catch (Exception e) {
+            logger.error("Error updating product in cart: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    //req 2.4 (c) for guests
+    public Response<CartRequest> removeFromCart(CartRequest cart, UUID storeId, UUID productId) {
+        logger.info("Removing product with ID: {} from guest cart", productId);
+        try {
+            cart.removeFromCartRequest(storeId, productId);
+            logger.info("Product removed from cart successfully");
+            return Response.success(cart);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    // NOTE: Checkout methods have been removed - use CheckoutApplicationService + CheckoutController instead
+    // For registered users: POST /api/checkout/user/{username}
+    // For guests: POST /api/checkout/guest
+
+    // ==================== PRODUCT REVIEWS & RATINGS ====================
 
     //req 3.3
     public Response<String> saveReview(String token, ProductReviewRequest review) {
@@ -276,20 +278,7 @@ public class UserService {
         }
     }
 
-    //req 3.6
-    public Response<String> reportViolation(String username, String token, ReviewRequest report) {
-        try {
-            logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username, token);
-            logger.info("Reporting violation for review with ID: {}", report.getProductId());
-            userAccessService.reportViolation(username, report.getStoreId(), report.getProductId(), report.getComment());
-            logger.info("Violation reported successfully");
-            return Response.success("Violation reported successfully");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
+    // ==================== USER PROFILE MANAGEMENT ====================
 
     //req 3.7
     public Response<List<UUID>> getOrdersHistory(String username, String token) {
@@ -338,7 +327,39 @@ public class UserService {
         }
     }
 
-    //SystemAdmin functions here:
+    public Response<List<UUID>> getStoresIds (String username, String token){
+        try{
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+            logger.info("Getting stores ids for user with username: {}", username);
+            List<UUID> storesIds = userAccessService.getStoresIds(username);
+            logger.info("StoresIds retrieved successfully");
+            return Response.success(storesIds);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    // ==================== VIOLATION REPORTING ====================
+
+    //req 3.6
+    public Response<String> reportViolation(String username, String token, ReviewRequest report) {
+        try {
+            logger.info("Validating token for user with username: {}", username);
+            authentication.validateToken(username, token);
+            logger.info("Reporting violation for review with ID: {}", report.getProductId());
+            userAccessService.reportViolation(username, report.getStoreId(), report.getProductId(), report.getComment());
+            logger.info("Violation reported successfully");
+            return Response.success("Violation reported successfully");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    // ==================== SYSTEM ADMIN FUNCTIONS ====================
+
     //req 6.2
     public Response<String> deleteUser(String adminUser, String token, String userToDelete) {
         try {
@@ -444,45 +465,7 @@ public class UserService {
         }
     }
 
-    public Response<List<UUID>> getStoresIds (String username, String token){
-        try{
-            logger.info("Validating token for user with username: {}", username);
-            authentication.validateToken(username, token);
-            logger.info("Getting stores ids for user with username: {}", username);
-            List<UUID> storesIds = userAccessService.getStoresIds(username);
-            logger.info("StoresIds retrieved successfully");
-            return Response.success(storesIds);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-
-
-    }
-
-//    //System functions here:
-//    public Response<String> openMarket(String admin, String token) {
-//        //open the market
-//        //initialize the system
-//        //validate admin user exists
-//        logger.info("Validating token for user with username: {}", admin);
-//        authentication.validateToken(admin, token);
-//        //initialize the supply system
-//        //initialize the payment system
-//        //open market
-//        return Response.error("not implemented yet");
-//    }
-//
-//    public Response<String> closeMarket(String admin, String token) {
-//        try {
-//            logger.info("Validating token for user with username: {}", admin);
-//            authentication.validateToken(admin, token);
-//        } catch (IllegalArgumentException e) {
-//            return Response.error(e.getMessage());
-//        }
-//        //close the market (not allowing anyone to access market)
-//        return Response.error("not implemented yet");
-//    }
+    // ==================== SYSTEM MANAGEMENT ====================
 
     public void clear() {
         authentication.clear();
