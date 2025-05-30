@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { fetchStoreById } from './store'; // Assuming you have a store API module
-import { getProductInfo } from './product'; // Assuming you have a product API module
+import { getProductInfo } from './product'; 
 
 const API_URL = 'http://localhost:8081/api/orders';
 
@@ -48,51 +47,65 @@ export const fetchOrderById = async (orderId) => {
  * @returns {Promise<Response<List<OrderDTO>>>}
  */
 export const fetchOrderHistory = async (username) => {
-    const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
 
-    const res = await axios.get(`${API_URL}/history/${username}`, {
-        headers: {
-            Authorization: token,
-        },
-    });
+  const res = await axios.get(`${API_URL}/history/${username}`, {
+    headers: {
+      Authorization: token,
+    },
+  });
 
-    const orders = res.data.data;
-    console.log("Raw response data:", res.data);
+  const orders = res.data.data;
+  console.log("Raw response data:", orders);
 
-    // You need to transform the orders to fit what OrderCard expects
-    return await Promise.all(
-        orders.map(async (order) => {
-            const productEntries = Object.entries(order.products); // [[productId, quantity], ...]
+  // Transform the orders to fit what OrderCard expects
+  return await Promise.all(
+    orders.map(async (order) => {
+      const productEntries = Object.entries(order.products); // [[productId, quantity], ...]
 
-            // Assuming you have a getProductById function that fetches product info
-            const products = await Promise.all(
-                productEntries.map(async ([productId, quantity]) => {
-                    const productRes = getProductInfo(productId); // Replace with your actual function to fetch product info
-                    return {
-                        name: productRes.data.name,
-                        quantity,
-                    };
-                })
-            );
+      // Fetch product info for each product
+      const products = await Promise.all(
+        productEntries.map(async ([productId, quantity]) => {
+          try {
+            const productRes = await getProductInfo(productId);
+            console.log("Product response:", productRes);
+            console.log("Product ID:", productId, "Quantity:", quantity);
 
-            // Assuming you also have APIs for storeName, paymentMethod, and deliveryAddress:
-            const storeRes = fetchStoreById(order.storeId);
-            console.log("Store response:", storeRes.data);
-            //   const paymentRes = await axios.get(`http://localhost:8081/api/payments/${order.paymentId}`);
-            //   const deliveryRes = await axios.get(`http://localhost:8081/api/deliveries/${order.deliveryId}`);
-
+            // Make sure to access the nested data property
             return {
-                storeName: storeRes.data.name,
-                products,
-                // paymentMethod: paymentRes.data.method,
-                // deliveryAddress: deliveryRes.data.address,
-                totalPrice: order.finalPrice, // or totalPrice depending on what you want to show
-                status: order.status,
+              productId,
+              name: productRes.data.name, // Fix: Access name from productRes.data.name
+              description: productRes.data.description,
+              price: productRes.data.price,
+              category: productRes.data.category,
+              quantity,
             };
+          } catch (err) {
+            console.error("Failed to fetch product:", productId, err);
+            return null;
+          }
         })
-    );
-};
+      );
 
+      // Filter out any null products (failed fetches)
+      const validProducts = products.filter(product => product !== null);
+
+      // Return the transformed order
+      return {
+        orderId: order.orderId,
+        orderDate: order.orderDate,
+        status: order.status,
+        totalPrice: order.totalPrice,
+        finalPrice: order.finalPrice,
+        products: validProducts,
+        storeId: order.storeId,
+        paymentId: order.paymentId,
+        deliveryId: order.deliveryId,
+        userName: order.userName,
+      };
+    })
+  );
+};
 /**
  * Fetch order status by order ID
  * @param {string} orderId
