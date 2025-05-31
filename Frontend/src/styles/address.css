@@ -28,6 +28,23 @@
     gap: 1rem;
 }
 
+.form-row.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-row.three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+/* When state field is hidden, adjust the grid for city and postal code */
+.form-row:not(.three-col):has(.form-group:nth-child(2):empty) {
+    grid-template-columns: 1fr 1fr;
+}
+
 .form-group {
     display: flex;
     flex-direction: column;
@@ -63,6 +80,12 @@
 
 .error-text {
     color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.help-text {
+    color: #6b7280;
     font-size: 0.875rem;
     margin-top: 0.25rem;
 }
@@ -419,7 +442,9 @@
         margin: 0 1rem;
     }
 
-    .form-row {
+    .form-row,
+    .form-row.two-col,
+    .form-row.three-col {
         grid-template-columns: 1fr;
     }
 

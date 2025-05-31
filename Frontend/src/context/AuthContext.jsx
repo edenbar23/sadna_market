@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import * as userAPI from '../api/user';
+import creditCardStorage from '../services/creditCardStorage';
 
 // Create auth context
 export const AuthContext = createContext();
@@ -16,6 +17,10 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+
+    // REMOVED: Don't clear payment data on logout anymore
+    // This allows users to keep their saved payment methods between sessions
+    // The creditCardStorage service already handles user-specific data securely
   }, []);
 
   // Validate token with backend
@@ -87,9 +92,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, token]);
 
-  // Logout function at the context level
+  // UPDATED: Enhanced logout function WITHOUT payment data cleanup
   const logout = useCallback(async () => {
     setIsValidating(true);
+
     try {
       if (user && token) {
         // Try to logout from backend, but don't fail if it doesn't work
@@ -104,9 +110,16 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error("Error during logout:", err);
     } finally {
-      // Always clear local state regardless of API success/failure
+      // Always clear local auth state regardless of API success/failure
       clearAuth();
       setIsValidating(false);
+
+      // REMOVED: Payment data cleanup
+      // Users can now keep their saved payment methods between sessions
+      // This is secure because:
+      // 1. Payment data is encrypted and user-specific
+      // 2. The creditCardStorage service verifies username before accessing data
+      // 3. Each user's data is stored with a unique key based on their username hash
     }
   }, [user, token, clearAuth]);
 
@@ -131,6 +144,19 @@ export const AuthProvider = ({ children }) => {
 
           setToken(tokenValue);
           setUser(userObject);
+
+          // UPDATED: Security audit on login to check for payment data integrity
+          try {
+            const auditResult = creditCardStorage.securityAudit();
+            console.log(`Payment security audit completed: ${auditResult} storage keys found`);
+
+            // Verify user can access their own payment data
+            const userCards = creditCardStorage.getSavedCards(username);
+            console.log(`User ${username} has ${userCards.length} saved payment methods`);
+          } catch (auditError) {
+            console.warn('Payment security audit failed:', auditError);
+          }
+
           return response;
         } else {
           throw new Error('Failed to validate login');

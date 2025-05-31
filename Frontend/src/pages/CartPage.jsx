@@ -24,8 +24,10 @@ export default function CartPage() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const { user, token } = useAuthContext();
   const username = user?.username;
-  const [showShipping, setShowShipping] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
+
+  // FIXED: Single state to manage which form is open
+  const [activeForm, setActiveForm] = useState(null); // null, 'shipping', or 'payment'
+
   const [shippingDetails, setShippingDetails] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,12 @@ export default function CartPage() {
     city: "",
     postalCode: ""
   });
+
+  // ADDED: Helper function to dispatch cart update event
+  const dispatchCartUpdate = () => {
+    console.log("🔄 Dispatching cart update event");
+    window.dispatchEvent(new Event('cartUpdated'));
+  };
 
   // Fetch the cart from API
   useEffect(() => {
@@ -237,8 +245,7 @@ export default function CartPage() {
       console.error("Failed to update quantity:", error);
       setError("Failed to update quantity");
     }
-    window.dispatchEvent(new Event('cartUpdated'));
-
+    dispatchCartUpdate(); // ADDED: Dispatch update event
   };
 
   const handleRemoveProduct = async (storeId, productId) => {
@@ -286,8 +293,7 @@ export default function CartPage() {
       console.error("Failed to remove product:", error);
       setError("Failed to remove product");
     }
-    window.dispatchEvent(new Event('cartUpdated'));
-
+    dispatchCartUpdate(); // ADDED: Dispatch update event
   };
 
   // Helper functions for checkout
@@ -388,7 +394,7 @@ export default function CartPage() {
     return filteredCart;
   };
 
-  // FIXED: Common checkout success handler with UUID support
+  // UPDATED: Common checkout success handler with cart indicator update
   const handleCheckoutSuccess = (response, checkoutType = "all") => {
     if (response && !response.error && response.data) {
       const checkoutResult = response.data;
@@ -439,7 +445,14 @@ export default function CartPage() {
         localStorage.removeItem("guestCart");
       }
 
-      console.log("🧹 Cart cleared, redirecting to confirmation...");
+      console.log("🧹 Cart cleared, dispatching update event...");
+
+
+
+      // ADDED: Dispatch cart update event after clearing cart
+      dispatchCartUpdate();
+
+      console.log("🎯 Redirecting to confirmation...");
 
       // Navigate to confirmation page
       if (orderIds.length === 1) {
@@ -464,17 +477,36 @@ export default function CartPage() {
     }
   };
 
-  // Checkout handlers
+  // FIXED: Updated form handlers to use single state
+  const handleShowShipping = () => {
+    setActiveForm(activeForm === 'shipping' ? null : 'shipping');
+  };
+
+  const handleShowPayment = () => {
+    setActiveForm(activeForm === 'payment' ? null : 'payment');
+  };
+
+  const handleShippingComplete = (data) => {
+    setShippingDetails(data);
+    setActiveForm(null); // Close the form after completion
+  };
+
+  const handlePaymentComplete = (data) => {
+    setPaymentDetails(data);
+    setActiveForm(null); // Close the form after completion
+  };
+
+  // Checkout handlers (rest of the existing handlers remain the same...)
   const handleCheckoutAll = async () => {
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -496,7 +528,7 @@ export default function CartPage() {
 
       console.log("Checkout response:", response);
 
-      // FIXED: Use common success handler
+      // UPDATED: Use common success handler (which now dispatches cart update)
       handleCheckoutSuccess(response, "all");
 
     } catch (error) {
@@ -525,13 +557,13 @@ export default function CartPage() {
 
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -552,7 +584,7 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // FIXED: Use common success handler
+      // UPDATED: Use common success handler, but also update remaining cart
       if (handleCheckoutSuccess(response, "selected")) {
         // Remove checked out items from cart
         const updatedCart = { ...cart };
@@ -588,6 +620,9 @@ export default function CartPage() {
           });
           localStorage.setItem("guestCart", JSON.stringify(guestCart));
         }
+
+        // ADDED: Dispatch cart update for remaining items
+        dispatchCartUpdate();
       }
 
     } catch (error) {
@@ -613,13 +648,13 @@ export default function CartPage() {
 
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -669,7 +704,7 @@ export default function CartPage() {
         response = await checkout(username, token, checkoutData);
       }
 
-      // FIXED: Use common success handler
+      // UPDATED: Use common success handler, but also update remaining cart
       if (handleCheckoutSuccess(response, "store")) {
         // Remove checked out items from cart
         const updatedCart = { ...cart };
@@ -716,6 +751,9 @@ export default function CartPage() {
           });
           localStorage.setItem("guestCart", JSON.stringify(guestCart));
         }
+
+        // ADDED: Dispatch cart update for remaining items
+        dispatchCartUpdate();
       }
 
     } catch (error) {
@@ -736,6 +774,7 @@ export default function CartPage() {
     }
   };
 
+  // Rest of the component remains the same...
   if (loading) {
     return <div className="cart-page">Loading cart...</div>;
   }
@@ -792,13 +831,13 @@ export default function CartPage() {
                   <div className="cart-actions">
                     <button
                         className="payment-btn"
-                        onClick={() => setShowPayment((prev) => !prev)}
+                        onClick={handleShowPayment}
                     >
                       Payment Method {paymentDetails && "✔"}
                     </button>
                     <button
                         className="delivery-btn"
-                        onClick={() => setShowShipping((prev) => !prev)}
+                        onClick={handleShowShipping}
                     >
                       Shipping Address {shippingDetails && "✔"}
                     </button>
@@ -821,21 +860,16 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {showShipping && (
+              {/* FIXED: Only show one form at a time */}
+              {activeForm === 'shipping' && (
                   <ShippingForm
-                      onComplete={(data) => {
-                        setShippingDetails(data);
-                        setShowShipping(false);
-                      }}
+                      onComplete={handleShippingComplete}
                   />
               )}
 
-              {showPayment && (
+              {activeForm === 'payment' && (
                   <PaymentForm
-                      onComplete={(data) => {
-                        setPaymentDetails(data);
-                        setShowPayment(false);
-                      }}
+                      onComplete={handlePaymentComplete}
                   />
               )}
 

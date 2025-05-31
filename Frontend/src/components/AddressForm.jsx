@@ -12,9 +12,9 @@ export default function AddressForm({
         addressLine1: initialData.addressLine1 || '',
         addressLine2: initialData.addressLine2 || '',
         city: initialData.city || '',
-        state: initialData.state || '',
+        state: initialData.state || 'N/A', // Default to 'N/A' instead of empty string
         postalCode: initialData.postalCode || '',
-        country: initialData.country || 'United States',
+        country: initialData.country || 'Israel', // Default to Israel
         phoneNumber: initialData.phoneNumber || '',
         label: initialData.label || 'Home',
         isDefault: initialData.isDefault || false
@@ -24,10 +24,26 @@ export default function AddressForm({
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => {
+            const newData = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            };
+
+            // Handle state field based on country
+            if (name === 'country') {
+                const countriesWithStates = ['United States', 'Canada', 'Australia'];
+                if (!countriesWithStates.includes(value)) {
+                    // For countries without states, set state to 'N/A'
+                    newData.state = 'N/A';
+                } else if (prev.state === 'N/A') {
+                    // If switching to a country with states and current state is 'N/A', clear it
+                    newData.state = '';
+                }
+            }
+
+            return newData;
+        });
 
         // Clear error when user starts typing
         if (errors[name]) {
@@ -53,8 +69,13 @@ export default function AddressForm({
             newErrors.city = 'City is required';
         }
 
-        if (!formData.state.trim()) {
-            newErrors.state = 'State is required';
+        // Only validate state for countries that have states AND require non-empty state
+        const countriesWithStates = ['United States', 'Canada', 'Australia'];
+        if (countriesWithStates.includes(formData.country)) {
+            if (!formData.state.trim() || formData.state === 'N/A') {
+                const stateLabel = formData.country === 'Canada' ? 'Province' : 'State';
+                newErrors.state = `${stateLabel} is required`;
+            }
         }
 
         if (!formData.postalCode.trim()) {
@@ -73,9 +94,20 @@ export default function AddressForm({
         e.preventDefault();
 
         if (validateForm()) {
-            onSubmit(formData);
+            // Ensure state is never empty - backend requires it
+            const submissionData = {
+                ...formData,
+                state: formData.state.trim() || 'N/A'
+            };
+
+            console.log('Submitting address data:', submissionData);
+            onSubmit(submissionData);
         }
     };
+
+    // Check if current country uses states/provinces
+    const countriesWithStates = ['United States', 'Canada', 'Australia'];
+    const showStateField = countriesWithStates.includes(formData.country);
 
     return (
         <div className="address-form-container">
@@ -136,7 +168,28 @@ export default function AddressForm({
                     />
                 </div>
 
-                <div className="form-row">
+                <div className="form-group">
+                    <label htmlFor="country">Country *</label>
+                    <select
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        className={errors.country ? 'error' : ''}
+                    >
+                        <option value="Israel">Israel</option>
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Germany">Germany</option>
+                        <option value="France">France</option>
+                        <option value="Australia">Australia</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    {errors.country && <span className="error-text">{errors.country}</span>}
+                </div>
+
+                <div className={showStateField ? "form-row" : "form-row two-col"}>
                     <div className="form-group">
                         <label htmlFor="city">City *</label>
                         <input
@@ -151,22 +204,29 @@ export default function AddressForm({
                         {errors.city && <span className="error-text">{errors.city}</span>}
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="state">State *</label>
-                        <input
-                            type="text"
-                            id="state"
-                            name="state"
-                            value={formData.state}
-                            onChange={handleChange}
-                            className={errors.state ? 'error' : ''}
-                            placeholder="Enter state"
-                        />
-                        {errors.state && <span className="error-text">{errors.state}</span>}
-                    </div>
+                    {showStateField && (
+                        <div className="form-group">
+                            <label htmlFor="state">
+                                {formData.country === 'Canada' ? 'Province' : 'State'} *
+                            </label>
+                            <input
+                                type="text"
+                                id="state"
+                                name="state"
+                                value={formData.state === 'N/A' ? '' : formData.state}
+                                onChange={handleChange}
+                                className={errors.state ? 'error' : ''}
+                                placeholder={`Enter ${formData.country === 'Canada' ? 'province' : 'state'}`}
+                            />
+                            {errors.state && <span className="error-text">{errors.state}</span>}
+                        </div>
+                    )}
 
                     <div className="form-group">
-                        <label htmlFor="postalCode">Postal Code *</label>
+                        <label htmlFor="postalCode">
+                            {formData.country === 'United Kingdom' ? 'Postcode' :
+                                formData.country === 'Israel' ? 'Postal Code' : 'Postal Code'} *
+                        </label>
                         <input
                             type="text"
                             id="postalCode"
@@ -174,33 +234,13 @@ export default function AddressForm({
                             value={formData.postalCode}
                             onChange={handleChange}
                             className={errors.postalCode ? 'error' : ''}
-                            placeholder="Enter postal code"
+                            placeholder={`Enter ${formData.country === 'United Kingdom' ? 'postcode' : 'postal code'}`}
                         />
                         {errors.postalCode && <span className="error-text">{errors.postalCode}</span>}
                     </div>
                 </div>
 
                 <div className="form-row">
-                    <div className="form-group">
-                        <label htmlFor="country">Country *</label>
-                        <select
-                            id="country"
-                            name="country"
-                            value={formData.country}
-                            onChange={handleChange}
-                            className={errors.country ? 'error' : ''}
-                        >
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="Germany">Germany</option>
-                            <option value="France">France</option>
-                            <option value="Australia">Australia</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        {errors.country && <span className="error-text">{errors.country}</span>}
-                    </div>
-
                     <div className="form-group">
                         <label htmlFor="label">Label</label>
                         <select
@@ -215,6 +255,14 @@ export default function AddressForm({
                         </select>
                     </div>
                 </div>
+
+                {!showStateField && (
+                    <div className="form-note">
+                        <small style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                            * For {formData.country}, state/province is not required
+                        </small>
+                    </div>
+                )}
 
                 <div className="form-group checkbox-group">
                     <label className="checkbox-label">

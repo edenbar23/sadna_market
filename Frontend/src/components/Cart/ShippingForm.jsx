@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthContext } from '../../context/AuthContext';
 import { getUserAddresses, getDefaultAddress, addAddress } from '../../api/address';
-import AddressList from '../AddressList';
 import AddressForm from '../AddressForm';
 
 export default function ShippingForm({ onComplete }) {
@@ -15,19 +14,13 @@ export default function ShippingForm({ onComplete }) {
     const { user } = useAuthContext();
     const isGuest = !user?.username;
 
-    // For guest users - simple form data
-    const [guestFormData, setGuestFormData] = useState({
-        fullName: "",
-        address: "",
-        city: "",
-        postalCode: ""
-    });
-
     useEffect(() => {
         if (!isGuest) {
             loadUserAddresses();
         } else {
             setLoading(false);
+            // For guests, default to showing the address form
+            setSelectedOption('new');
         }
     }, [isGuest, user]);
 
@@ -36,15 +29,21 @@ export default function ShippingForm({ onComplete }) {
             setLoading(true);
             setError(null);
 
-            console.log('Loading addresses for user:', user.username); // Debug log
+            console.log('Loading addresses for user:', user.username);
 
             // Load all addresses
             const addressResponse = await getUserAddresses(user.username);
-            console.log('Address response:', addressResponse); // Debug log
+            console.log('Address response:', addressResponse);
 
-            const userAddresses = addressResponse.data || [];
-            console.log('User addresses loaded:', userAddresses); // Debug log
+            // Handle the response structure properly
+            let userAddresses = [];
+            if (addressResponse && addressResponse.data) {
+                userAddresses = Array.isArray(addressResponse.data) ? addressResponse.data : [];
+            } else if (addressResponse && Array.isArray(addressResponse)) {
+                userAddresses = addressResponse;
+            }
 
+            console.log('User addresses loaded:', userAddresses);
             setAddresses(userAddresses);
 
             // Set default selection based on whether addresses exist
@@ -54,7 +53,7 @@ export default function ShippingForm({ onComplete }) {
                 // Try to get default address
                 try {
                     const defaultResponse = await getDefaultAddress(user.username);
-                    if (defaultResponse.data) {
+                    if (defaultResponse && defaultResponse.data) {
                         setSelectedAddress(defaultResponse.data);
                         console.log('Default address selected:', defaultResponse.data);
                     } else {
@@ -76,7 +75,7 @@ export default function ShippingForm({ onComplete }) {
             }
         } catch (error) {
             console.error('Error loading addresses:', error);
-            setError('Failed to load addresses: ' + error.message);
+            setError('Failed to load addresses: ' + (error.message || 'Unknown error'));
             // If there's an error, default to new address
             setSelectedOption('new');
         } finally {
@@ -84,21 +83,25 @@ export default function ShippingForm({ onComplete }) {
         }
     };
 
-    const handleGuestChange = (e) => {
-        const { name, value } = e.target;
-        setGuestFormData({ ...guestFormData, [name]: value });
-    };
+    const handleGuestSubmit = async (formData) => {
+        try {
+            setSaving(true);
+            setError(null);
 
-    const handleGuestSubmit = (e) => {
-        e.preventDefault();
-        const allFilled = Object.values(guestFormData).every((val) => val.trim() !== "");
-        if (allFilled) {
+            console.log('Processing guest address:', formData);
+
+            // For guests, directly use the form data
             onComplete({
                 type: 'guest',
-                data: guestFormData
+                data: formData
             });
-        } else {
-            alert("Please fill in all fields.");
+
+            setShowNewAddressForm(false);
+        } catch (error) {
+            console.error('Error processing guest address:', error);
+            setError('Error processing address: ' + (error.message || 'Unknown error'));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -120,18 +123,31 @@ export default function ShippingForm({ onComplete }) {
     const handleNewAddressSubmit = async (formData) => {
         try {
             setSaving(true);
+            setError(null);
 
-            console.log('Saving new address:', formData); // Debug log
+            console.log('Saving new address for user:', user.username);
+            console.log('Address data to save:', formData);
 
             // Save the address to the user's account
             const response = await addAddress(user.username, formData);
+            console.log('Address save response:', response);
 
-            console.log('Address save response:', response); // Debug log
-
+            // Handle the response properly
+            let savedAddress = null;
             if (response && response.data) {
-                // Address was saved successfully
-                const savedAddress = response.data;
+                savedAddress = response.data;
+            } else if (response && response.addressId) {
+                // If the response is the address object directly
+                savedAddress = response;
+            } else {
+                // If save was successful but we don't get the address back, use the form data
+                savedAddress = {
+                    ...formData,
+                    addressId: 'temp_' + Date.now() // temporary ID
+                };
+            }
 
+            if (savedAddress) {
                 // Refresh the address list
                 await loadUserAddresses();
 
@@ -144,14 +160,29 @@ export default function ShippingForm({ onComplete }) {
                 setShowNewAddressForm(false);
 
                 // Show success message
-                alert('Address saved successfully and will be used for shipping!');
+                console.log('Address saved successfully!');
             } else {
-                throw new Error('Failed to save address');
+                throw new Error('Failed to save address - no response data');
             }
 
         } catch (error) {
             console.error('Error saving new address:', error);
-            alert('Error saving address: ' + (error.message || 'Unknown error'));
+
+            // Enhanced error handling
+            let errorMessage = 'Failed to save address';
+            if (error.response?.data?.errorMessage) {
+                errorMessage = error.response.data.errorMessage;
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.errorMessage) {
+                errorMessage = error.errorMessage;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            setError('Error saving address: ' + errorMessage);
+
+            // Don't close the form on error so user can try again
         } finally {
             setSaving(false);
         }
@@ -159,7 +190,7 @@ export default function ShippingForm({ onComplete }) {
 
     const handleAddressSelect = (address) => {
         setSelectedAddress(address);
-        console.log('Address selected:', address); // Debug log
+        console.log('Address selected:', address);
     };
 
     if (loading) {
@@ -178,59 +209,48 @@ export default function ShippingForm({ onComplete }) {
                     {error}
                 </div>
                 <button
-                    onClick={() => setSelectedOption('new')}
+                    onClick={() => {
+                        setError(null);
+                        setSelectedOption('new');
+                        setShowNewAddressForm(true);
+                    }}
                     className="btn btn-primary"
                 >
-                    Add New Address
+                    Try Add New Address
                 </button>
             </div>
         );
     }
 
-    // Guest user form - simple version
+    // Guest user form
     if (isGuest) {
         return (
-            <form className="shipping-form" onSubmit={handleGuestSubmit}>
-                <h3>Shipping Address</h3>
-                <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Full Name"
-                    value={guestFormData.fullName}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="address"
-                    placeholder="Address"
-                    value={guestFormData.address}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={guestFormData.city}
-                    onChange={handleGuestChange}
-                />
-                <input
-                    type="text"
-                    name="postalCode"
-                    placeholder="Postal Code"
-                    value={guestFormData.postalCode}
-                    onChange={handleGuestChange}
-                />
-                <button type="submit">Save Shipping</button>
-            </form>
+            <div className="shipping-form-container">
+                {showNewAddressForm ? (
+                    <div className="guest-address-form">
+                        <AddressForm
+                            title="Shipping Address"
+                            onSubmit={handleGuestSubmit}
+                            onCancel={() => setShowNewAddressForm(false)}
+                            isLoading={saving}
+                        />
+                    </div>
+                ) : (
+                    <div className="guest-address-prompt">
+                        <h3>Shipping Address</h3>
+                        <p>Please provide your shipping address to continue with checkout.</p>
+                        <button
+                            onClick={() => setShowNewAddressForm(true)}
+                            className="btn btn-primary"
+                            style={{ marginTop: '1rem' }}
+                        >
+                            Add Shipping Address
+                        </button>
+                    </div>
+                )}
+            </div>
         );
     }
-
-    // Debug info - remove this after testing
-    console.log('Rendering with:', {
-        addresses: addresses.length,
-        selectedOption,
-        selectedAddress: selectedAddress?.addressId
-    });
 
     // Registered user form - with saved addresses
     return (
@@ -241,7 +261,10 @@ export default function ShippingForm({ onComplete }) {
                         <AddressForm
                             title="Add Shipping Address"
                             onSubmit={handleNewAddressSubmit}
-                            onCancel={() => setShowNewAddressForm(false)}
+                            onCancel={() => {
+                                setShowNewAddressForm(false);
+                                setError(null);
+                            }}
                             isLoading={saving}
                         />
                     </div>
@@ -293,7 +316,7 @@ export default function ShippingForm({ onComplete }) {
                                                     <div className="address-preview">
                                                         {address.fullName}<br />
                                                         {address.addressLine1}<br />
-                                                        {address.city}, {address.state} {address.postalCode}
+                                                        {address.city}, {address.state && `${address.state} `}{address.postalCode}
                                                     </div>
                                                 </div>
                                             </div>
@@ -319,8 +342,9 @@ export default function ShippingForm({ onComplete }) {
                     </div>
 
                     <div className="form-actions">
-                        <button type="submit" className="btn btn-primary">
-                            {selectedOption === 'saved' ? 'Use Selected Address' : 'Add New Address'}
+                        <button type="submit" className="btn btn-primary" disabled={saving}>
+                            {saving ? 'Processing...' :
+                                selectedOption === 'saved' ? 'Use Selected Address' : 'Add New Address'}
                         </button>
                     </div>
                 </form>
