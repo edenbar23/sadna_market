@@ -117,7 +117,86 @@ public class OrderProcessingService {
     }
 
     /**
-     * Creates a single pending order for a specific store
+     * Creates pending orders with payment and delivery details
+     * Enhanced version that includes order details from checkout
+     */
+    public List<Order> createPendingOrdersWithDetails(String username, Cart cart,
+                                                      String paymentMethod, String deliveryAddress) {
+        logger.info("Creating pending orders with details for user: {}", username);
+
+        // Validate user exists
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        // Check if cart is empty
+        if (cart.getShoppingBaskets().isEmpty()) {
+            logger.warn("Cannot create orders from empty cart for user: {}", username);
+            throw new IllegalStateException("Cannot create orders from empty cart");
+        }
+
+        List<Order> orders = new ArrayList<>();
+
+        // Create order for each store in cart
+        for (Map.Entry<UUID, ShoppingBasket> entry : cart.getShoppingBaskets().entrySet()) {
+            UUID storeId = entry.getKey();
+            ShoppingBasket basket = entry.getValue();
+
+            try {
+                Order order = createPendingOrderWithDetails(username, storeId, basket,
+                        paymentMethod, deliveryAddress);
+                orders.add(order);
+                logger.info("Created pending order {} for store {} with details", order.getOrderId(), storeId);
+            } catch (Exception e) {
+                logger.error("Failed to create pending order for store {}: {}", storeId, e.getMessage());
+                // Rollback any created orders
+                cancelOrders(orders);
+                throw new RuntimeException("Order creation failed: " + e.getMessage(), e);
+            }
+        }
+
+        logger.info("Successfully created {} pending orders with details for user {}", orders.size(), username);
+        return orders;
+    }
+
+    /**
+     * Creates guest pending orders with payment and delivery details
+     */
+    public List<Order> createGuestPendingOrdersWithDetails(Cart cart, String paymentMethod, String deliveryAddress) {
+        logger.info("Creating guest pending orders with details");
+
+        // Check if cart is empty
+        if (cart.getShoppingBaskets().isEmpty()) {
+            logger.warn("Cannot create orders from empty cart for guest");
+            throw new IllegalStateException("Cannot create orders from empty cart");
+        }
+
+        List<Order> orders = new ArrayList<>();
+        String guestId = "GUEST-" + UUID.randomUUID().toString().substring(0, 8);
+
+        // Create order for each store in cart
+        for (Map.Entry<UUID, ShoppingBasket> entry : cart.getShoppingBaskets().entrySet()) {
+            UUID storeId = entry.getKey();
+            ShoppingBasket basket = entry.getValue();
+
+            try {
+                Order order = createPendingOrderWithDetails(guestId, storeId, basket,
+                        paymentMethod, deliveryAddress);
+                orders.add(order);
+                logger.info("Created pending order {} for store {} with details", order.getOrderId(), storeId);
+            } catch (Exception e) {
+                logger.error("Failed to create pending order for store {}: {}", storeId, e.getMessage());
+                // Rollback any created orders
+                cancelOrders(orders);
+                throw new RuntimeException("Order creation failed: " + e.getMessage(), e);
+            }
+        }
+
+        logger.info("Successfully created {} pending orders with details for guest", orders.size());
+        return orders;
+    }
+
+    /**
+     * Creates a single pending order for a specific store (original method for backward compatibility)
      */
     private Order createPendingOrder(String username, UUID storeId, ShoppingBasket basket) {
         logger.debug("Creating pending order for store: {} and user: {}", storeId, username);
@@ -157,6 +236,58 @@ public class OrderProcessingService {
                 LocalDateTime.now(),
                 OrderStatus.PENDING,
                 -1 // No transaction ID yet
+        );
+
+        // Return the created order
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Failed to create order"));
+    }
+
+    /**
+     * Creates a single pending order with enhanced details
+     */
+    private Order createPendingOrderWithDetails(String username, UUID storeId, ShoppingBasket basket,
+                                                String paymentMethod, String deliveryAddress) {
+        logger.debug("Creating pending order with details for store: {} and user: {}", storeId, username);
+
+        // Get and validate store
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
+
+        if (!store.isActive()) {
+            throw new IllegalStateException("Cannot create order for inactive store: " + store.getName());
+        }
+
+        // Get and validate basket items
+        Map<UUID, Integer> items = basket.getProductsList();
+        if (items.isEmpty()) {
+            throw new IllegalStateException("Cannot create order from empty basket");
+        }
+
+        // Validate inventory availability
+        Set<String> inventoryErrors = store.checkCart(items);
+        if (!inventoryErrors.isEmpty()) {
+            String errorMessage = String.join(", ", inventoryErrors);
+            logger.error("Inventory validation failed: {}", errorMessage);
+            throw new IllegalStateException("Inventory validation failed: " + errorMessage);
+        }
+
+        // Calculate total price
+        double totalPrice = calculateTotalPrice(items);
+
+        // Create order with enhanced details using new repository method
+        UUID orderId = orderRepository.createOrderWithDetails(
+                storeId,
+                username,
+                new HashMap<>(items), // Defensive copy
+                totalPrice,
+                totalPrice, // TODO: Apply discounts/promotions here
+                LocalDateTime.now(),
+                OrderStatus.PENDING,
+                -1, // No transaction ID yet
+                store.getName(), // Store name
+                paymentMethod, // Payment method
+                deliveryAddress // Delivery address
         );
 
         // Return the created order

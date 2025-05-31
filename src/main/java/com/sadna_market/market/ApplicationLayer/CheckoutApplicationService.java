@@ -7,9 +7,7 @@ import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentResult;
-import com.sadna_market.market.InfrastructureLayer.Payment.PaymentService;
+import com.sadna_market.market.InfrastructureLayer.Payment.*;
 import com.sadna_market.market.InfrastructureLayer.Supply.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
@@ -33,6 +32,7 @@ public class CheckoutApplicationService {
     // Domain Services
     private final OrderProcessingService orderProcessingService;
     private final UserAccessService userAccessService;
+    private final AddressService addressService;
 
     // Infrastructure Services
     private final PaymentService paymentService;
@@ -41,21 +41,26 @@ public class CheckoutApplicationService {
 
     // Repositories
     private final IUserRepository userRepository;
+    private final IAddressRepository addressRepository;
 
     @Autowired
     public CheckoutApplicationService(
             OrderProcessingService orderProcessingService,
             UserAccessService userAccessService,
+            AddressService addressService,
             PaymentService paymentService,
             SupplyService supplyService,
             AuthenticationAdapter authentication,
-            IUserRepository userRepository) {
+            IUserRepository userRepository,
+            IAddressRepository addressRepository) {
         this.orderProcessingService = orderProcessingService;
         this.userAccessService = userAccessService;
+        this.addressService = addressService;
         this.paymentService = paymentService;
         this.supplyService = supplyService;
         this.authentication = authentication;
         this.userRepository = userRepository;
+        this.addressRepository = addressRepository;
 
         logger.info("CheckoutApplicationService initialized");
     }
@@ -81,11 +86,16 @@ public class CheckoutApplicationService {
                 return Response.error("Cannot checkout with empty cart");
             }
 
-            // 3. Create pending orders through domain service
-            logger.info("Creating pending orders for user: {}", username);
-            List<Order> orders = orderProcessingService.createPendingOrders(username, cart);
+            // 3. Extract payment method and delivery address
+            String paymentMethodStr = getPaymentMethodString(request.getPaymentMethod());
+            String deliveryAddress = extractDeliveryAddress(user, request);
 
-            // 4. Process payment through infrastructure service
+            // 4. Create pending orders with enhanced details through domain service
+            logger.info("Creating pending orders with details for user: {}", username);
+            List<Order> orders = orderProcessingService.createPendingOrdersWithDetails(
+                    username, cart, paymentMethodStr, deliveryAddress);
+
+            // 5. Process payment through infrastructure service
             double totalAmount = calculateTotalAmount(orders);
             logger.info("Processing payment for amount: {}", totalAmount);
             PaymentResult paymentResult = paymentService.processPayment(request.getPaymentMethod(), totalAmount);
@@ -96,7 +106,7 @@ public class CheckoutApplicationService {
                 return Response.error("Payment failed: " + paymentResult.getErrorMessage());
             }
 
-            // 5. Arrange supply through infrastructure service
+            // 6. Arrange supply through infrastructure service
             logger.info("Arranging supply for {} orders", orders.size());
             List<SupplyResult> supplyResults = processSupplyForOrders(orders, request.getSupplyMethod());
 
@@ -110,18 +120,18 @@ public class CheckoutApplicationService {
                 }
             }
 
-            // 6. Finalize orders through domain service
+            // 7. Finalize orders through domain service
             logger.info("Finalizing orders with payment and supply information");
             List<Integer> supplyTransactionIds = supplyResults.stream()
                     .map(SupplyResult::getTransactionId)
                     .toList();
             orderProcessingService.finalizeOrders(orders, paymentResult.getTransactionId(), supplyTransactionIds);
 
-            // 7. Clear user cart
+            // 8. Clear user cart
             logger.info("Clearing cart for user: {}", username);
             clearUserCart(user);
 
-            // 8. Create success response
+            // 9. Create success response
             CheckoutResultDTO result = createCheckoutResult(orders, paymentResult, supplyResults);
             logger.info("Checkout completed successfully for user: {}", username);
 
@@ -147,11 +157,16 @@ public class CheckoutApplicationService {
                 return Response.error("Cannot checkout with empty cart");
             }
 
-            // 2. Create pending orders for guest through domain service
-            logger.info("Creating pending orders for guest");
-            List<Order> orders = orderProcessingService.createGuestPendingOrders(cart);
+            // 2. Extract payment method and delivery address
+            String paymentMethodStr = getPaymentMethodString(request.getPaymentMethod());
+            String deliveryAddress = request.getShippingAddress();
 
-            // 3. Process payment through infrastructure service
+            // 3. Create pending orders for guest with details through domain service
+            logger.info("Creating pending orders with details for guest");
+            List<Order> orders = orderProcessingService.createGuestPendingOrdersWithDetails(
+                    cart, paymentMethodStr, deliveryAddress);
+
+            // 4. Process payment through infrastructure service
             double totalAmount = calculateTotalAmount(orders);
             logger.info("Processing payment for guest, amount: {}", totalAmount);
             PaymentResult paymentResult = paymentService.processPayment(request.getPaymentMethod(), totalAmount);
@@ -162,7 +177,7 @@ public class CheckoutApplicationService {
                 return Response.error("Payment failed: " + paymentResult.getErrorMessage());
             }
 
-            // 4. Arrange supply through infrastructure service
+            // 5. Arrange supply through infrastructure service
             logger.info("Arranging supply for guest orders");
             List<SupplyResult> supplyResults = processSupplyForOrders(orders, request.getSupplyMethod());
 
@@ -176,14 +191,14 @@ public class CheckoutApplicationService {
                 }
             }
 
-            // 5. Finalize orders through domain service
+            // 6. Finalize orders through domain service
             logger.info("Finalizing guest orders");
             List<Integer> supplyTransactionIds = supplyResults.stream()
                     .map(SupplyResult::getTransactionId)
                     .toList();
             orderProcessingService.finalizeOrders(orders, paymentResult.getTransactionId(), supplyTransactionIds);
 
-            // 6. Create success response
+            // 7. Create success response
             CheckoutResultDTO result = createCheckoutResult(orders, paymentResult, supplyResults);
             logger.info("Guest checkout completed successfully");
 
@@ -193,6 +208,80 @@ public class CheckoutApplicationService {
             logger.error("Guest checkout failed: {}", e.getMessage(), e);
             return Response.error("Checkout failed: " + e.getMessage());
         }
+    }
+
+    /**
+     * Converts PaymentMethod DTO to string representation
+     * Since you only support credit cards, this is simplified
+     */
+    private String getPaymentMethodString(PaymentMethod paymentMethod) {
+        if (paymentMethod == null) {
+            return "Unknown Payment Method";
+        }
+
+        // Since you only support credit cards, check the type
+        if (paymentMethod instanceof CreditCardDTO) {
+            CreditCardDTO creditCard = (CreditCardDTO) paymentMethod;
+            return "Credit Card (**** " + getLastFourDigits(creditCard.cardNumber) + ")";
+        } else if (paymentMethod instanceof PayPalDTO) {
+            PayPalDTO paypal = (PayPalDTO) paymentMethod;
+            return "PayPal (" + paypal.email + ")";
+        } else if (paymentMethod instanceof BankAccountDTO) {
+            return "Bank Account";
+        } else {
+            return "Credit Card"; // Default for your system
+        }
+    }
+
+    /**
+     * Helper method to get last 4 digits of card number safely
+     */
+    private String getLastFourDigits(String cardNumber) {
+        if (cardNumber == null || cardNumber.length() < 4) {
+            return "****";
+        }
+        return cardNumber.substring(cardNumber.length() - 4);
+    }
+
+    /**
+     * Extracts delivery address based on user's choice in the checkout request
+     * Uses the shippingAddress field from CheckoutRequest if provided
+     */
+    private String extractDeliveryAddress(User user, CheckoutRequest request) {
+        // Priority 1: Use shipping address provided in the request (user's choice)
+        if (request.getShippingAddress() != null && !request.getShippingAddress().trim().isEmpty()) {
+            logger.info("Using shipping address from request for user: {}", user.getUserName());
+            return request.getShippingAddress().trim();
+        }
+
+        // Priority 2: Fallback to user's default address if no address in request
+        try {
+            Optional<Address> defaultAddress = addressRepository.findDefaultByUsername(user.getUserName());
+            if (defaultAddress.isPresent()) {
+                logger.info("Using default address for user: {} (no shipping address in request)", user.getUserName());
+                return defaultAddress.get().getFormattedAddress();
+            }
+        } catch (Exception e) {
+            logger.warn("Error retrieving default address for user {}: {}", user.getUserName(), e.getMessage());
+        }
+
+        // Priority 3: Check if user has any addresses available
+        try {
+            List<Address> userAddresses = addressRepository.findByUsername(user.getUserName());
+            if (!userAddresses.isEmpty()) {
+                // User has addresses but none is set as default and no address provided in request
+                throw new IllegalStateException(
+                        "No shipping address provided and no default address set. Please select an address or set a default address."
+                );
+            }
+        } catch (Exception e) {
+            logger.warn("Error checking user addresses: {}", e.getMessage());
+        }
+
+        // No addresses available at all
+        throw new IllegalStateException(
+                "No delivery address available. Please provide a shipping address or add an address to your profile."
+        );
     }
 
     /**
@@ -220,12 +309,11 @@ public class CheckoutApplicationService {
      */
     private ShipmentDetails createShipmentDetails(Order order) {
         // Extract shipping information from order
-        // For now, using default values - in real system, this would come from user input
         String shipmentId = "SHIP-" + order.getOrderId().toString().substring(0, 8);
-        String address = "Default Address"; // This should come from user/order data
+        String address = order.getDeliveryAddress(); // Now we have this from the order!
         int totalQuantity = order.getProductsMap().values().stream().mapToInt(Integer::intValue).sum();
 
-        boolean isGuest = order.getUserName().contains("-"); // Simple guest detection
+        boolean isGuest = order.getUserName().startsWith("GUEST-");
         String username = isGuest ? null : order.getUserName();
 
         return new ShipmentDetails(shipmentId, address, totalQuantity, username, isGuest);
@@ -239,9 +327,6 @@ public class CheckoutApplicationService {
         int totalItems = order.getProductsMap().values().stream().mapToInt(Integer::intValue).sum();
         return totalItems * 0.5; // Assume 0.5kg per item average
     }
-
-    // Remove this method - it's now handled by OrderProcessingService.finalizeOrders()
-    // private void finalizeOrders(List<Order> orders, PaymentResult paymentResult, List<SupplyResult> supplyResults)
 
     /**
      * Calculates total amount for all orders
@@ -319,28 +404,10 @@ public class CheckoutApplicationService {
     }
 
     /**
-     * Handles supply failure by keeping payment but notifying about shipping issues
-     * DEPRECATED: Use performFullRollback instead for better customer experience
-     */
-    @Deprecated
-    private void handleSupplyFailure(List<Order> orders, PaymentResult paymentResult) {
-        logger.warn("Supply failed but payment succeeded. Keeping orders as paid.");
-
-        // Update orders to reflect payment success but supply failure
-        for (Order order : orders) {
-            order.updateStatus(OrderStatus.PAID); // Keep as paid, supply will be arranged later
-        }
-
-        // Could send notification to customer about shipping delay
-        // Could create a task for customer service to follow up
-    }
-
-    /**
      * Rolls back orders by canceling them through domain service
      */
     private void rollbackOrders(List<Order> orders) {
         logger.warn("Rolling back {} orders", orders.size());
-
         orderProcessingService.cancelOrders(orders);
     }
 

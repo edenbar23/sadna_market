@@ -121,6 +121,54 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
 
     @Override
+    public UUID createOrderWithDetails(UUID storeId, String userName, Map<UUID, Integer> products,
+                                       double totalPrice, double finalPrice, LocalDateTime orderDate,
+                                       OrderStatus status, int transactionId, String storeName,
+                                       String paymentMethod, String deliveryAddress) {
+        // Validate input parameters
+        if (storeId == null) {
+            logger.error("Cannot create order with null store ID");
+            throw new IllegalArgumentException("Store ID cannot be null");
+        }
+
+        if (userName == null || userName.isEmpty()) {
+            logger.error("Cannot create order with null or empty username");
+            throw new IllegalArgumentException("Username cannot be null or empty");
+        }
+
+        if (products == null || products.isEmpty()) {
+            logger.error("Cannot create order with null or empty products");
+            throw new IllegalArgumentException("Products cannot be null or empty");
+        }
+
+        if (orderDate == null) {
+            logger.error("Cannot create order with null order date");
+            throw new IllegalArgumentException("Order date cannot be null");
+        }
+
+        if (status == null) {
+            logger.error("Cannot create order with null status");
+            throw new IllegalArgumentException("Order status cannot be null");
+        }
+
+        logger.info("Creating new order with details for user: {} in store: {} ({})",
+                userName, storeId, storeName);
+
+        // Create a defensive copy of the products map
+        HashMap<UUID, Integer> productsCopy = new HashMap<>(products);
+
+        // Use the enhanced constructor with additional details
+        Order order = new Order(storeId, userName, productsCopy, totalPrice, finalPrice,
+                orderDate, status, transactionId, storeName, paymentMethod, deliveryAddress);
+
+        orders.put(order.getOrderId(), order);
+        logger.info("Order created with enhanced details. ID: {}, Store: {}, Payment: {}",
+                order.getOrderId(), storeName, paymentMethod);
+
+        return order.getOrderId();
+    }
+
+    @Override
     public boolean updateOrderStatus(UUID orderId, OrderStatus newStatus) {
         if (orderId == null) {
             logger.error("Cannot update status for order with null ID");
@@ -175,6 +223,41 @@ public class InMemoryOrderRepository implements IOrderRepository {
         }
 
         return updated;
+    }
+
+    @Override
+    public boolean updateOrderDetails(UUID orderId, String storeName, String paymentMethod, String deliveryAddress) {
+        if (orderId == null) {
+            logger.error("Cannot update details for order with null ID");
+            return false;
+        }
+
+        logger.debug("Updating order details for ID: {}", orderId);
+
+        Order order = orders.get(orderId);
+        if (order == null) {
+            logger.warn("Cannot update details - order not found with ID: {}", orderId);
+            return false;
+        }
+
+        // Update only non-null values
+        if (storeName != null) {
+            order.setStoreName(storeName);
+            logger.debug("Updated store name for order {}: {}", orderId, storeName);
+        }
+
+        if (paymentMethod != null) {
+            order.setPaymentMethod(paymentMethod);
+            logger.debug("Updated payment method for order {}: {}", orderId, paymentMethod);
+        }
+
+        if (deliveryAddress != null) {
+            order.setDeliveryAddress(deliveryAddress);
+            logger.debug("Updated delivery address for order {}: {}", orderId, deliveryAddress);
+        }
+
+        logger.info("Order details updated for ID: {}", orderId);
+        return true;
     }
 
     @Override
@@ -298,7 +381,7 @@ public class InMemoryOrderRepository implements IOrderRepository {
                 .collect(Collectors.toList());
     }
 
-
+    @Override
     public boolean hasUserPurchasedProduct(String username, UUID productId) {
         logger.info("Checking if user {} has purchased product {}", username, productId);
         List<Order> orders = findOrdersByUser(username);
@@ -313,5 +396,4 @@ public class InMemoryOrderRepository implements IOrderRepository {
         logger.info("User {} has not purchased product {}", username, productId);
         return false;
     }
-
 }
