@@ -24,8 +24,10 @@ export default function CartPage() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const { user, token } = useAuthContext();
   const username = user?.username;
-  const [showShipping, setShowShipping] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
+
+  // FIXED: Single state to manage which form is open
+  const [activeForm, setActiveForm] = useState(null); // null, 'shipping', or 'payment'
+
   const [shippingDetails, setShippingDetails] = useState(null);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -464,17 +466,36 @@ export default function CartPage() {
     }
   };
 
+  // FIXED: Updated form handlers to use single state
+  const handleShowShipping = () => {
+    setActiveForm(activeForm === 'shipping' ? null : 'shipping');
+  };
+
+  const handleShowPayment = () => {
+    setActiveForm(activeForm === 'payment' ? null : 'payment');
+  };
+
+  const handleShippingComplete = (data) => {
+    setShippingDetails(data);
+    setActiveForm(null); // Close the form after completion
+  };
+
+  const handlePaymentComplete = (data) => {
+    setPaymentDetails(data);
+    setActiveForm(null); // Close the form after completion
+  };
+
   // Checkout handlers
   const handleCheckoutAll = async () => {
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -525,13 +546,13 @@ export default function CartPage() {
 
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -613,13 +634,13 @@ export default function CartPage() {
 
     if (!shippingDetails) {
       alert("Please provide shipping information");
-      setShowShipping(true);
+      setActiveForm('shipping');
       return;
     }
 
     if (!paymentDetails) {
       alert("Please provide payment information");
-      setShowPayment(true);
+      setActiveForm('payment');
       return;
     }
 
@@ -790,15 +811,16 @@ export default function CartPage() {
                   </div>
 
                   <div className="cart-actions">
+                    {/* FIXED: Updated button handlers */}
                     <button
                         className="payment-btn"
-                        onClick={() => setShowPayment((prev) => !prev)}
+                        onClick={handleShowPayment}
                     >
                       Payment Method {paymentDetails && "✔"}
                     </button>
                     <button
                         className="delivery-btn"
-                        onClick={() => setShowShipping((prev) => !prev)}
+                        onClick={handleShowShipping}
                     >
                       Shipping Address {shippingDetails && "✔"}
                     </button>
@@ -821,21 +843,16 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {showShipping && (
+              {/* FIXED: Only show one form at a time */}
+              {activeForm === 'shipping' && (
                   <ShippingForm
-                      onComplete={(data) => {
-                        setShippingDetails(data);
-                        setShowShipping(false);
-                      }}
+                      onComplete={handleShippingComplete}
                   />
               )}
 
-              {showPayment && (
+              {activeForm === 'payment' && (
                   <PaymentForm
-                      onComplete={(data) => {
-                        setPaymentDetails(data);
-                        setShowPayment(false);
-                      }}
+                      onComplete={handlePaymentComplete}
                   />
               )}
 

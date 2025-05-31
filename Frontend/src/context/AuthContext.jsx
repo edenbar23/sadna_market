@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import * as userAPI from '../api/user';
+import creditCardStorage from '../services/creditCardStorage';
 
 // Create auth context
 export const AuthContext = createContext();
@@ -12,11 +13,24 @@ export const AuthProvider = ({ children }) => {
 
   // Clear user and token from both state and localStorage
   const clearAuth = useCallback(() => {
+    // FIXED: Store username before clearing for payment cleanup
+    const currentUsername = user?.username;
+
     setUser(null);
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-  }, []);
+
+    // FIXED: Clear payment data for security when logging out
+    if (currentUsername) {
+      console.log(`Clearing payment data for user: ${currentUsername}`);
+      try {
+        creditCardStorage.clearCardsOnLogout(currentUsername);
+      } catch (error) {
+        console.error('Error clearing payment data on logout:', error);
+      }
+    }
+  }, [user?.username]);
 
   // Validate token with backend
   const validateToken = useCallback(async (username, tokenToValidate) => {
@@ -87,9 +101,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user, token]);
 
-  // Logout function at the context level
+  // FIXED: Enhanced logout function with payment data cleanup
   const logout = useCallback(async () => {
     setIsValidating(true);
+    const currentUsername = user?.username;
+
     try {
       if (user && token) {
         // Try to logout from backend, but don't fail if it doesn't work
@@ -107,6 +123,18 @@ export const AuthProvider = ({ children }) => {
       // Always clear local state regardless of API success/failure
       clearAuth();
       setIsValidating(false);
+
+      // ADDITIONAL SECURITY: Clear any remaining payment data
+      if (currentUsername) {
+        setTimeout(() => {
+          try {
+            creditCardStorage.clearCardsOnLogout(currentUsername);
+            console.log(`Payment data cleanup completed for: ${currentUsername}`);
+          } catch (error) {
+            console.error('Error in additional payment cleanup:', error);
+          }
+        }, 100);
+      }
     }
   }, [user, token, clearAuth]);
 
@@ -131,6 +159,15 @@ export const AuthProvider = ({ children }) => {
 
           setToken(tokenValue);
           setUser(userObject);
+
+          // FIXED: Security audit on login to check for orphaned payment data
+          try {
+            const auditResult = creditCardStorage.securityAudit();
+            console.log(`Payment security audit completed: ${auditResult} storage keys found`);
+          } catch (auditError) {
+            console.warn('Payment security audit failed:', auditError);
+          }
+
           return response;
         } else {
           throw new Error('Failed to validate login');

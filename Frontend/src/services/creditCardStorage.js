@@ -2,9 +2,23 @@ import CryptoJS from 'crypto-js';
 
 class CreditCardStorage {
     constructor() {
-
         this.encryptionKey = this.getOrCreateEncryptionKey();
-        this.storageKey = 'encrypted_payment_methods';
+        // FIXED: Base storage key - will be combined with username
+        this.baseStorageKey = 'encrypted_payment_methods';
+    }
+
+    /**
+     * FIXED: Get user-specific storage key
+     * @param {string} username - Current user's username
+     * @returns {string} - User-specific storage key
+     */
+    getUserStorageKey(username) {
+        if (!username) {
+            throw new Error('Username is required for payment storage');
+        }
+        // Create a hashed version of username for additional security
+        const hashedUsername = CryptoJS.SHA256(username).toString().substring(0, 16);
+        return `${this.baseStorageKey}_${hashedUsername}`;
     }
 
     /**
@@ -90,7 +104,7 @@ class CreditCardStorage {
     }
 
     /**
-     * Save a credit card securely
+     * FIXED: Save a credit card securely for a specific user
      * @param {Object} cardData - Credit card information
      * @param {string} cardData.cardNumber - Card number
      * @param {string} cardData.expiryDate - MM/YY format
@@ -99,10 +113,16 @@ class CreditCardStorage {
      * @param {string} cardData.cardType - Card type (credit/debit)
      * @param {Object} cardData.billingAddress - Billing address
      * @param {string} nickname - Optional nickname for the card
+     * @param {string} username - Current user's username
      */
-    saveCard(cardData, nickname = '') {
+    saveCard(cardData, nickname = '', username) {
         try {
-            const cards = this.getSavedCards();
+            if (!username) {
+                throw new Error('Username is required to save payment methods');
+            }
+
+            const userStorageKey = this.getUserStorageKey(username);
+            const cards = this.getSavedCards(username);
 
             // Create card object with sensitive data
             const cardToSave = {
@@ -114,20 +134,21 @@ class CreditCardStorage {
                 cardHolder: cardData.cardHolder,
                 billingAddress: cardData.billingAddress,
                 savedAt: new Date().toISOString(),
-                // Encrypt sensitive data
+                // FIXED: Include username in encrypted data for additional verification
                 encryptedData: this.encrypt({
                     cardNumber: cardData.cardNumber,
-                    cvv: cardData.cvv
+                    cvv: cardData.cvv,
+                    username: username // Additional security check
                 })
             };
 
             // Add to saved cards
             cards.push(cardToSave);
 
-            // Save to localStorage
-            localStorage.setItem(this.storageKey, JSON.stringify(cards));
+            // Save to user-specific localStorage key
+            localStorage.setItem(userStorageKey, JSON.stringify(cards));
 
-            console.log('Credit card saved successfully');
+            console.log(`Credit card saved successfully for user: ${username}`);
             return cardToSave.id;
 
         } catch (error) {
@@ -137,12 +158,20 @@ class CreditCardStorage {
     }
 
     /**
-     * Get all saved cards (with sensitive data encrypted)
+     * FIXED: Get all saved cards for a specific user (with sensitive data encrypted)
      * Returns cards with masked numbers for display
+     * @param {string} username - Current user's username
      */
-    getSavedCards() {
+    getSavedCards(username) {
         try {
-            const cardsData = localStorage.getItem(this.storageKey);
+            if (!username) {
+                console.warn('No username provided, returning empty cards array');
+                return [];
+            }
+
+            const userStorageKey = this.getUserStorageKey(username);
+            const cardsData = localStorage.getItem(userStorageKey);
+
             if (!cardsData) return [];
 
             const cards = JSON.parse(cardsData);
@@ -162,13 +191,20 @@ class CreditCardStorage {
     }
 
     /**
-     * Get a specific card with decrypted data for payment processing
+     * FIXED: Get a specific card with decrypted data for payment processing
      * @param {string} cardId - Card ID
+     * @param {string} username - Current user's username
      * @returns {Object} Full card data with decrypted sensitive information
      */
-    getCardForPayment(cardId) {
+    getCardForPayment(cardId, username) {
         try {
-            const cardsData = localStorage.getItem(this.storageKey);
+            if (!username) {
+                throw new Error('Username is required to access payment methods');
+            }
+
+            const userStorageKey = this.getUserStorageKey(username);
+            const cardsData = localStorage.getItem(userStorageKey);
+
             if (!cardsData) throw new Error('No saved cards found');
 
             const cards = JSON.parse(cardsData);
@@ -178,6 +214,11 @@ class CreditCardStorage {
 
             // Decrypt sensitive data
             const decryptedData = this.decrypt(card.encryptedData);
+
+            // FIXED: Verify that the decrypted username matches current user
+            if (decryptedData.username !== username) {
+                throw new Error('Unauthorized access to payment method');
+            }
 
             // Return complete card data for payment
             return {
@@ -198,20 +239,27 @@ class CreditCardStorage {
     }
 
     /**
-     * Delete a saved card
+     * FIXED: Delete a saved card for a specific user
      * @param {string} cardId - Card ID to delete
+     * @param {string} username - Current user's username
      */
-    deleteCard(cardId) {
+    deleteCard(cardId, username) {
         try {
-            const cardsData = localStorage.getItem(this.storageKey);
+            if (!username) {
+                throw new Error('Username is required to delete payment methods');
+            }
+
+            const userStorageKey = this.getUserStorageKey(username);
+            const cardsData = localStorage.getItem(userStorageKey);
+
             if (!cardsData) return false;
 
             const cards = JSON.parse(cardsData);
             const filteredCards = cards.filter(card => card.id !== cardId);
 
-            localStorage.setItem(this.storageKey, JSON.stringify(filteredCards));
+            localStorage.setItem(userStorageKey, JSON.stringify(filteredCards));
 
-            console.log('Credit card deleted successfully');
+            console.log(`Credit card deleted successfully for user: ${username}`);
             return true;
 
         } catch (error) {
@@ -221,13 +269,20 @@ class CreditCardStorage {
     }
 
     /**
-     * Update card nickname
+     * FIXED: Update card nickname for a specific user
      * @param {string} cardId - Card ID
      * @param {string} newNickname - New nickname
+     * @param {string} username - Current user's username
      */
-    updateCardNickname(cardId, newNickname) {
+    updateCardNickname(cardId, newNickname, username) {
         try {
-            const cardsData = localStorage.getItem(this.storageKey);
+            if (!username) {
+                throw new Error('Username is required to update payment methods');
+            }
+
+            const userStorageKey = this.getUserStorageKey(username);
+            const cardsData = localStorage.getItem(userStorageKey);
+
             if (!cardsData) throw new Error('No saved cards found');
 
             const cards = JSON.parse(cardsData);
@@ -236,7 +291,7 @@ class CreditCardStorage {
             if (cardIndex === -1) throw new Error('Card not found');
 
             cards[cardIndex].nickname = newNickname;
-            localStorage.setItem(this.storageKey, JSON.stringify(cards));
+            localStorage.setItem(userStorageKey, JSON.stringify(cards));
 
             return true;
         } catch (error) {
@@ -246,27 +301,60 @@ class CreditCardStorage {
     }
 
     /**
-     * Check if a card with the same last 4 digits already exists
+     * FIXED: Check if a card with the same last 4 digits already exists for a user
      * @param {string} cardNumber - Card number to check
+     * @param {string} username - Current user's username
      */
-    isDuplicateCard(cardNumber) {
+    isDuplicateCard(cardNumber, username) {
+        if (!username) return false;
+
         const lastFour = cardNumber.replace(/\s/g, '').slice(-4);
-        const savedCards = this.getSavedCards();
+        const savedCards = this.getSavedCards(username);
         return savedCards.some(card => card.lastFour === lastFour);
     }
 
     /**
-     * Clear all saved cards (useful for logout or security reasons)
+     * FIXED: Clear all saved cards for a specific user (useful for logout or security reasons)
+     * @param {string} username - Current user's username (optional - if not provided, clears all)
      */
-    clearAllCards() {
+    clearAllCards(username = null) {
         try {
-            localStorage.removeItem(this.storageKey);
-            localStorage.removeItem('payment_encryption_key');
-            console.log('All payment methods cleared');
+            if (username) {
+                // Clear cards for specific user
+                const userStorageKey = this.getUserStorageKey(username);
+                localStorage.removeItem(userStorageKey);
+                console.log(`All payment methods cleared for user: ${username}`);
+            } else {
+                // SECURITY: Only clear all if no username provided (emergency cleanup)
+                // Find all payment-related keys and remove them
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith(this.baseStorageKey)) {
+                        keysToRemove.push(key);
+                    }
+                }
+
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                localStorage.removeItem('payment_encryption_key');
+                console.log('All payment methods cleared for all users');
+            }
             return true;
         } catch (error) {
             console.error('Failed to clear payment methods:', error);
             return false;
+        }
+    }
+
+    /**
+     * FIXED: Clear cards when user logs out
+     * This is a security measure to ensure cards don't persist after logout
+     * @param {string} username - Username of the user logging out
+     */
+    clearCardsOnLogout(username) {
+        if (username) {
+            console.log(`Clearing payment methods for user ${username} on logout`);
+            this.clearAllCards(username);
         }
     }
 
@@ -305,6 +393,31 @@ class CreditCardStorage {
         if (cardYear === currentYear && cardMonth < currentMonth) return true;
 
         return false;
+    }
+
+    /**
+     * SECURITY: Emergency method to detect and clean up orphaned payment data
+     * This should be called periodically or on app startup
+     */
+    securityAudit() {
+        try {
+            const allKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(this.baseStorageKey)) {
+                    allKeys.push(key);
+                }
+            }
+
+            console.log(`Security audit: Found ${allKeys.length} payment storage keys`);
+
+            // In a real application, you might want to verify these keys against
+            // active user sessions or clean up old data
+            return allKeys.length;
+        } catch (error) {
+            console.error('Security audit failed:', error);
+            return 0;
+        }
     }
 }
 

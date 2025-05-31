@@ -16,7 +16,8 @@ export default function PaymentForm({ onComplete }) {
     updateCardNickname
   } = useSavedCards();
 
-  const [paymentMethod, setPaymentMethod] = useState('new'); // 'new' or 'saved'
+  // FIXED: Better initial state management
+  const [paymentMethod, setPaymentMethod] = useState('new'); // Always start with 'new'
   const [selectedCardId, setSelectedCardId] = useState('');
   const [showCardNicknameEdit, setShowCardNicknameEdit] = useState('');
   const [newNickname, setNewNickname] = useState('');
@@ -42,13 +43,33 @@ export default function PaymentForm({ onComplete }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Set default payment method based on saved cards
+  // FIXED: Only auto-select saved card if user explicitly chooses it
   useEffect(() => {
-    if (savedCards.length > 0 && paymentMethod === 'new') {
-      setPaymentMethod('saved');
+    if (savedCards.length > 0 && paymentMethod === 'saved' && !selectedCardId) {
       setSelectedCardId(savedCards[0].id);
     }
-  }, [savedCards, paymentMethod]);
+  }, [savedCards, paymentMethod, selectedCardId]);
+
+  // FIXED: Clear form when switching between payment methods
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    setErrors({}); // Clear any errors
+
+    if (method === 'saved' && savedCards.length > 0) {
+      setSelectedCardId(savedCards[0].id);
+    } else if (method === 'new') {
+      setSelectedCardId('');
+      // Optionally clear the form data when switching to new card
+      setFormData(prev => ({
+        ...prev,
+        cardNumber: "",
+        expiryDate: "",
+        cvv: "",
+        cardHolder: "",
+        cardType: "credit"
+      }));
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -241,6 +262,7 @@ export default function PaymentForm({ onComplete }) {
           const remainingCards = savedCards.filter(card => card.id !== cardId);
           setSelectedCardId(remainingCards[0].id);
         } else {
+          // FIXED: If no cards left, switch to new card method
           setPaymentMethod('new');
           setSelectedCardId('');
         }
@@ -288,9 +310,9 @@ export default function PaymentForm({ onComplete }) {
                         name="paymentMethod"
                         value="saved"
                         checked={paymentMethod === 'saved'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        onChange={(e) => handlePaymentMethodChange(e.target.value)}
                     />
-                    <span>Use saved payment method</span>
+                    <span>Use saved payment method ({savedCards.length} available)</span>
                   </label>
 
                   {paymentMethod === 'saved' && (
@@ -372,7 +394,7 @@ export default function PaymentForm({ onComplete }) {
                 </div>
             )}
 
-            {/* New card option */}
+            {/* New card option - FIXED: Always show this option */}
             <div className="payment-method-option">
               <label className="radio-option">
                 <input
@@ -380,14 +402,14 @@ export default function PaymentForm({ onComplete }) {
                     name="paymentMethod"
                     value="new"
                     checked={paymentMethod === 'new'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
                 />
                 <span>Add new payment method</span>
               </label>
             </div>
           </div>
 
-          {/* New Card Form */}
+          {/* FIXED: Show new card form when 'new' is selected */}
           {paymentMethod === 'new' && (
               <>
                 <div className="payment-section">
