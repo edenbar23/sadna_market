@@ -248,4 +248,33 @@ public class AddressService {
             return Response.error("Failed to get default address: " + e.getMessage());
         }
     }
+
+    /**
+     * Get user's delivery address for checkout (internal use)
+     * Returns formatted address string for order creation
+     */
+    public String getDeliveryAddressForCheckout(String username) {
+        try {
+            logger.debug("Getting delivery address for checkout for user: {}", username);
+
+            // Try to get default address first
+            Address defaultAddress = addressRepository.findDefaultByUsername(username).orElse(null);
+            if (defaultAddress != null) {
+                return defaultAddress.getFormattedAddress();
+            }
+
+            // If no default, get first available address
+            List<Address> addresses = addressRepository.findByUsername(username);
+            if (!addresses.isEmpty()) {
+                return addresses.get(0).getFormattedAddress();
+            }
+
+            // No addresses found
+            return "No delivery address found - please add an address to your profile";
+
+        } catch (Exception e) {
+            logger.error("Error getting delivery address for checkout for user {}: {}", username, e.getMessage());
+            return "Error retrieving delivery address";
+        }
+    }
 }

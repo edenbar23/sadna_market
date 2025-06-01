@@ -1,5 +1,6 @@
 package com.sadna_market.market.DomainLayer;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -97,4 +98,6 @@ public interface IMessageRepository {
     int markAllStoreMessagesAsRead(UUID storeId);
 
     void clear();
+
+    List<Message> findAll();
 }

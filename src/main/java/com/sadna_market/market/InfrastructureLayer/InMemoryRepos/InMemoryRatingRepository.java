@@ -370,5 +370,13 @@ public class InMemoryRatingRepository implements IRatingRepository {
         logger.info("Rating repository cleared");
     }
 
+    @Override
+    public List<Object> findAll() {
+        List<Object> allRatings = new ArrayList<>();
+        allRatings.addAll(productRatings.values());
+        allRatings.addAll(storeRatings.values());
+        return allRatings;
+    }
+
 
 }

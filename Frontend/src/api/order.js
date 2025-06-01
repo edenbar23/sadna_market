@@ -1,4 +1,4 @@
-// Fixed order.js API to work with UUID format
+// Updated order.js API - simplified to use OrderDTO fields directly
 import axios from 'axios';
 import { getProductInfo } from './product';
 
@@ -111,7 +111,7 @@ export const fetchOrderById = async (orderId) => {
 };
 
 /**
- * Fetch user order history with UUID handling
+ * Fetch user order history - now simplified with OrderDTO fields
  * @param {string} username
  * @returns {Promise<Array<OrderDTO>>}
  */
@@ -155,16 +155,19 @@ export const fetchOrderHistory = async (username) => {
                         console.warn('Order has invalid UUID format:', order.orderId);
                     }
 
+                    // ✅ NEW: OrderDTO now includes storeName, paymentMethod, deliveryAddress
+                    // So we don't need to fetch them separately anymore!
+
                     // Handle products - your OrderDTO should have products as a Map<String, Integer>
                     if (!order.products || typeof order.products !== 'object') {
                         console.warn('Order has no products or invalid products structure:', order.orderId);
                         return {
                             ...order,
                             products: [],
-                            // Add missing fields with defaults
+                            // These are now included in OrderDTO directly!
                             storeName: order.storeName || 'Unknown Store',
-                            paymentMethod: order.paymentMethod || 'Unknown',
-                            deliveryAddress: order.deliveryAddress || order.shippingAddress || 'Unknown Address'
+                            paymentMethod: order.paymentMethod || 'Unknown Payment Method',
+                            deliveryAddress: order.deliveryAddress || 'Unknown Address'
                         };
                     }
 
@@ -219,7 +222,8 @@ export const fetchOrderHistory = async (username) => {
 
                     const validProducts = products.filter(product => product !== null);
 
-                    // Transform to match what your frontend expects
+                    // ✅ IMPROVED: Transform to match what your frontend expects
+                    // Now using data directly from OrderDTO
                     const transformedOrder = {
                         orderId: order.orderId,
                         orderDate: order.orderDate,
@@ -228,10 +232,11 @@ export const fetchOrderHistory = async (username) => {
                         finalPrice: order.finalPrice || order.totalPrice || 0,
                         products: validProducts,
                         storeId: order.storeId,
-                        // Add fields that OrderCard expects
+
+                        // ✅ These are now provided directly from OrderDTO!
                         storeName: order.storeName || 'Unknown Store',
                         paymentMethod: order.paymentMethod || 'Unknown Payment Method',
-                        deliveryAddress: order.deliveryAddress || order.shippingAddress || 'Unknown Address'
+                        deliveryAddress: order.deliveryAddress || 'Unknown Address'
                     };
 
                     console.log('Transformed order:', transformedOrder);

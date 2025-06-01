@@ -1,5 +1,6 @@
 package com.sadna_market.market.DomainLayer;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,4 +39,6 @@ public interface IRatingRepository {
     int getProductReviewCount(UUID productId);
 
     void clear();
+
+    List<Object> findAll();
 }
