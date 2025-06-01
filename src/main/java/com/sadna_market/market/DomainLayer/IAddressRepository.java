@@ -37,11 +37,6 @@ public interface IAddressRepository {
     boolean deleteById(UUID addressId);
 
     /**
-     * Delete all addresses for a user
-     */
-    void deleteByUsername(String username);
-
-    /**
      * Set an address as default (and unset others)
      */
     boolean setAsDefault(String username, UUID addressId);
