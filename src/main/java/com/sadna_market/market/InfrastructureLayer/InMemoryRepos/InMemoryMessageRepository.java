@@ -199,4 +199,9 @@ public class InMemoryMessageRepository implements IMessageRepository {
         messages.clear();
         logger.info("Message repository cleared");
     }
+
+    @Override
+    public List<Message> findAll() {
+        return new ArrayList<>(messages.values());
+    }
 }

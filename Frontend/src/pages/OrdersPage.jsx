@@ -4,7 +4,7 @@ import { fetchOrderHistory } from "../api/order";
 import { fetchStoreById, rateStore } from "../api/store";
 import { useAuthContext } from "../context/AuthContext";
 import MessageModal from "../components/MessageModal";
-import "../index.css";
+import "../styles/orders-page.css";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -33,7 +33,7 @@ export default function OrdersPage() {
       try {
         const ordersData = await fetchOrderHistory(user.username);
         console.log("Fetched orders:", ordersData);
-        
+
         // Fetch store data for each unique storeId
         const storeIds = [...new Set(ordersData.map(order => order.storeId))];
         const storePromises = storeIds.map(async (storeId) => {
@@ -96,11 +96,11 @@ export default function OrdersPage() {
     try {
       if (ratingType === 'store') {
         const result = await rateStore(
-          selectedOrder.storeId,
-          rating,
-          comment,
-          token,
-          user.username
+            selectedOrder.storeId,
+            rating,
+            comment,
+            token,
+            user.username
         );
         console.log('Store rating submitted successfully:', result);
         alert('Store rating submitted successfully!');
@@ -115,17 +115,17 @@ export default function OrdersPage() {
         // await rateProduct(selectedProduct.id, { rating, comment, userId: user.id });
         alert('Product rating functionality coming soon!');
       }
-      
+
       // Close modal and reset state
       setShowRatingModal(false);
       setSelectedOrder(null);
       setSelectedProduct(null);
       setRating(0);
       setComment("");
-      
+
     } catch (error) {
       console.error('Failed to submit rating:', error);
-      
+
       // Show more specific error message based on error type
       let errorMessage = 'Failed to submit rating. Please try again.';
       if (error.response?.data?.message) {
@@ -133,7 +133,7 @@ export default function OrdersPage() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       alert(errorMessage);
     } finally {
       setIsSubmittingRating(false);
@@ -150,124 +150,258 @@ export default function OrdersPage() {
 
   const StarRating = ({ rating, onRatingChange }) => {
     return (
-      <div className="star-rating">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            className={`star ${star <= rating ? 'star-filled' : 'star-empty'}`}
-            onClick={() => onRatingChange(star)}
-          >
-            ★
-          </button>
-        ))}
-      </div>
+        <div className="star-rating">
+          {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                  key={star}
+                  type="button"
+                  className={`star ${star <= rating ? 'star-filled' : 'star-empty'}`}
+                  onClick={() => onRatingChange(star)}
+              >
+                ★
+              </button>
+          ))}
+        </div>
     );
+  };
+
+  // Calculate order statistics
+  const orderStats = {
+    total: orders.length,
+    completed: orders.filter(order => order.status === 'COMPLETED').length,
+    pending: orders.filter(order => order.status === 'PENDING').length,
+    totalSpent: orders.reduce((sum, order) => sum + (order.finalPrice || order.totalPrice || 0), 0)
   };
 
   if (loading) {
     return (
-      <div className="orders-page">
-        <h1 className="orders-title">Loading orders...</h1>
-      </div>
+        <div className="orders-page">
+          <div className="orders-loading">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Loading your orders...</p>
+          </div>
+        </div>
     );
   }
 
   if (!orders || !orders.length) {
     return (
-      <div className="orders-page">
-        <h1 className="orders-title">No orders found.</h1>
-      </div>
+        <div className="orders-page">
+          <div className="orders-page-header">
+            <h1 className="orders-title">My Orders</h1>
+            <p className="orders-subtitle">Track and manage your order history</p>
+          </div>
+
+          <div className="no-orders">
+            <div className="no-orders-icon">📦</div>
+            <h2>No Orders Yet</h2>
+            <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
+            <button
+                className="start-shopping-btn"
+                onClick={() => window.location.href = '/'}
+            >
+              Start Shopping
+            </button>
+          </div>
+        </div>
     );
   }
 
   return (
-    <div className="orders-page">
-      <h1 className="orders-title">My Orders</h1>
-      <div className="orders-list">
-        {orders.map((order) => {
-          const store = stores[order.storeId];
-          const isCompleted = order.status === 'COMPLETED';
-          
-          return (
-            <div key={order.orderId} className="order-card">
-              <div className="order-content">
-                <OrderCard order={order} />
-              </div>
-              
-              <div className="order-actions">
-                <button
-                  className="message-store-btn"
-                  onClick={() => handleMessageStore(order)}
-                >
-                  Message {store?.data?.name || store?.name || "Store"}
-                </button>
-                {isCompleted && (
-                  <button
-                    className="rate-store-btn"
-                    onClick={() => handleRateStore(order)}
-                  >
-                    Rate Store
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <div className="orders-page">
+        <div className="orders-page-header">
+          <h1 className="orders-title">My Orders</h1>
+          <p className="orders-subtitle">Track and manage your order history</p>
+        </div>
 
-      {/* Message Modal */}
-      {showModal && selectedStore && (
-        <MessageModal 
-          store={selectedStore}
-          onClose={handleCloseModal}
-        />
-      )}
-
-      {/* Rating Modal */}
-      {showRatingModal && (
-        <div className="modal-overlay">
-          <div className="rating-modal">
-            <div className="modal-header">
-              <h3>
-                Rate {ratingType === 'store' 
-                  ? (stores[selectedOrder?.storeId]?.data?.name || stores[selectedOrder?.storeId]?.name || 'Store')
-                  : (selectedProduct?.name || 'Product')
-                }
-              </h3>
-              <button className="modal-close" onClick={handleCloseRatingModal}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="rating-section">
-                <label>Rating:</label>
-                <StarRating rating={rating} onRatingChange={setRating} />
-              </div>
-              <div className="comment-section">
-                <label htmlFor="rating-comment">Comment (optional):</label>
-                <textarea
-                  id="rating-comment"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your experience..."
-                  rows="4"
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={handleCloseRatingModal}>
-                Cancel
-              </button>
-              <button 
-                className="submit-btn" 
-                onClick={handleSubmitRating}
-                disabled={rating === 0 || isSubmittingRating}
-              >
-                {isSubmittingRating ? 'Submitting...' : 'Submit Rating'}
-              </button>
-            </div>
+        {/* Order Statistics */}
+        <div className="orders-stats">
+          <div className="stat-card">
+            <div className="stat-number">{orderStats.total}</div>
+            <div className="stat-label">Total Orders</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">{orderStats.completed}</div>
+            <div className="stat-label">Completed</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">{orderStats.pending}</div>
+            <div className="stat-label">Pending</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-number">${orderStats.totalSpent.toFixed(2)}</div>
+            <div className="stat-label">Total Spent</div>
           </div>
         </div>
-      )}
-    </div>
+
+        <div className="orders-container">
+          <div className="orders-list">
+            {orders.map((order) => {
+              const store = stores[order.storeId];
+              const isCompleted = order.status === 'COMPLETED';
+
+              return (
+                  <div key={order.orderId} className="order-card">
+                    {/* Order Header */}
+                    <div className="order-header">
+                      <div className="order-meta">
+                        <div className="order-id">#{order.orderId.substring(0, 8)}...</div>
+                        <div className="order-date">
+                          {new Date(order.orderDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                      <div className="order-summary">
+                        <div className="order-total">${(order.finalPrice || order.totalPrice || 0).toFixed(2)}</div>
+                        <div className={`order-status ${order.status?.toLowerCase() || 'pending'}`}>
+                          {order.status || 'PENDING'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="order-content">
+                      {/* Store Information */}
+                      <div className="store-info">
+                        <div className="store-name">
+                          {store?.data?.name || store?.name || order.storeName || "Unknown Store"}
+                        </div>
+                        <div className="store-details">
+                          Order from this store • {order.products?.length || 0} items
+                        </div>
+                      </div>
+
+                      {/* Products Section */}
+                      <div className="products-section">
+                        <div className="products-header">
+                          <h4 className="products-title">Items Ordered</h4>
+                          <span className="products-count">{order.products?.length || 0} items</span>
+                        </div>
+                        <ul className="products-list">
+                          {order.products?.map((product, index) => (
+                              <li key={index} className="product-item">
+                                <div className="product-info">
+                                  <div className="product-details">
+                                    <span className="product-name">{product.name}</span>
+                                    <span className="product-quantity">Quantity: {product.quantity}</span>
+                                  </div>
+                                </div>
+                                <div className="product-price">
+                                  ${(product.price * product.quantity).toFixed(2)}
+                                </div>
+                                {isCompleted && (
+                                    <button
+                                        className="rate-product-btn"
+                                        onClick={() => handleRateProduct(product)}
+                                    >
+                                      Rate Product
+                                    </button>
+                                )}
+                              </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Order Details */}
+                      <div className="order-details">
+                        <div className="detail-item">
+                          <span className="detail-label">Payment Method</span>
+                          <span className="detail-value">{order.paymentMethod || 'N/A'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Delivery Address</span>
+                          <span className="detail-value">{order.deliveryAddress || 'N/A'}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Order Total</span>
+                          <span className="detail-value">${(order.totalPrice || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="detail-item">
+                          <span className="detail-label">Final Price</span>
+                          <span className="detail-value">${(order.finalPrice || order.totalPrice || 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Actions */}
+                    <div className="order-actions">
+                      <button
+                          className="message-store-btn"
+                          onClick={() => handleMessageStore(order)}
+                      >
+                        💬 Message {store?.data?.name || store?.name || "Store"}
+                      </button>
+                      {isCompleted && (
+                          <button
+                              className="rate-store-btn"
+                              onClick={() => handleRateStore(order)}
+                          >
+                            ⭐ Rate Store
+                          </button>
+                      )}
+                    </div>
+                  </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Message Modal */}
+        {showModal && selectedStore && (
+            <MessageModal
+                store={selectedStore}
+                onClose={handleCloseModal}
+            />
+        )}
+
+        {/* Rating Modal */}
+        {showRatingModal && (
+            <div className="modal-overlay">
+              <div className="rating-modal">
+                <div className="modal-header">
+                  <h3>
+                    Rate {ratingType === 'store'
+                      ? (stores[selectedOrder?.storeId]?.data?.name || stores[selectedOrder?.storeId]?.name || 'Store')
+                      : (selectedProduct?.name || 'Product')
+                  }
+                  </h3>
+                  <button className="modal-close" onClick={handleCloseRatingModal}>×</button>
+                </div>
+                <div className="modal-body">
+                  <div className="rating-section">
+                    <label>How would you rate your experience?</label>
+                    <StarRating rating={rating} onRatingChange={setRating} />
+                  </div>
+                  <div className="comment-section">
+                    <label htmlFor="rating-comment">Share your thoughts (optional):</label>
+                    <textarea
+                        id="rating-comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Tell us about your experience..."
+                        rows="4"
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="cancel-btn" onClick={handleCloseRatingModal}>
+                    Cancel
+                  </button>
+                  <button
+                      className="submit-btn"
+                      onClick={handleSubmitRating}
+                      disabled={rating === 0 || isSubmittingRating}
+                  >
+                    {isSubmittingRating ? 'Submitting...' : 'Submit Rating'}
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
+      </div>
   );
 }
