@@ -1,17 +1,38 @@
 package com.sadna_market.market.DomainLayer;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Entity
+@Table(name = "store_ratings")
+@Getter
+@NoArgsConstructor // Required by JPA
 public class StoreRating implements IRating {
-    @Getter private final UUID ratingId;
-    @Getter private final String username;  // Username instead of UUID
-    @Getter private final UUID storeId;
-    @Getter private int ratingValue;
-    @Getter private String comment;  // Keeping comment for store ratings
-    @Getter private LocalDateTime timestamp;
-    @Getter private boolean updated;
+
+    @Id
+    @Column(name = "rating_id", updatable = false, nullable = false)
+    private UUID ratingId;
+
+    @Column(name = "username", nullable = false, length = 50)
+    private String username;
+
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;
+
+    @Column(name = "rating_value", nullable = false)
+    private int ratingValue;
+
+    @Column(name = "comment", length = 1000)
+    private String comment;
+
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+
+    @Column(name = "updated", nullable = false)
+    private boolean updated;
 
     /**
      * Constructor for a new store rating
