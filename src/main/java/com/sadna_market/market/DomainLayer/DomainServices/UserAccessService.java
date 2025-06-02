@@ -356,9 +356,9 @@ public class UserAccessService {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             checkIfLoggedIn(username);
-            if (password != null) {
-                user.setPassword(password);
-            }
+//            if (password != null) {
+//                user.setPassword(password);
+//            }
             if (email != null) {
                 user.setEmail(email);
             }
