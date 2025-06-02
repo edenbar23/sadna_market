@@ -37,7 +37,7 @@ public class MessageService {
     @PostConstruct
     public void subscribeToEvents() {
         // Subscribe to message-related events
-        DomainEventPublisher.subscribe(MessageSentEvent.class, this::handleMessageSent);
+//        DomainEventPublisher.subscribe(MessageSentEvent.class, this::handleMessageSent);
         DomainEventPublisher.subscribe(ViolationReportedEvent.class, this::handleViolationReported);
         DomainEventPublisher.subscribe(ViolationReplyEvent.class, this::handleViolationReply);
         DomainEventPublisher.subscribe(DirectMessageEvent.class, this::handleDirectMessage);
@@ -48,23 +48,23 @@ public class MessageService {
     /**
      * Event handler for MessageSentEvent
      */
-    private void handleMessageSent(MessageSentEvent event) {
-        logger.info("Handling message sent event from user {} to store {}",
-                event.getSenderUsername(), event.getStoreId());
-
-        try {
-            // Use the existing method to handle the message
-            Message message = sendMessage(
-                    event.getSenderUsername(),
-                    event.getStoreId(),
-                    event.getContent()
-            );
-
-            logger.info("Message created successfully: {}", message.getMessageId());
-        } catch (Exception e) {
-            logger.error("Error handling message sent event: {}", e.getMessage(), e);
-        }
-    }
+//    private void handleMessageSent(MessageSentEvent event) {
+//        logger.info("Handling message sent event from user {} to store {}",
+//                event.getSenderUsername(), event.getStoreId());
+//
+//        try {
+//            // Use the existing method to handle the message
+//            Message message = sendMessage(
+//                    event.getSenderUsername(),
+//                    event.getStoreId(),
+//                    event.getContent()
+//            );
+//
+//            logger.info("Message created successfully: {}", message.getMessageId());
+//        } catch (Exception e) {
+//            logger.error("Error handling message sent event: {}", e.getMessage(), e);
+//        }
+//    }
 
     /**
      * Event handler for ViolationReportedEvent
