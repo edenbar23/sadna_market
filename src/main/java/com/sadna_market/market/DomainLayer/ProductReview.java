@@ -1,19 +1,40 @@
 package com.sadna_market.market.DomainLayer;
-
 import lombok.Getter;
-
+import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Entity
+@Table(name = "product_reviews")
+@Getter
+@NoArgsConstructor // Required by JPA
 public class ProductReview {
-    @Getter private final UUID reviewId;
-    @Getter private final String username;
-    @Getter private final UUID productId;
-    @Getter private final UUID storeId;
-    @Getter private String reviewText;
-    @Getter private final LocalDateTime timestamp;
-    @Getter private boolean isEdited;
-    @Getter private LocalDateTime lastEditTime;
+
+    @Id
+    @Column(name = "review_id", updatable = false, nullable = false)
+    private UUID reviewId;
+
+    @Column(name = "username", nullable = false, length = 50)
+    private String username;
+
+    @Column(name = "product_id", nullable = false)
+    private UUID productId;
+
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;
+
+    @Column(name = "review_text", nullable = false, length = 500)
+    private String reviewText;
+
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+
+    @Column(name = "is_edited", nullable = false)
+    private boolean isEdited;
+
+    @Column(name = "last_edit_time")
+    private LocalDateTime lastEditTime;
 
     private static final int MAX_REVIEW_LENGTH = 500;
 
