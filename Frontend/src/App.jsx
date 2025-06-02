@@ -16,6 +16,7 @@ import StorePage from "./pages/StorePage";
 import StoreManagementPage from "./pages/StoreManagementPage";
 import StoreManagePage from "./pages/StoreManagePage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
     const { user, loading } = useAuthContext();
@@ -56,6 +57,14 @@ function App() {
                             element={
                                 <ProtectedRoute user={user}>
                                     <MessagesPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/my-profile"
+                            element={
+                                <ProtectedRoute user={user}>
+                                    <ProfilePage />
                                 </ProtectedRoute>
                             }
                         />
