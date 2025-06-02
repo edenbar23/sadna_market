@@ -2,45 +2,57 @@ package com.sadna_market.market.DomainLayer;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Entity
+@Table(name = "messages")
+@Getter
+@NoArgsConstructor // Required by JPA
 public class Message {
 
-    @Getter
-    private final UUID messageId;
+    @Id
+    @Column(name = "message_id", updatable = false, nullable = false)
+    private UUID messageId;
 
-    @Getter
-    private final String senderUsername;
+    @Column(name = "sender_username", nullable = false, length = 50)
+    private String senderUsername;
 
-    @Getter
-    private final UUID storeId;
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;
 
-    @Getter
-    private final String content;
+    @Column(name = "content", nullable = false, length = 2000)
+    private String content;
 
-    @Getter
-    private final LocalDateTime timestamp;
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "reply", length = 2000)
     private String reply;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "reply_timestamp")
     private LocalDateTime replyTimestamp;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "reply_author", length = 50)
     private String replyAuthor;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "is_read", nullable = false)
     private boolean isRead;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "is_violation_reported", nullable = false)
     private boolean isViolationReported;
 
-    @Getter @Setter
+    @Setter
+    @Column(name = "violation_reason", length = 500)
     private String violationReason;
-
 
     /**
      * Constructor for a new message
@@ -78,6 +90,8 @@ public class Message {
         this.replyTimestamp = replyTimestamp;
         this.replyAuthor = replyAuthor;
         this.isRead = isRead;
+        this.isViolationReported = false;
+        this.violationReason = null;
     }
 
     /**
@@ -149,7 +163,4 @@ public class Message {
 
         return sb.toString();
     }
-
-
-
 }
