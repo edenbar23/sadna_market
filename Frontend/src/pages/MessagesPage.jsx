@@ -12,12 +12,21 @@ export default function MessagesPage() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newFormData, setNewFormData] = useState({ toType: "store", to: "", text: "" });
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
+
+  // Debug: Component render counter
+  const renderRef = React.useRef(0);
+  renderRef.current += 1;
+  console.log(`🔄 MessagesPage render #${renderRef.current}`);
 
   // Load user messages when component mounts
   useEffect(() => {
+    console.log("📥 useEffect loadMessages triggered", { user: user?.username, hasToken: !!token });
+
     const loadMessages = async () => {
       if (!user || !token) {
+        console.log("⚠️ No user or token, skipping load messages");
         setIsLoading(false);
         return;
       }
@@ -26,7 +35,9 @@ export default function MessagesPage() {
       setError(null);
 
       try {
+        console.log("🔍 Fetching user messages...");
         const response = await getUserMessages(user.username, token);
+        console.log("📨 getUserMessages response:", response);
 
         // Group messages by conversation (store)
         const convMap = new Map();
@@ -35,6 +46,7 @@ export default function MessagesPage() {
         if (response && response.data) {
           // First, collect all unique store IDs
           const storeIds = [...new Set(response.data.map(message => message.storeId))];
+          console.log("🏪 Unique store IDs:", storeIds);
 
           // Fetch store names for all stores
           for (const storeId of storeIds) {
@@ -105,14 +117,16 @@ export default function MessagesPage() {
           return conv;
         });
 
+        console.log("💬 Setting conversations:", sortedConversations);
         setConversations(sortedConversations);
 
         // Select the first conversation by default if available
         if (sortedConversations.length > 0) {
+          console.log("🎯 Auto-selecting first conversation:", sortedConversations[0].id);
           setSelectedConv(sortedConversations[0]);
         }
       } catch (err) {
-        console.error("Failed to load messages:", err);
+        console.error("❌ Failed to load messages:", err);
         setError("Failed to load messages. Please try again.");
       } finally {
         setIsLoading(false);
@@ -144,22 +158,56 @@ export default function MessagesPage() {
 
   // Handle sending a message in existing conversation
   const handleSend = async () => {
-    if (newMsg.trim() === "" || !selectedConv || !user || !token) return;
+    const timestamp = Date.now();
+    console.log(`🚀 handleSend called at ${timestamp}`, {
+      messageText: newMsg,
+      selectedConvId: selectedConv?.id,
+      isSending,
+      hasUser: !!user,
+      hasToken: !!token
+    });
+
+    if (newMsg.trim() === "" || !selectedConv || !user || !token || isSending) {
+      console.log("⛔ handleSend early return", {
+        emptyMessage: newMsg.trim() === "",
+        noSelectedConv: !selectedConv,
+        noUser: !user,
+        noToken: !token,
+        alreadySending: isSending
+      });
+      return;
+    }
+
+    console.log(`🔒 Setting isSending to true at ${timestamp}`);
+    setIsSending(true);
+    const messageText = newMsg; // Capture the message text
+    console.log(`📝 Captured message text: "${messageText}"`);
+
+    console.log(`🧹 Clearing input field at ${timestamp}`);
+    setNewMsg(""); // Clear input immediately to prevent double-sends
 
     try {
+      console.log(`📤 Calling sendMessage API at ${timestamp}`, {
+        username: user.username,
+        storeId: selectedConv.id,
+        message: messageText
+      });
+
       // Send message to the API
-      await sendMessage(
+      const apiResponse = await sendMessage(
           user.username,
-          selectedConv.id, // storeId
-          newMsg,
+          selectedConv.id,
+          messageText,
           token
       );
 
+      console.log(`✅ sendMessage API response at ${timestamp}:`, apiResponse);
+
       // Update the UI
       const newMessage = {
-        id: `temp-${Date.now()}`,
+        id: `temp-${timestamp}`,
         sender: "user",
-        text: newMsg,
+        text: messageText,
         time: new Date().toLocaleString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -172,30 +220,57 @@ export default function MessagesPage() {
         isRead: false
       };
 
-      const updated = conversations.map((conv) =>
-          conv.id === selectedConv.id
-              ? {
-                ...conv,
-                messages: [...conv.messages, newMessage],
-              }
-              : conv
-      );
+      console.log(`🎨 Created new message object at ${timestamp}:`, newMessage);
 
-      setConversations(updated);
-      setSelectedConv(updated.find((c) => c.id === selectedConv.id));
-      setNewMsg("");
+      console.log(`🔄 Updating conversations state at ${timestamp}`);
+      setConversations(prevConversations => {
+        console.log(`📊 Previous conversations:`, prevConversations.length);
+        const updated = prevConversations.map((conv) =>
+            conv.id === selectedConv.id
+                ? {
+                  ...conv,
+                  messages: [...conv.messages, newMessage],
+                }
+                : conv
+        );
+
+        console.log(`📊 Updated conversations:`, updated.length);
+        console.log(`💬 Updated selected conv messages count:`,
+            updated.find(c => c.id === selectedConv.id)?.messages.length
+        );
+
+        // Update selected conversation
+        const newSelectedConv = updated.find((c) => c.id === selectedConv.id);
+        console.log(`🎯 Setting new selected conversation at ${timestamp}:`, newSelectedConv?.id);
+        setSelectedConv(newSelectedConv);
+        return updated;
+      });
+
+      console.log(`✅ Message send completed successfully at ${timestamp}`);
+
     } catch (err) {
-      console.error("Failed to send message:", err);
+      console.error(`❌ Failed to send message at ${timestamp}:`, err);
       alert("Failed to send message. Please try again.");
+      console.log(`🔄 Restoring message text: "${messageText}"`);
+      setNewMsg(messageText); // Restore message on error
+    } finally {
+      console.log(`🔓 Setting isSending to false at ${timestamp}`);
+      setIsSending(false);
     }
   };
 
   // Handle starting a new conversation
   const handleNewMessage = async () => {
+    console.log("🆕 handleNewMessage called", newFormData);
+
     const { to, toType, text } = newFormData;
-    if (!to || !text || !user || !token) return;
+    if (!to || !text || !user || !token) {
+      console.log("⛔ handleNewMessage early return - missing data");
+      return;
+    }
 
     try {
+      console.log("📤 Sending new message via API");
       await sendMessage(
           user.username,
           to, // This should be a storeId
@@ -238,41 +313,72 @@ export default function MessagesPage() {
         ],
       };
 
+      console.log("🆕 Created new conversation:", newConv);
       setConversations([newConv, ...conversations]);
       setSelectedConv(newConv);
       setShowNewForm(false);
       setNewFormData({ toType: "store", to: "", text: "" });
     } catch (err) {
-      console.error("Failed to start new conversation:", err);
+      console.error("❌ Failed to start new conversation:", err);
       alert("Failed to send message. Please try again.");
     }
   };
 
   // Mark messages as read when viewing a conversation
   useEffect(() => {
+    console.log("👁️ useEffect markMessagesRead triggered", { selectedConvId: selectedConv?.id });
+
     const markMessagesRead = async () => {
-      if (!selectedConv || !user || !token) return;
+      if (!selectedConv || !user || !token) {
+        console.log("⚠️ Skipping mark as read - missing requirements");
+        return;
+      }
 
       const unreadMessages = selectedConv.messages.filter(
           msg => msg.sender !== "user" && !msg.isRead && msg.originalMessageId
       );
 
+      console.log(`📖 Found ${unreadMessages.length} unread messages to mark as read`);
+
       for (const msg of unreadMessages) {
         try {
           await markMessageAsRead(msg.originalMessageId, user.username, token);
           msg.isRead = true;
+          console.log(`✅ Marked message ${msg.id} as read`);
         } catch (err) {
-          console.error(`Failed to mark message ${msg.id} as read:`, err);
+          console.error(`❌ Failed to mark message ${msg.id} as read:`, err);
         }
       }
 
       if (unreadMessages.length > 0) {
+        console.log("🔄 Updating conversations after marking as read");
         setConversations([...conversations]);
       }
     };
 
     markMessagesRead();
   }, [selectedConv, user, token]);
+
+  // Debug: Log key press events
+  const handleKeyDown = (e) => {
+    console.log(`⌨️ Key pressed: ${e.key}`, {
+      target: e.target.tagName,
+      isSending,
+      messageLength: newMsg.length
+    });
+
+    if (e.key === 'Enter') {
+      console.log("🎯 Enter key detected - calling handleSend");
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Debug: Log button clicks
+  const handleSendClick = () => {
+    console.log("🖱️ Send button clicked", { isSending, messageLength: newMsg.length });
+    handleSend();
+  };
 
   if (isLoading) {
     return <div className="messages-page loading">Loading messages...</div>;
@@ -281,6 +387,12 @@ export default function MessagesPage() {
   if (error) {
     return <div className="messages-page error">{error}</div>;
   }
+
+  console.log("🎨 Rendering component", {
+    conversationsCount: conversations.length,
+    selectedConvId: selectedConv?.id,
+    isSending
+  });
 
   return (
       <div className="messages-page">
@@ -292,7 +404,10 @@ export default function MessagesPage() {
                 conversations.map((conv) => (
                     <li
                         key={conv.id}
-                        onClick={() => setSelectedConv(conv)}
+                        onClick={() => {
+                          console.log(`🎯 Selecting conversation: ${conv.id}`);
+                          setSelectedConv(conv);
+                        }}
                         className={conv.id === selectedConv?.id ? "active" : ""}
                     >
                       <strong>{conv.with}</strong> ({conv.type})
@@ -328,11 +443,17 @@ export default function MessagesPage() {
                 <div className="chat-input">
                   <input
                       value={newMsg}
-                      onChange={(e) => setNewMsg(e.target.value)}
+                      onChange={(e) => {
+                        console.log(`📝 Input changed: "${e.target.value}"`);
+                        setNewMsg(e.target.value);
+                      }}
                       placeholder="Type a reply..."
-                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      onKeyDown={handleKeyDown}
+                      disabled={isSending}
                   />
-                  <button onClick={handleSend}>Send</button>
+                  <button onClick={handleSendClick} disabled={isSending}>
+                    {isSending ? 'Sending...' : 'Send'}
+                  </button>
                 </div>
               </>
           ) : (

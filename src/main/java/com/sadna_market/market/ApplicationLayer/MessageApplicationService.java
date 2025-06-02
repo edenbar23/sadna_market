@@ -47,10 +47,10 @@ public class MessageApplicationService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
 
-            // Publish the event
-            DomainEventPublisher.publish(
-                    new MessageSentEvent(username, request.getReceiverStoreId(), request.getContent())
-            );
+//            // Publish the event
+//            DomainEventPublisher.publish(
+//                    new MessageSentEvent(username, request.getReceiverStoreId(), request.getContent())
+//            );
 
             // Use the domain service to send the message
             Message message = messageService.sendMessage(username, request.getReceiverStoreId(), request.getContent());
@@ -79,10 +79,10 @@ public class MessageApplicationService {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);
 
-            // Publish the event
-            DomainEventPublisher.publish(
-                    new MessageSentEvent(username, request.getStoreId(), request.getContent())
-            );
+//            // Publish the event
+//            DomainEventPublisher.publish(
+//                    new MessageSentEvent(username, request.getStoreId(), request.getContent())
+//            );
 
             // Use the domain service to send the message
             Message message = messageService.sendMessage(username, request.getStoreId(), request.getContent());
