@@ -76,11 +76,10 @@ public class UserService {
     public Response<String> loginUser(String username, String password) {
         try {
             logger.info("Logging in user with username: {}", username);
-            userAccessService.loginUser(username, password);
-            logger.info("User logged in successfully");
-            //auth return token
             String token = authentication.createUserSessionToken(username, password);
             logger.info("Token generated successfully: {}", token);
+            userAccessService.loginUser(username, password);
+            logger.info("User logged in successfully");
             return Response.success(token);
         } catch (Exception e) {
             logger.error("Error logging in user: {}", e.getMessage());

@@ -44,6 +44,7 @@ public class SystemInitializer implements CommandLineRunner {
     private final IRatingRepository ratingRepository;
     private final IAddressRepository addressRepository;
     private final IAuthRepository authRepository;
+    private final IUserStoreRolesRepository userStoreRolesRepository;
     private final UserAccessService userAccessService;
     private final StoreManagementService storeManagementService;
     private final InventoryManagementService inventoryManagementService;
@@ -73,6 +74,7 @@ public class SystemInitializer implements CommandLineRunner {
             IRatingRepository ratingRepository,
             IAddressRepository addressRepository,
             IAuthRepository authRepository,
+            IUserStoreRolesRepository userStoreRolesRepository,
             UserAccessService userAccessService,
             StoreManagementService storeManagementService,
             InventoryManagementService inventoryManagementService,
@@ -86,6 +88,7 @@ public class SystemInitializer implements CommandLineRunner {
         this.ratingRepository = ratingRepository;
         this.addressRepository = addressRepository;
         this.authRepository = authRepository;
+        this.userStoreRolesRepository = userStoreRolesRepository;
         this.userAccessService = userAccessService;
         this.storeManagementService = storeManagementService;
         this.inventoryManagementService = inventoryManagementService;
@@ -130,6 +133,7 @@ public class SystemInitializer implements CommandLineRunner {
     private void clearAllData() {
         logger.info("Clearing existing data...");
         try {
+            userStoreRolesRepository.clear();
             userRepository.clear();
             storeRepository.clear();
             productRepository.clear();

@@ -5,17 +5,51 @@ import java.util.Map;
 import java.util.UUID;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "shopping_baskets")
+@Getter
+@NoArgsConstructor
 public class ShoppingBasket {
     private static final Logger logger = LogManager.getLogger(ShoppingBasket.class);
-    private final Map<UUID, Integer> products;
-    @Getter
-    private final UUID storeId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "basket_id")
+    private UUID basketId;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "basket_products",
+            joinColumns = @JoinColumn(name = "basket_id")
+    )
+    @MapKeyColumn(name = "product_id")
+    @Column(name = "quantity")
+    private Map<UUID, Integer> products = new HashMap<>();
+
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;
+
+    @Setter
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id")
+    private Cart cart;
 
     public ShoppingBasket(UUID storeId) {
         this.storeId = storeId;
+        this.products = new HashMap<>();
+    }
+
+
+    ShoppingBasket(UUID storeId, Cart cart) {
+        this.storeId = storeId;
+        this.cart = cart;
         this.products = new HashMap<>();
     }
 
@@ -69,4 +103,5 @@ public class ShoppingBasket {
     public int getProductQuantity(UUID productId) {
         return products.getOrDefault(productId, 0);
     }
+
 }

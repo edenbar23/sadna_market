@@ -9,23 +9,56 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/**
- * Abstract base class for all user roles in the market system.
- * Implements common functionality defined in the IUserRole interface.
- */
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
+@Entity
+@Table(name = "user_store_roles")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "role_type", discriminatorType = DiscriminatorType.STRING)
+@Getter
+@NoArgsConstructor // Required by JPA
 public abstract class UserStoreRoles implements IUserRole {
     private static final Logger logger = LogManager.getLogger(UserStoreRoles.class);
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "role_id")
+    private UUID roleId;
+
+    @Column(nullable = false, length = 50)
     protected String username;
+
+    @Column(name = "store_id", nullable = false)
     protected UUID storeId;
+
+    @Column(name = "appointed_by", length = 50)
     protected String appointedBy; // null for founder
-    
-    // Using thread-safe collections for concurrent access
-    protected List<String> appointees; // users appointed by this role
-    protected Set<Permission> permissions;
-    
+
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "role_appointees",
+            joinColumns = @JoinColumn(name = "role_id")
+    )
+    @Column(name = "appointee_username")
+    protected List<String> appointees = new ArrayList<>();
+
+    // Store permissions as enumerated values
+    @ElementCollection(fetch = FetchType.EAGER, targetClass = Permission.class)
+    @CollectionTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id")
+    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "permission")
+    protected Set<Permission> permissions = ConcurrentHashMap.newKeySet();
+
     /**
      * Constructor for creating a new role
-     * 
+     *
      * @param username The username of the user with this role
      * @param storeId The store ID this role is associated with
      * @param appointedBy The username of the user who appointed this role (null for founder)
@@ -34,7 +67,7 @@ public abstract class UserStoreRoles implements IUserRole {
         if (username == null || username.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
-        
+
         this.username = username;
         this.storeId = storeId;
         this.appointedBy = appointedBy;
@@ -42,32 +75,32 @@ public abstract class UserStoreRoles implements IUserRole {
         this.permissions = ConcurrentHashMap.newKeySet();
         initializePermissions(); // Initialize role-specific permissions
     }
-    
+
     /**
      * Method to be implemented by subclasses to set initial permissions
      * This allows each role type to have its own default set of permissions
      */
     protected abstract void initializePermissions();
-    
+
     /**
      * Abstract method to get the role type of this role
      * Each concrete role class must implement this to specify its type
-     * 
+     *
      * @return The RoleType enum value for this role
      */
     @Override
     public abstract RoleType getRoleType();
-    
+
     @Override
     public String getUsername() {
         return username;
     }
-    
+
     @Override
     public UUID getStoreId() {
         return storeId;
     }
-    
+
     @Override
     public boolean hasPermission(Permission permission) {
         if (permission == null) {
@@ -75,31 +108,31 @@ public abstract class UserStoreRoles implements IUserRole {
         }
         return permissions.contains(permission);
     }
-    
+
     @Override
     public void addPermission(Permission permission) {
         if (permission != null) {
             permissions.add(permission);
         }
     }
-    
+
     @Override
     public void removePermission(Permission permission) {
         if (permission != null) {
             permissions.remove(permission);
         }
     }
-    
+
     @Override
     public List<Permission> getPermissions() {
         return new ArrayList<>(permissions);
     }
-    
+
     @Override
     public String getAppointedBy() {
         return appointedBy;
     }
-    
+
     @Override
     public boolean isAppointedByUser(String username) {
         if (username == null) {
@@ -107,30 +140,30 @@ public abstract class UserStoreRoles implements IUserRole {
         }
         return appointedBy != null && appointedBy.equals(username);
     }
-    
+
     @Override
     public List<String> getAppointees() {
         return new ArrayList<>(appointees);
     }
-    
+
     @Override
     public void addAppointee(String appointeeUsername) {
-        if (appointeeUsername != null && !appointeeUsername.isEmpty() && 
-            !appointees.contains(appointeeUsername)) {
+        if (appointeeUsername != null && !appointeeUsername.isEmpty() &&
+                !appointees.contains(appointeeUsername)) {
             appointees.add(appointeeUsername);
         }
     }
-    
+
     /**
      * Abstract method to process the removal of this role
      * Each concrete role implementation delegates to the appropriate method on the visitor
-     * 
+     *
      * @param visitor The visitor to handle the role-specific removal process
      * @param user The user with this role
      */
     @Override
     public abstract void processRoleRemoval(UserRoleVisitor visitor, User user);
-    
+
     //TODO: Implement the createRequest method
     @Override
     public String createRequest(String senderName, String sentName, String reqType) {
@@ -139,13 +172,13 @@ public abstract class UserStoreRoles implements IUserRole {
         }
         return null; // Placeholder for request creation logic
     }
-    
+
     @Override
     public String toString() {
-        return String.format("UserRole[type=%s, username=%s, storeId=%d, appointedBy=%s]", 
-                            getRoleType(), username, storeId, appointedBy);
+        return String.format("UserRole[type=%s, username=%s, storeId=%s, appointedBy=%s]",
+                getRoleType(), username, storeId, appointedBy);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -154,13 +187,13 @@ public abstract class UserStoreRoles implements IUserRole {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        
+
         UserStoreRoles other = (UserStoreRoles) obj;
-        return username.equals(other.username) && 
-               storeId == other.storeId && 
-               getRoleType() == other.getRoleType();
+        return username.equals(other.username) &&
+                storeId.equals(other.storeId) &&
+                getRoleType() == other.getRoleType();
     }
-    
+
     @Override
     public int hashCode() {
         int result = 17;
