@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "../index.css";
 
 const ProfileForm = ({ userInfo, onSave }) => {
@@ -6,9 +6,18 @@ const ProfileForm = ({ userInfo, onSave }) => {
         email: userInfo.email || '',
         firstName: userInfo.firstName || '',
         lastName: userInfo.lastName || '',
-        phoneNumber: userInfo.phoneNumber || '',
-        address: userInfo.address || '',
+        // phoneNumber: userInfo.phoneNumber || '',
+        // address: userInfo.address || '',
     });
+
+    // 🔁 Sync when userInfo changes
+    useEffect(() => {
+        setFormData({
+            email: userInfo.email || '',
+            firstName: userInfo.firstName || '',
+            lastName: userInfo.lastName || '',
+        });
+    }, [userInfo]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -41,11 +50,11 @@ const ProfileForm = ({ userInfo, onSave }) => {
                 </div>
             </div>
 
-            <label>Phone Number</label>
-            <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
+            {/*<label>Phone Number</label>*/}
+            {/*<input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />*/}
 
-            <label>Address</label>
-            <textarea name="address" rows={3} value={formData.address} onChange={handleChange}></textarea>
+            {/*<label>Address</label>*/}
+            {/*<textarea name="address" rows={3} value={formData.address} onChange={handleChange}></textarea>*/}
 
             <button type="submit" className="save-button">Save Changes</button>
         </form>

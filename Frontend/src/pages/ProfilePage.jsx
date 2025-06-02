@@ -1,54 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import ProfileForm from '../components/ProfileForm';
 import { returnInfo, changeUserInfo } from '../api/user';
+import { useAuthContext } from '../context/AuthContext';
 import "../index.css";
 
 const ProfilePage = () => {
+    const { user, token } = useAuthContext(); // ✅ use context instead of localStorage
     const [userInfo, setUserInfo] = useState(null);
-    const [token, setToken] = useState('');
-    const [username, setUsername] = useState('');
+
+    const fetchUserInfo = async () => {
+        console.log("Calling returnInfo with", user?.username, token);
+        try {
+            const res = await returnInfo(user.username, token);
+            console.log("res.data", res.data);
+            const dto = res.data;
+            setUserInfo({
+                userName: dto.userName,
+                email: dto.email,
+                firstName: dto.firstName,
+                lastName: dto.lastName,
+                // phoneNumber: dto.phoneNumber || '',
+                // address: dto.address || '',
+            });
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+        }
+    };
+
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        const storedUsername = localStorage.getItem('username');
-        setToken(storedToken);
-        setUsername(storedUsername);
-
-        const fetchUserInfo = async () => {
-            try {
-                const res = await returnInfo(storedUsername, storedToken);
-                const dto = res.data.data;
-                setUserInfo({
-                    userName: dto.userName,
-                    email: dto.email,
-                    firstName: dto.firstName,
-                    lastName: dto.lastName,
-                    phoneNumber: dto.phoneNumber || '',
-                    address: dto.address || '',
-                });
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-            }
-        };
-
-        if (storedToken && storedUsername) {
+        if (user?.username && token) {
             fetchUserInfo();
         }
-    }, []);
+    }, [user, token]);
 
     const handleSave = async (updatedData) => {
         try {
             const updateRequest = {
                 ...updatedData,
-                username,
-                password: 'placeholder-password', // Replace with real password if needed
+                username: user.username,
+                //password: 'placeholder-password', // Replace with real password if needed
             };
-            const res = await changeUserInfo(username, token, updateRequest);
+            const res = await changeUserInfo(user.username, token, updateRequest);
             if (res.data.error) {
                 alert("Error updating profile: " + res.data.message);
             } else {
                 alert("Profile updated successfully!");
-                setUserInfo(res.data.data);
+                setUserInfo(res.data);
             }
         } catch (error) {
             console.error("Error updating profile:", error);

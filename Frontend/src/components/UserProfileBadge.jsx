@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuthContext } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 function UserProfileBadge() {
     const { user, isAuthenticated } = useAuthContext();
@@ -11,7 +12,18 @@ function UserProfileBadge() {
                 alt="Profile"
                 className="profile-pic"
             />
-            <span>{isAuthenticated ? user.username : "Guest"}</span>
+            <span>{isAuthenticated ? (
+                <Link
+                    to="/my-profile"
+                    title="Click for user info"
+                    className="username-link"
+                >
+                    {user.username}
+                </Link>
+            ):
+                (
+                    <span className="guest-label">Guest</span>
+                )}</span>
         </div>
     );
 }

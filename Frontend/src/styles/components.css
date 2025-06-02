@@ -5,7 +5,25 @@
     object-fit: cover;
     border-radius: 50%;
   }
+.username-link {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
 
+.username-link:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.guest-label {
+  font-size: 0.95rem;
+  color: #888;
+}
   /* Button Styles */
   .button {
     border-radius: 8px;
