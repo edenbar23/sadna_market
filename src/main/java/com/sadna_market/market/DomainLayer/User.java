@@ -7,6 +7,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,14 +45,20 @@ public class User extends IUser {
     @Column(name = "is_logged_in", nullable = false)
     private boolean isLoggedIn;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinColumn(name = "username")
+    @Setter
+    @Column(name = "is_admin", nullable = false)
+    private boolean isAdmin = false;
+
+
+    @OneToMany(mappedBy = "username", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private List<UserStoreRoles> userStoreRoles = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_orders_history",
-            joinColumns = @JoinColumn(name = "username")
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_orders_history_username")
     )
     @Column(name = "order_id")
     private List<UUID> ordersHistory = new ArrayList<>();
@@ -57,7 +66,8 @@ public class User extends IUser {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_reports",
-            joinColumns = @JoinColumn(name = "username")
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_reports_username")
     )
     @Column(name = "report_id")
     private List<UUID> myReports = new ArrayList<>();
@@ -65,13 +75,14 @@ public class User extends IUser {
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
             name = "user_addresses",
-            joinColumns = @JoinColumn(name = "username")
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_addresses_username")
     )
     @Column(name = "address_id")
     private List<UUID> addressIds = new ArrayList<>();
 
     public User(String userName, String password, String email, String firstName, String lastName) {
-        super();
+        super();//TODO : delete password
         this.userName = userName;
         this.password = null;
         this.email = email;
@@ -82,6 +93,10 @@ public class User extends IUser {
         this.ordersHistory = new ArrayList<>();
         this.myReports = new ArrayList<>();
         this.addressIds = new ArrayList<>();
+
+        if(this.cart != null){
+            this.cart.setUser(this);
+        }
     }
 
     @Override
@@ -134,6 +149,7 @@ public class User extends IUser {
     public Cart clearCart() {
         logger.info("User {} clearing cart", userName);
         this.cart = new Cart();
+        this.cart.setUser(null);
         return cart;
     }
 
@@ -153,6 +169,11 @@ public class User extends IUser {
         if (role == null) {
             throw new IllegalArgumentException("Role cannot be null");
         }
+
+        if (!role.getUsername().equals(this.userName)) {
+            throw new IllegalArgumentException("Role username must match user username");
+        }
+
         userStoreRoles.add(role);
         logger.info("Added {} role for store {} to user {}",
                 role.getRoleType(), role.getStoreId(), userName);
@@ -217,4 +238,38 @@ public class User extends IUser {
     public boolean hasAddress(UUID addressId) {
         return addressIds.contains(addressId);
     }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
+        if (cart != null) {
+            cart.setUser(this);
+        }
+    }
+
+    @PreRemove
+    private void preRemove() {
+        logger.info("PreRemove: Cleaning up user {} data", userName);
+
+        // Clear collections explicitly to trigger cascade
+        if (userStoreRoles != null) {
+            userStoreRoles.clear();
+        }
+        if (ordersHistory != null) {
+            ordersHistory.clear();
+        }
+        if (myReports != null) {
+            myReports.clear();
+        }
+        if (addressIds != null) {
+            addressIds.clear();
+        }
+
+        // Clear cart
+        if (cart != null) {
+            cart.getShoppingBasketsList().clear();
+        }
+
+        logger.info("PreRemove: User {} data cleanup completed", userName);
+    }
+
 }

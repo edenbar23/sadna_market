@@ -49,5 +49,15 @@ public interface IReportRepository {
 
     List<Report> getAllReports();
 
+    /**
+     * Counts all the pending reports in the system
+     */
+    int countPendingReports();
+
+    /**
+     * Finds all the reports in the system
+     */
+    List<Report> findAll();
+
     void clear();
 }

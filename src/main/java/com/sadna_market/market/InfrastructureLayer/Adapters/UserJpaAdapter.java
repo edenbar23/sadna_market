@@ -4,6 +4,8 @@ import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.User;
 import com.sadna_market.market.DomainLayer.RoleType;
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.UserJpaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class UserJpaAdapter implements IUserRepository {
     private static final Logger logger = LoggerFactory.getLogger(UserJpaAdapter.class);
 
     private final UserJpaRepository userJpaRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public UserJpaAdapter(UserJpaRepository userJpaRepository) {
@@ -131,32 +136,63 @@ public class UserJpaAdapter implements IUserRepository {
         }
 
         try {
-            logger.debug("Deleting user with username: {}", username);
-            userJpaRepository.deleteById(username);
-            logger.info("User deleted: {}", username);
+            logger.info("Starting cascade delete for user: {}", username);
+
+            // Find the user first to trigger all lazy loading
+            Optional<User> userOpt = userJpaRepository.findByUserName(username);
+            if (userOpt.isEmpty()) {
+                logger.warn("User not found for deletion: {}", username);
+                return;
+            }
+
+            User user = userOpt.get();
+
+            initializeLazyCollections(user);
+
+            logger.debug("Clearing user collections before delete");
+            user.getUserStoreRoles().clear();
+            user.getOrdersHistory().clear();
+            user.getAddressIds().clear();
+
+            // Clear cart and its baskets
+            if (user.getCart() != null) {
+                user.getCart().getShoppingBasketsList().clear();
+            }
+
+            entityManager.flush();
+
+            // Now delete the user - JPA cascade should handle the rest
+            logger.debug("Deleting user entity: {}", username);
+            userJpaRepository.delete(user);
+
+            // Final flush to ensure everything is committed
+            entityManager.flush();
+
+            logger.info("User deleted successfully with all related data: {}", username);
+
         } catch (Exception e) {
             logger.error("Error deleting user: {}", username, e);
             throw new RuntimeException("Failed to delete user: " + username, e);
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<User> findAll() {
-        try {
-            logger.debug("Getting all users");
-            List<User> users = userJpaRepository.findAll();
-            logger.debug("Found {} users", users.size());
-
-            // Initialize lazy collections for all users
-            users.forEach(this::initializeLazyCollections);
-
-            return users;
-        } catch (Exception e) {
-            logger.error("Error finding all users", e);
-            throw new RuntimeException("Failed to find all users", e);
-        }
-    }
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<User> findAll() {
+//        try {
+//            logger.debug("Getting all users");
+//            List<User> users = userJpaRepository.findAll();
+//            logger.debug("Found {} users", users.size());
+//
+//            // Initialize lazy collections for all users
+//            users.forEach(this::initializeLazyCollections);
+//
+//            return users;
+//        } catch (Exception e) {
+//            logger.error("Error finding all users", e);
+//            throw new RuntimeException("Failed to find all users", e);
+//        }
+//    }
 
     @Override
     @Transactional(readOnly = true)
@@ -181,27 +217,6 @@ public class UserJpaAdapter implements IUserRepository {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<User> findByPhoneRole(RoleType role) {
-        if (role == null) {
-            logger.error("Cannot find users with null role");
-            return List.of();
-        }
-
-        try {
-            logger.debug("Finding users with role: {}", role);
-
-            // Since we removed the direct roleType query, we'll use the UserStoreRoles repository
-            // This is a more complex query that should be handled by the UserStoreRoles repository
-            logger.warn("Role-based user queries should use UserStoreRolesRepository instead");
-            return List.of();
-
-        } catch (Exception e) {
-            logger.error("Error finding users by role: {}", role, e);
-            return List.of();
-        }
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -221,12 +236,40 @@ public class UserJpaAdapter implements IUserRepository {
         }
     }
 
+
     @Override
     @Transactional
     public void clear() {
         try {
+            logger.info("Starting to clear all users with cascade delete");
+
+
+            List<User> allUsers = userJpaRepository.findAll();
+            logger.info("Found {} users to delete", allUsers.size());
+
+            for (User user : allUsers) {
+
+                initializeLazyCollections(user);
+
+
+                user.getUserStoreRoles().clear();
+                user.getOrdersHistory().clear();
+                user.getAddressIds().clear();
+
+                if (user.getCart() != null) {
+                    user.getCart().getShoppingBasketsList().clear();
+                }
+            }
+
+
+            entityManager.flush();
+
+
             userJpaRepository.deleteAll();
-            logger.info("User repository cleared");
+            entityManager.flush();
+
+            logger.info("All users and their data cleared successfully");
+
         } catch (Exception e) {
             logger.error("Error clearing user repository", e);
             throw new RuntimeException("Failed to clear user repository", e);
@@ -256,4 +299,37 @@ public class UserJpaAdapter implements IUserRepository {
             logger.warn("Could not initialize lazy collections for user: {}", user.getUserName(), e);
         }
     }
+
+
+
+    @Override
+    public int countAll() {
+        return Math.toIntExact(userJpaRepository.count());
+    }
+
+    @Override
+    public int countActiveUsers() {
+        return userJpaRepository.countActiveUsers();
+    }
+
+    @Override
+    public List<User> findAll() {
+        return userJpaRepository.findAll();
+    }
+
+    @Override
+    public boolean existsByIsAdmin(boolean isAdmin) {
+        return userJpaRepository.countByIsAdmin(isAdmin) > 0;
+    }
+
+    @Override
+    public List<User> findByIsAdmin(boolean isAdmin) {
+        return userJpaRepository.findByIsAdmin(isAdmin);
+    }
+
+    @Override
+    public long countByIsAdmin(boolean isAdmin) {
+        return userJpaRepository.countByIsAdmin(isAdmin);
+    }
+
 }

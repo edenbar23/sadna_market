@@ -266,6 +266,12 @@ public interface IStoreRepository {
                                   Double maxPrice, 
                                   Double minRating);
 
+    /**
+     * Counts all the stores in the system
+     * @return The total number of stores
+     */
+    int countAll();
+
     List<Store> getTopRatedStores();
 
     void addStoreRating(UUID storeId, int rating);

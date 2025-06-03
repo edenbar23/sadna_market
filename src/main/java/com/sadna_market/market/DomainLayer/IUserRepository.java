@@ -12,8 +12,14 @@ public interface IUserRepository {
 
     List<User> findAll();
     List<User> findByEmail(String email);
-    List<User> findByPhoneRole(RoleType role);
     List<User> findActiveUsers();
+
+    boolean existsByIsAdmin(boolean isAdmin);
+    List<User> findByIsAdmin(boolean isAdmin);
+    long countByIsAdmin(boolean isAdmin);
+
+    public int countAll();
+    public int countActiveUsers();
 
 
     void clear();

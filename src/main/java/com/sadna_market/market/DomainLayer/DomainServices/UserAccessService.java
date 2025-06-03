@@ -155,8 +155,6 @@ public class UserAccessService {
     }
 
     public boolean deleteUser(String adminUser, String userToDelete) {
-        validateAdmin(adminUser);
-        checkIfLoggedIn(adminUser);
         if(userToDelete.equals(adminUser)) {
             throw new IllegalArgumentException("Admin can't delete himself!");
         }
@@ -408,8 +406,6 @@ public class UserAccessService {
     }
 
     public List<Report> getViolationReports(String admin) {
-        validateAdmin(admin);
-        checkIfLoggedIn(admin);
         List<Report> reports = reportRepository.getAllReports();
         if (reports.isEmpty()) {
             logger.info("No violation reports found");
@@ -422,20 +418,14 @@ public class UserAccessService {
     }
 
     public double getTransactionsRatePerHour(String admin) {
-        validateAdmin(admin);
-        checkIfLoggedIn(admin);
         return cleanupAndCount(transactionTimestamps);
     }
 
     public double getSubscriptionsRatePerHour(String admin) {
-        validateAdmin(admin);
-        checkIfLoggedIn(admin);
         return cleanupAndCount(subscriptionTimestamps);
     }
 
     public void replyViolationReport(String admin, UUID reportId, String user, String message) {
-        validateAdmin(admin);
-        checkIfLoggedIn(admin);
         // check if user exists
         if (!userRepository.contains(user)) {
             logger.info("User not found: {}", user);
@@ -451,8 +441,6 @@ public class UserAccessService {
     }
 
     public void sendMessageToUser(String admin, String addressee, String message) {
-        validateAdmin(admin);
-        checkIfLoggedIn(admin);
         // check if user exists
         if (!userRepository.contains(addressee)) {
             logger.info("User not found: {}", addressee);
@@ -474,11 +462,6 @@ public class UserAccessService {
         subscriptionTimestamps.add(LocalDateTime.now());
     }
 
-    // Helper methods for validation
-    private void validateAdmin(String username) {
-        if(!realAdmin.equals(username))
-            throw new IllegalArgumentException("Not authorized! only admin can operate this!");
-    }
 
     private double cleanupAndCount(Queue<LocalDateTime> timestamps) {
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);

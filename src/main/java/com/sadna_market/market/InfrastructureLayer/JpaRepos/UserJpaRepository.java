@@ -59,10 +59,14 @@ public interface UserJpaRepository extends JpaRepository<User, String> {
      */
     List<User> findByLastNameContainingIgnoreCase(String lastName);
 
-    /**
-     * Count total number of users.
-     */
-    @Query("SELECT COUNT(u) FROM User u")
-    long countAllUsers();
+    @Query("SELECT u FROM User u WHERE u.isAdmin = :isAdmin")
+    List<User> findByIsAdmin(@Param("isAdmin") boolean isAdmin);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isAdmin = :isAdmin")
+    long countByIsAdmin(@Param("isAdmin") boolean isAdmin);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.isLoggedIn = true")
+    int countActiveUsers();
+
 
 }

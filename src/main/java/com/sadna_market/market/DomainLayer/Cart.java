@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +29,10 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<ShoppingBasket> shoppingBaskets = new ArrayList<>();
+
+    @Setter
+    @OneToOne(mappedBy = "cart")
+    private User user;
 
     public Cart(Map<UUID, Map<UUID,Integer>> shoppingBaskets) {
         //should validate storeId and productId before creating the cart

@@ -72,4 +72,17 @@ public class ReportJpaAdapter implements IReportRepository {
     public void clear() {
         reportJpaRepository.deleteAll();
     }
+
+    @Override
+    public int countPendingReports() {
+        // Since Report entity doesn't have status field yet,
+        // return total count (assuming all are "pending")
+        return Math.toIntExact(reportJpaRepository.count());
+    }
+
+    @Override
+    public List<Report> findAll() {
+        return reportJpaRepository.findAll();
+    }
+
 }
