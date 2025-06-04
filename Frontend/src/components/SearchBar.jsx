@@ -42,25 +42,25 @@ export default function SearchBar({ storeId }) {
   };
 
   return (
-    <div className="search-bar-container">
-      <input
-        type="text"
-        placeholder={storeId ? "Search products in this store..." : "Search products..."}
-        className="search-input"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-      />
-      <button className="button" onClick={handleSearch}>Search</button>
-      <button className="button" onClick={() => setShowFilters(true)}>Filters</button>
-
-      {showFilters && (
-        <FiltersModal
-          filters={filters}
-          onChange={updateFilter}
-          onClose={() => setShowFilters(false)}
+      <div className="search-bar-container">
+        <input
+            type="text"
+            placeholder={storeId ? "Search products in this store..." : "Search products..."}
+            className="search-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-      )}
-    </div>
+        <button className="button" onClick={handleSearch}>Search</button>
+        <button className="button" onClick={() => setShowFilters(true)}>Filters</button>
+
+        {showFilters && (
+            <FiltersModal
+                filters={filters}
+                onChange={updateFilter}
+                onClose={() => setShowFilters(false)}
+            />
+        )}
+      </div>
   );
 }
