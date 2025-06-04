@@ -2,14 +2,18 @@ package com.sadna_market.market.DomainLayer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.util.ArrayList;
+
+import jakarta.persistence.*;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("STORE_OWNER")
+@NoArgsConstructor
 public class StoreOwner extends UserStoreRoles {
     private static final Logger logger = LogManager.getLogger(StoreOwner.class);
-    private String appointedBy;
-    private UUID storeId;
 
     /**
      * Constructor for the StoreOwner class.
@@ -21,15 +25,13 @@ public class StoreOwner extends UserStoreRoles {
      */
     public StoreOwner(String username, UUID storeId, String appointedBy) {
         super(username, storeId, appointedBy);
-        this.storeId = storeId;
-        this.appointedBy = appointedBy;
-        this.appointees = new ArrayList<>();
+        // Note: Removed duplicate field initialization since parent class handles everything
+        logger.info("StoreOwner created for user: {}, store: {}, appointed by: {}",
+                username, storeId, appointedBy);
     }
 
     @Override
     protected void initializePermissions() {
-        // Call the parent's addPermission directly to bypass our overridden version
-        // This avoids the exception during initialization
         super.addPermission(Permission.VIEW_STORE_INFO);
         super.addPermission(Permission.VIEW_PRODUCT_INFO);
         super.addPermission(Permission.MANAGE_DISCOUNT_POLICY);
@@ -45,46 +47,64 @@ public class StoreOwner extends UserStoreRoles {
         super.addPermission(Permission.REMOVE_PRODUCT);
         super.addPermission(Permission.UPDATE_PRODUCT);
         super.addPermission(Permission.RESPOND_TO_USER_INQUIRIES);
+
+        logger.info("Initialized StoreOwner permissions: {}", getPermissions());
     }
 
     @Override
     public void addPermission(Permission permission) {
-        logger.error("Exception in addPermission: store owner already has all the permissions");
-        throw new IllegalStateException("Store owner has all the permissions");
-    }
-
-    public boolean isAppointedByUser(String username) {
-        logger.info("Entering isAppointedByUser with username={}", username);
-        boolean result = appointees.contains(username);
-        logger.info("Exiting isAppointedByUser with result={}", result);
-        return result;
-    }
-
-    @Override
-    public List<String> getAppointees() {
-        logger.info("Entering getAppointers");
-        logger.info("Exiting getAppointers with result={}", appointees);
-        return appointees;
-    }
-
-    @Override
-    public String getAppointedBy() {
-        logger.info("Entering getAppointedBy");
-        logger.info("Exiting getApointee with result={}", appointedBy);
-        return appointedBy;
+        logger.error("Exception in addPermission: store owner already has all the required permissions");
+        throw new IllegalStateException("Store owner permissions are fixed and cannot be modified");
     }
 
     @Override
     public void removePermission(Permission permission) {
         logger.error("Exception in removePermission: can't remove permissions from a store owner");
-        throw new IllegalStateException("Store owner has all the permissions");
+        throw new IllegalStateException("Store owner permissions are fixed and cannot be modified");
     }
 
+    /**
+     * Override the parent's isAppointedByUser to use the correct field access
+     * Note: Removed duplicate implementation since parent class handles this correctly
+     */
+    @Override
+    public boolean isAppointedByUser(String username) {
+        logger.info("Checking if user {} appointed this store owner", username);
+        boolean result = super.isAppointedByUser(username);
+        logger.info("isAppointedByUser result: {}", result);
+        return result;
+    }
+
+    /**
+     * Override to use parent's implementation (removed duplicate appointees field)
+     */
+    @Override
+    public List<String> getAppointees() {
+        logger.info("Getting appointees for store owner");
+        List<String> result = super.getAppointees();
+        logger.info("Appointees: {}", result);
+        return result;
+    }
+
+    /**
+     * Override to use parent's implementation (removed duplicate appointedBy field)
+     */
+    @Override
+    public String getAppointedBy() {
+        logger.info("Getting who appointed this store owner");
+        String result = super.getAppointedBy();
+        logger.info("Appointed by: {}", result);
+        return result;
+    }
+
+    /**
+     * Override to use parent's implementation (removed duplicate appointees field)
+     */
     @Override
     public void addAppointee(String appointee) {
-        logger.info("Entering addAppointers with apointee={}", appointee);
-        appointees.add(appointee);
-        logger.info("Exiting addAppointers");
+        logger.info("Adding appointee: {}", appointee);
+        super.addAppointee(appointee);
+        logger.info("Appointee added successfully");
     }
 
     @Override
@@ -98,5 +118,11 @@ public class StoreOwner extends UserStoreRoles {
                 username, storeId);
         visitor.processOwnerRoleRemoval(this, storeId, user);
         logger.info("Role removal processing completed for StoreOwner");
+    }
+
+    @Override
+    public String toString() {
+        return String.format("StoreOwner[username=%s, storeId=%s, appointedBy=%s, permissions=%s]",
+                getUsername(), getStoreId(), getAppointedBy(), getPermissions());
     }
 }

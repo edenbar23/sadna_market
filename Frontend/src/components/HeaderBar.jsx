@@ -20,7 +20,7 @@ function HeaderBar() {
   const [showRegister, setShowRegister] = useState(false);
   const [userStores, setUserStores] = useState([]);
   const [storesLoading, setStoresLoading] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Add this line for force re-render
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
 
   // Debug: Log all cart-related data
@@ -29,7 +29,7 @@ function HeaderBar() {
   console.log('user:', user);
   console.log('guestCart:', guestCart);
   console.log('cart (from useCart):', cart);
-  console.log('refreshTrigger:', refreshTrigger); // Add this debug line
+  console.log('refreshTrigger:', refreshTrigger);
   console.log('========================');
 
   // Fetch cart data when component mounts or refreshTrigger changes
@@ -42,7 +42,7 @@ function HeaderBar() {
         console.error('Error fetching cart:', err);
       });
     }
-  }, [isAuthenticated, user, fetchCart, refreshTrigger]); // Add refreshTrigger here
+  }, [isAuthenticated, user, fetchCart, refreshTrigger]);
 
   // Add event listener for cart updates
   useEffect(() => {
@@ -86,7 +86,7 @@ function HeaderBar() {
   // Calculate total cart items with detailed logging
   const getCartItemCount = () => {
     console.log('Calculating cart item count...');
-    
+
     if (isAuthenticated && cart) {
       console.log('Using authenticated user cart:', cart);
       const count = cart.totalItems || 0;
@@ -124,26 +124,25 @@ function HeaderBar() {
       <>
         <header className="header">
           {/* Left Side */}
-          <UserProfileBadge user={user} />
+          <div className="header-left">
+            <UserProfileBadge user={user} />
 
-          {/* Admin Controls - only for admin users */}
-          {user?.role === "admin" && <AdminControls />}
-
-          {isAuthenticated && (
-              !storesLoading ? (
-                  userStores && userStores.length > 0 ? (
-                      <Link to="/my-stores">
-                        <button className="button">My Stores</button>
-                      </Link>
-                  ) : (
-                      <Link to="/create-store">
-                        <button className="button">Create Store</button>
-                      </Link>
-                  )
-              ) : (
-                  <span>Loading stores...</span>
-              )
-          )}
+            {isAuthenticated && (
+                !storesLoading ? (
+                    userStores && userStores.length > 0 ? (
+                        <Link to="/my-stores">
+                          <button className="button">My Stores</button>
+                        </Link>
+                    ) : (
+                        <Link to="/create-store">
+                          <button className="button">Create Store</button>
+                        </Link>
+                    )
+                ) : (
+                    <span>Loading stores...</span>
+                )
+            )}
+          </div>
 
           {/* Center: Logo */}
           <div className="logo-container">
@@ -152,32 +151,39 @@ function HeaderBar() {
             </Link>
           </div>
 
+          {/* Admin Controls - Between Logo and Right Side */}
+          {user?.isAdmin && (
+              <div className="header-admin">
+                <AdminControls />
+              </div>
+          )}
+
           {/* Right Side Buttons */}
-          <div className="space-x-3">
+          <div className="header-right">
             {isAuthenticated ? (
                 <>
                   <Link to="/cart" className="cart-link">
                     <button className="button cart-button">
                       Cart
                       {cartItemCount > 0 && (
-                        <span className="cart-badge" style={{
-                          position: 'absolute',
-                          top: '-8px',
-                          right: '-8px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold',
-                          minWidth: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '0 4px',
-                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                          zIndex: 1
-                        }}>
+                          <span className="cart-badge" style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            minWidth: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                            zIndex: 1
+                          }}>
                           {cartItemCount}
                         </span>
                       )}
@@ -197,24 +203,24 @@ function HeaderBar() {
                     <button className="button cart-button">
                       Cart
                       {cartItemCount > 0 && (
-                        <span className="cart-badge" style={{
-                          position: 'absolute',
-                          top: '-8px',
-                          right: '-8px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold',
-                          minWidth: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: '0 4px',
-                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                          zIndex: 1
-                        }}>
+                          <span className="cart-badge" style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            minWidth: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0 4px',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                            zIndex: 1
+                          }}>
                           {cartItemCount}
                         </span>
                       )}

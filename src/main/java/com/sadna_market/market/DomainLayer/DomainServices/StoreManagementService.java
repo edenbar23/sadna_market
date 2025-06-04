@@ -3,6 +3,7 @@ package com.sadna_market.market.DomainLayer.DomainServices;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -190,6 +191,7 @@ public class StoreManagementService {
      * - New owner must be a registered user
      * - Store must be active
      */
+    @Transactional
     public void appointStoreOwner(String appointerUsername, UUID storeId, String newOwnerUsername) {
         logger.debug("User '{}' attempting to appoint new owner '{}' for store '{}'", appointerUsername, newOwnerUsername, storeId);
 
@@ -212,6 +214,17 @@ public class StoreManagementService {
 
         StoreOwner newOwnerRole = new StoreOwner(newOwnerUsername, storeId, appointerUsername);
         newOwner.addStoreRole(newOwnerRole);
+
+        UserStoreRoles appointerRole = findUserStoreRole(appointer, storeId, RoleType.STORE_OWNER);
+        if (appointerRole == null) {
+            // If not owner, maybe they're founder
+            appointerRole = findUserStoreRole(appointer, storeId, RoleType.STORE_FOUNDER);
+        }
+
+        if (appointerRole != null) {
+            appointerRole.addAppointee(newOwnerUsername);
+            userRepository.update(appointer);
+        }
 
         store.addStoreOwner(newOwnerUsername);
         storeRepository.save(store);
@@ -301,8 +314,14 @@ public class StoreManagementService {
         if (permissions != null && !permissions.isEmpty()) {
             newManagerRole.addPermissions(permissions);
         }
-
         newManager.addStoreRole(newManagerRole);
+
+        UserStoreRoles appointerRole = findUserStoreRole(appointer, storeId, RoleType.STORE_OWNER);
+        if (appointerRole != null) {
+            appointerRole.addAppointee(newManagerUsername);
+            userRepository.update(appointer);
+        }
+
         store.addStoreManager(newManagerUsername);
         storeRepository.save(store);
         userRepository.update(newManager);

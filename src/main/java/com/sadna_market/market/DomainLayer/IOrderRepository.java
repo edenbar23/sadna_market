@@ -166,6 +166,19 @@ public interface IOrderRepository {
      */
     List<Order> getStorePurchaseHistory(UUID storeId);
 
+    /**
+     * Count all the orders in the system
+     */
+    int countAll();
+
+    /**
+     * Calculate the total revenue
+     */
+    double calculateTotalRevenue();
+
+
+
+
     void clear();
 
     List<Order> findOrdersByUser(String username);

@@ -568,6 +568,13 @@ public class Store {
         }
     }
 
+    public String getFounderUserName(){
+        if (founder == null) {
+            return null;
+        }
+        return founder.getUsername();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

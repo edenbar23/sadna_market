@@ -42,6 +42,7 @@ public class CheckoutApplicationService {
     // Repositories
     private final IUserRepository userRepository;
     private final IAddressRepository addressRepository;
+    private final IStoreRepository storeRepository;
 
     @Autowired
     public CheckoutApplicationService(
@@ -52,7 +53,7 @@ public class CheckoutApplicationService {
             SupplyService supplyService,
             AuthenticationAdapter authentication,
             IUserRepository userRepository,
-            IAddressRepository addressRepository) {
+            IAddressRepository addressRepository, IStoreRepository storeRepository) {
         this.orderProcessingService = orderProcessingService;
         this.userAccessService = userAccessService;
         this.addressService = addressService;
@@ -61,6 +62,7 @@ public class CheckoutApplicationService {
         this.authentication = authentication;
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
+        this.storeRepository = storeRepository;
 
         logger.info("CheckoutApplicationService initialized");
     }
@@ -135,6 +137,9 @@ public class CheckoutApplicationService {
             CheckoutResultDTO result = createCheckoutResult(orders, paymentResult, supplyResults);
             logger.info("Checkout completed successfully for user: {}", username);
 
+            for (Order order : orders) {
+                storeRepository.addOrderIdToStore(order.getOrderId(), order.getStoreId());
+            }
             return Response.success(result);
 
         } catch (Exception e) {
@@ -201,6 +206,10 @@ public class CheckoutApplicationService {
             // 7. Create success response
             CheckoutResultDTO result = createCheckoutResult(orders, paymentResult, supplyResults);
             logger.info("Guest checkout completed successfully");
+
+            for (Order order : orders) {
+                storeRepository.addOrderIdToStore(order.getOrderId(), order.getStoreId());
+            }
 
             return Response.success(result);
 

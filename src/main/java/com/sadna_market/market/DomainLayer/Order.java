@@ -30,8 +30,8 @@ public class Order {
     @Column(name = "user_name", nullable = false, length = 100)
     private String userName;
 
-    // THE KEY CHANGE: Using @ElementCollection for the products map
-    @ElementCollection(fetch = FetchType.LAZY)
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "order_products",
             joinColumns = @JoinColumn(name = "order_id"))
     @MapKeyColumn(name = "product_id")

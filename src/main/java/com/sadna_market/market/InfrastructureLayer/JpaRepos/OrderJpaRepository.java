@@ -28,4 +28,7 @@ public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
 
     @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.products p WHERE KEY(p) = :productId AND o.userName = :username AND o.status = 'COMPLETED'")
     boolean hasUserPurchasedProduct(@Param("username") String username, @Param("productId") UUID productId);
+
+    @Query("SELECT COALESCE(SUM(o.finalPrice), 0.0) FROM Order o")
+    double calculateTotalRevenue();
 }

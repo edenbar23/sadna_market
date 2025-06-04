@@ -1,39 +1,92 @@
 package com.sadna_market.market.DomainLayer;
+
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+@Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
+@Table(name = "users")
+@Getter
+@NoArgsConstructor // Required by JPA
 public class User extends IUser {
     private static final Logger logger = LogManager.getLogger(User.class);
+
+    @Id
     @Setter
-    @Getter
+    @Column(name = "username", nullable = false, unique = true, length = 50)
     private String userName;
+
     @Setter
-    @Getter
+    @Column(name = "password", nullable = true, length = 255)
     private String password;
+
     @Setter
-    @Getter
+    @Column(name = "email", nullable = false, length = 100)
     private String email;
+
     @Setter
-    @Getter
+    @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
+
     @Setter
-    @Getter
+    @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
+
+    @Column(name = "is_logged_in", nullable = false)
     private boolean isLoggedIn;
-    private ArrayList<UserStoreRoles> userStoreRoles; // List of roles in stores
-    private ArrayList<UUID> ordersHistory; // List of order IDs
-    private ArrayList<UUID> myReports;
+
+    @Setter
+    @Column(name = "is_admin", nullable = false)
+    private boolean isAdmin = false;
+
+
+    @OneToMany(mappedBy = "username", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private List<UserStoreRoles> userStoreRoles = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "user_orders_history",
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_orders_history_username")
+    )
+    @Column(name = "order_id")
+    private List<UUID> ordersHistory = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "user_reports",
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_reports_username")
+    )
+    @Column(name = "report_id")
+    private List<UUID> myReports = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
+            name = "user_addresses",
+            joinColumns = @JoinColumn(name = "username"),
+            foreignKey = @ForeignKey(name = "fk_user_addresses_username")
+    )
+    @Column(name = "address_id")
     private List<UUID> addressIds = new ArrayList<>();
 
     public User(String userName, String password, String email, String firstName, String lastName) {
+        super();//TODO : delete password
         this.userName = userName;
-        this.password = password;
+        this.password = null;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -42,11 +95,26 @@ public class User extends IUser {
         this.ordersHistory = new ArrayList<>();
         this.myReports = new ArrayList<>();
         this.addressIds = new ArrayList<>();
+
+        if(this.cart != null){
+            this.cart.setUser(this);
+        }
     }
 
     @Override
     public synchronized boolean isLoggedIn() {
+        logger.debug("🔍 isLoggedIn() called for user {}: {}", userName, isLoggedIn);
         return isLoggedIn;
+    }
+
+    public boolean isAdmin() {
+        logger.debug("🔍 isAdmin() called for user {}: {}", userName, isAdmin);
+        return isAdmin;
+    }
+
+    public synchronized void setIsLoggedIn(boolean isLoggedIn) {
+        logger.debug("🔍 setIsLoggedIn() called for user {}: {} -> {}", userName, this.isLoggedIn, isLoggedIn);
+        this.isLoggedIn = isLoggedIn;
     }
 
     public synchronized void login(String username,String password) {
@@ -54,13 +122,13 @@ public class User extends IUser {
             logger.error("User {} is already logged in", userName);
             throw new IllegalStateException("User is already logged in");
         }
-        if (username == null || password == null) {
-            logger.error("Username or password cannot be null");
-            throw new IllegalArgumentException("Username or password cannot be null");
+        if (username == null) {
+            logger.error("Username cannot be null");
+            throw new IllegalArgumentException("Username cannot be null");
         }
-        if (!this.userName.equals(username) || !this.password.equals(password)) {
-            logger.error("Invalid username or password for user {}", userName);
-            throw new IllegalArgumentException("Invalid username or password");
+        if (!this.userName.equals(username)) {
+            logger.error("Invalid username for user {}", userName);
+            throw new IllegalArgumentException("Invalid username");
         }
         this.isLoggedIn = true;
         logger.info("User {} logged in successfully", userName);
@@ -75,7 +143,6 @@ public class User extends IUser {
         logger.info("User {} logged out successfully", userName);
     }
 
-    // Cart operations - delegating to Cart object
     public Cart addToCart(UUID storeId, UUID productId, int quantity) {
         logger.info("User {} adding product {} to cart for store {}", userName, productId, storeId);
         return cart.addToCart(storeId, productId, quantity);
@@ -95,10 +162,10 @@ public class User extends IUser {
     public Cart clearCart() {
         logger.info("User {} clearing cart", userName);
         this.cart = new Cart();
+        this.cart.setUser(null);
         return cart;
     }
 
-    // Order history management
     public void addOrderToHistory(UUID orderId) {
         logger.info("Adding order {} to user {} history", orderId, userName);
         ordersHistory.add(orderId);
@@ -115,6 +182,11 @@ public class User extends IUser {
         if (role == null) {
             throw new IllegalArgumentException("Role cannot be null");
         }
+
+        if (!role.getUsername().equals(this.userName)) {
+            throw new IllegalArgumentException("Role username must match user username");
+        }
+
         userStoreRoles.add(role);
         logger.info("Added {} role for store {} to user {}",
                 role.getRoleType(), role.getStoreId(), userName);
@@ -180,5 +252,37 @@ public class User extends IUser {
         return addressIds.contains(addressId);
     }
 
+    public void setCart(Cart cart) {
+        this.cart = cart;
+        if (cart != null) {
+            cart.setUser(this);
+        }
+    }
+
+    @PreRemove
+    private void preRemove() {
+        logger.info("PreRemove: Cleaning up user {} data", userName);
+
+        // Clear collections explicitly to trigger cascade
+        if (userStoreRoles != null) {
+            userStoreRoles.clear();
+        }
+        if (ordersHistory != null) {
+            ordersHistory.clear();
+        }
+        if (myReports != null) {
+            myReports.clear();
+        }
+        if (addressIds != null) {
+            addressIds.clear();
+        }
+
+        // Clear cart
+        if (cart != null) {
+            cart.getShoppingBasketsList().clear();
+        }
+
+        logger.info("PreRemove: User {} data cleanup completed", userName);
+    }
 
 }

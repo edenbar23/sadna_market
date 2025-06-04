@@ -318,4 +318,15 @@ public class OrderJpaAdapter implements IOrderRepository {
 
         return stats;
     }
+
+    @Override
+    public int countAll() {
+        return Math.toIntExact(orderJpaRepository.count());
+    }
+
+    @Override
+    public double calculateTotalRevenue() {
+        return orderJpaRepository.calculateTotalRevenue();
+    }
+
 }

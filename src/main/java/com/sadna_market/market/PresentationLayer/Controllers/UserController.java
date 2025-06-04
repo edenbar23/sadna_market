@@ -6,6 +6,7 @@ import com.sadna_market.market.ApplicationLayer.DTOs.UserDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.ApplicationLayer.Response;
 import com.sadna_market.market.ApplicationLayer.UserService;
+import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.Report;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,11 @@ import java.util.UUID;
 @CrossOrigin(origins = "*") // For development - you might want to restrict this in production
 public class UserController {
 
+
     private final UserService userService;
+
+    //test only
+    private IUserRepository userRepository;
 
     @Autowired
     public UserController(UserService userService) {
@@ -144,21 +149,6 @@ public class UserController {
                 : ResponseEntity.ok(response);
     }
 
-//    /**
-//     * Checkout as guest
-//     */
-//    @PostMapping("/guest/checkout")
-//    public ResponseEntity<Response<String>> guestCheckout(
-//            @RequestBody CartRequest cart,
-//            @RequestBody PaymentMethod paymentMethod) {
-//
-//        Response<String> response = userService.checkout(cart, paymentMethod);
-//
-//        return response.isError()
-//                ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
-//                : ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
-
     //---------------------------
     // Registered User Cart Endpoints
     //---------------------------
@@ -230,22 +220,6 @@ public class UserController {
                 ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
                 : ResponseEntity.ok(response);
     }
-
-//    /**
-//     * Checkout user cart
-//     */
-//    @PostMapping("/{username}/checkout")
-//    public ResponseEntity<Response<String>> userCheckout(
-//            @PathVariable String username,
-//            @RequestHeader("Authorization") String token,
-//            @RequestBody PaymentMethod paymentMethod) {
-//
-//        Response<String> response = userService.checkout(username, token, paymentMethod);
-//
-//        return response.isError()
-//                ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
-//                : ResponseEntity.status(HttpStatus.CREATED).body(response);
-//    }
 
     //---------------------------
     // User Profile Endpoints
