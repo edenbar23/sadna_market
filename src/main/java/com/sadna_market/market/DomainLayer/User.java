@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
 @Table(name = "users")
 @Getter
 @NoArgsConstructor // Required by JPA
