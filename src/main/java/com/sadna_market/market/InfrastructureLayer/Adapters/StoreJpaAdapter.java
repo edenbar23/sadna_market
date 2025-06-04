@@ -382,6 +382,11 @@ public class StoreJpaAdapter implements IStoreRepository {
     }
 
     @Override
+    public int countAll() {
+        return Math.toIntExact(storeJpaRepository.count());
+    }
+
+    @Override
     public List<Store> getTopRatedStores() {
         logger.debug("Getting top rated stores");
 
