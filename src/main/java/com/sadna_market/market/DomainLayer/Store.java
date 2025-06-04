@@ -3,31 +3,94 @@ package com.sadna_market.market.DomainLayer;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.*;
+import jakarta.persistence.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@Entity
+@Table(name = "stores")
 @Getter
 public class Store {
     // Basic properties
-    @Setter private String name;
-    @Setter private String description;
+    @Id
+    @Column(name = "store_id", updatable = false, nullable = false)
+    private UUID storeId;
+
+    @Setter
+    @Column(name = "name", nullable = false, length = 200)
+    private String name;
+
+    @Setter
+    @Column(name = "description", length = 1000)
+    private String description;
+
+    @Column(name = "active", nullable = false)
     private boolean active;
-    private final UUID storeId;
-    private final Date creationDate;
-    private StoreFounder founder;
+
+    @Column(name = "creation_date", nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date creationDate;
 
     // Rating properties
+    @Column(name = "rating", nullable = false)
     private double rating;
+
+    @Column(name = "rating_count", nullable = false)
     private int ratingCount;
 
-    // Collections - thread-safe implementations
-    private final Map<UUID, Integer> productQuantities = new ConcurrentHashMap<>();
-    private final Set<String> ownerUsernames = ConcurrentHashMap.newKeySet();
-    private final Set<String> managerUsernames = ConcurrentHashMap.newKeySet();
-    private final Set<UUID> orderIds = ConcurrentHashMap.newKeySet();
+    // StoreFounder handling - save only username in DB but keep founder field as StoreFounder
+    @Transient // This field won't be persisted directly
+    private StoreFounder founder;
+
+    @Column(name = "founder_username", length = 50)
+    private String founderUsername; // This will be persisted
+
+    // Collections using @ElementCollection with EAGER fetch (no lazy loading)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "store_product_quantities",
+            joinColumns = @JoinColumn(name = "store_id"))
+    @MapKeyColumn(name = "product_id")
+    @Column(name = "quantity")
+    private Map<UUID, Integer> productQuantities = new HashMap<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "store_owners",
+            joinColumns = @JoinColumn(name = "store_id"))
+    @Column(name = "username", length = 50)
+    private Set<String> ownerUsernames = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "store_managers",
+            joinColumns = @JoinColumn(name = "store_id"))
+    @Column(name = "username", length = 50)
+    private Set<String> managerUsernames = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "store_orders",
+            joinColumns = @JoinColumn(name = "store_id"))
+    @Column(name = "order_id")
+    private Set<UUID> orderIds = new HashSet<>();
 
     // Use a single ReentrantReadWriteLock for better deadlock prevention
+    @Transient // Don't persist the lock
     private final ReentrantReadWriteLock storeLock = new ReentrantReadWriteLock();
+
+
+    // JPA lifecycle methods to handle StoreFounder conversion
+    @PostLoad
+    private void initializeFounderFromUsername() {
+        if (founderUsername != null) {
+            this.founder = new StoreFounder(founderUsername, this.storeId, null);
+        }
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void saveFounderUsername() {
+        if (founder != null) {
+            this.founderUsername = founder.getUsername();
+        }
+    }
 
     // Constructors
     public Store() {
@@ -66,6 +129,7 @@ public class Store {
         if (founder != null) {
             setFounder(founder);
         }
+        this.founderUsername = founder != null ? founder.getUsername() : null;
     }
 
     // Full constructor for repository reconstruction
@@ -79,6 +143,7 @@ public class Store {
         this.active = active;
         this.creationDate = creationDate;
         this.founder = founder;
+
         this.rating = 0.0;
         this.ratingCount = 0;
 
@@ -86,6 +151,8 @@ public class Store {
         if (founder != null) {
             this.ownerUsernames.add(founder.getUsername());
         }
+        this.founderUsername = founder != null ? founder.getUsername() : null;
+
     }
 
     public void setFounder(StoreFounder founder) {
@@ -102,6 +169,7 @@ public class Store {
 
 
         this.founder = founder;
+        this.founderUsername = founder.getUsername(); // Update the persisted field
         this.ownerUsernames.add(founder.getUsername());
     }
 

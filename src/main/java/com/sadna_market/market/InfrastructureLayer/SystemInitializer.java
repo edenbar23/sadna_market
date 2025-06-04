@@ -678,6 +678,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Credit Card (**** 4567)",
                         getFormattedAddress("eevee")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("electronics"), orderId);
 
                 addOrderToUserHistory("eevee", orderId);
                 logger.debug("Created premium electronics order for eevee");
@@ -710,6 +711,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Debit Card (**** 9876)",
                         getFormattedAddress("dragonite")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("grocery"), orderId);
 
                 addOrderToUserHistory("dragonite", orderId);
                 logger.debug("Created bulk grocery order for dragonite");
@@ -741,7 +743,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Credit Card (**** 1234)",
                         getFormattedAddress("lucario")
                 );
-
+                storeRepository.addOrderIdToStore(storeIds.get("clothing"), orderId);
                 addOrderToUserHistory("lucario", orderId);
                 logger.debug("Created fashion order for lucario");
             } catch (Exception e) {
@@ -772,7 +774,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "PayPal",
                         getFormattedAddress("gengar")
                 );
-
+                storeRepository.addOrderIdToStore(storeIds.get("books"), orderId);
                 addOrderToUserHistory("gengar", orderId);
                 logger.debug("Created book collection order for gengar");
             } catch (Exception e) {
@@ -802,6 +804,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Credit Card (**** 5555)",
                         getFormattedAddress("alakazam")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("electronics"), electronicsOrderId);
                 addOrderToUserHistory("alakazam", electronicsOrderId);
             }
 
@@ -824,6 +827,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Credit Card (**** 5555)",
                         getFormattedAddress("alakazam")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("books"), booksOrderId);
                 addOrderToUserHistory("alakazam", booksOrderId);
             }
 
@@ -842,7 +846,7 @@ public class SystemInitializer implements CommandLineRunner {
                 Map<UUID, Integer> shippedOrder = new HashMap<>();
                 shippedOrder.put(clothingProducts.get(5), 1); // Phoenix Leather Jacket
 
-                orderRepository.createOrderWithDetails(
+                UUID orderID1 = orderRepository.createOrderWithDetails(
                         storeIds.get("clothing"),
                         "dragonite",
                         shippedOrder,
@@ -854,6 +858,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Credit Card (**** 9876)",
                         getFormattedAddress("dragonite")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("clothing"), orderID1);
             }
 
             // Recent PAID order
@@ -862,7 +867,7 @@ public class SystemInitializer implements CommandLineRunner {
                 Map<UUID, Integer> paidOrder = new HashMap<>();
                 paidOrder.put(groceryProducts.get(7), 2); // Apricorn Tea x2
 
-                orderRepository.createOrderWithDetails(
+                UUID orderID2 = orderRepository.createOrderWithDetails(
                         storeIds.get("grocery"),
                         "gengar",
                         paidOrder,
@@ -874,6 +879,7 @@ public class SystemInitializer implements CommandLineRunner {
                         "Apple Pay",
                         getFormattedAddress("gengar")
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("grocery"), orderID2);
             }
 
             // PENDING order
@@ -882,7 +888,7 @@ public class SystemInitializer implements CommandLineRunner {
                 Map<UUID, Integer> pendingOrder = new HashMap<>();
                 pendingOrder.put(electronicsProducts.get(4), 1); // Gaming Console
 
-                orderRepository.createOrder(
+                UUID orderID3 = orderRepository.createOrder(
                         storeIds.get("electronics"),
                         "lucario",
                         pendingOrder,
@@ -891,6 +897,7 @@ public class SystemInitializer implements CommandLineRunner {
                         OrderStatus.PENDING,
                         -1
                 );
+                storeRepository.addOrderIdToStore(storeIds.get("electronics"), orderID3);
             }
 
             logger.debug("Created recent orders with various statuses");
