@@ -103,7 +103,18 @@ public class User extends IUser {
 
     @Override
     public synchronized boolean isLoggedIn() {
+        logger.debug("🔍 isLoggedIn() called for user {}: {}", userName, isLoggedIn);
         return isLoggedIn;
+    }
+
+    public boolean isAdmin() {
+        logger.debug("🔍 isAdmin() called for user {}: {}", userName, isAdmin);
+        return isAdmin;
+    }
+
+    public synchronized void setIsLoggedIn(boolean isLoggedIn) {
+        logger.debug("🔍 setIsLoggedIn() called for user {}: {} -> {}", userName, this.isLoggedIn, isLoggedIn);
+        this.isLoggedIn = isLoggedIn;
     }
 
     public synchronized void login(String username,String password) {

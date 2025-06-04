@@ -124,26 +124,25 @@ function HeaderBar() {
       <>
         <header className="header">
           {/* Left Side */}
-          <UserProfileBadge user={user} />
+          <div className="header-left">
+            <UserProfileBadge user={user} />
 
-          {/* Admin Controls - only for admin users */}
-          {user?.isAdmin && <AdminControls />}
-
-          {isAuthenticated && (
-              !storesLoading ? (
-                  userStores && userStores.length > 0 ? (
-                      <Link to="/my-stores">
-                        <button className="button">My Stores</button>
-                      </Link>
-                  ) : (
-                      <Link to="/create-store">
-                        <button className="button">Create Store</button>
-                      </Link>
-                  )
-              ) : (
-                  <span>Loading stores...</span>
-              )
-          )}
+            {isAuthenticated && (
+                !storesLoading ? (
+                    userStores && userStores.length > 0 ? (
+                        <Link to="/my-stores">
+                          <button className="button">My Stores</button>
+                        </Link>
+                    ) : (
+                        <Link to="/create-store">
+                          <button className="button">Create Store</button>
+                        </Link>
+                    )
+                ) : (
+                    <span>Loading stores...</span>
+                )
+            )}
+          </div>
 
           {/* Center: Logo */}
           <div className="logo-container">
@@ -152,8 +151,15 @@ function HeaderBar() {
             </Link>
           </div>
 
+          {/* Admin Controls - Between Logo and Right Side */}
+          {user?.isAdmin && (
+              <div className="header-admin">
+                <AdminControls />
+              </div>
+          )}
+
           {/* Right Side Buttons */}
-          <div className="space-x-3">
+          <div className="header-right">
             {isAuthenticated ? (
                 <>
                   <Link to="/cart" className="cart-link">

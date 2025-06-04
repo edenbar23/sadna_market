@@ -139,13 +139,13 @@ export const AuthProvider = ({ children }) => {
           const userObject = {
             username,
             token: tokenValue,
-            isAdmin: userInfoResponse.data.isAdmin || false, // Use isAdmin from UserDTO
+            isAdmin: userInfoResponse.data.admin, // Use isAdmin from UserDTO
             stores: userInfoResponse.data.stores || [],
             // Keep additional user info
             email: userInfoResponse.data.email,
             firstName: userInfoResponse.data.firstName,
             lastName: userInfoResponse.data.lastName,
-            isLoggedIn: userInfoResponse.data.isLoggedIn
+            isLoggedIn: userInfoResponse.data.loggedin
           };
 
           setToken(tokenValue);
