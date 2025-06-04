@@ -135,11 +135,17 @@ export const AuthProvider = ({ children }) => {
         const userInfoResponse = await userAPI.returnInfo(username, tokenValue);
 
         if (userInfoResponse && userInfoResponse.data) {
+          // FIXED: Create user object with proper admin field from backend
           const userObject = {
             username,
             token: tokenValue,
-            role: userInfoResponse.data.role || 'user',
+            isAdmin: userInfoResponse.data.isAdmin || false, // Use isAdmin from UserDTO
             stores: userInfoResponse.data.stores || [],
+            // Keep additional user info
+            email: userInfoResponse.data.email,
+            firstName: userInfoResponse.data.firstName,
+            lastName: userInfoResponse.data.lastName,
+            isLoggedIn: userInfoResponse.data.isLoggedIn
           };
 
           setToken(tokenValue);

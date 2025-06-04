@@ -16,6 +16,8 @@ public class UserDTO {
     private boolean isLoggedIn;
     @Getter
     private int cartItemsCount;
+    @Getter
+    private boolean isAdmin;
 
     public UserDTO(User user) {
         this.userName = user.getUserName();
@@ -24,6 +26,7 @@ public class UserDTO {
         this.lastName = user.getLastName();
         this.isLoggedIn = user.isLoggedIn();
         this.cartItemsCount = user.getCart().getTotalItems();
+        this.isAdmin = user.isAdmin();
     }
 
     public UserDTO(String userName, String email, String firstName, String lastName, boolean isLoggedIn, int cartItemsCount) {
@@ -33,5 +36,17 @@ public class UserDTO {
         this.lastName = lastName;
         this.isLoggedIn = isLoggedIn;
         this.cartItemsCount = cartItemsCount;
+        this.isAdmin = false; // Default value, can be set later if needed
+
+    }
+
+    public UserDTO(String userName, String email, String firstName, String lastName, boolean isLoggedIn, int cartItemsCount, boolean isAdmin) {
+        this.userName = userName;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.isLoggedIn = isLoggedIn;
+        this.cartItemsCount = cartItemsCount;
+        this.isAdmin = isAdmin;
     }
 }
