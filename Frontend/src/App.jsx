@@ -18,6 +18,13 @@ import StoreManagePage from "./pages/StoreManagePage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import ProfilePage from "./pages/ProfilePage";
 
+// Import Admin Pages
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminStoresPage from "./pages/AdminStoresPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminInsightsPage from "./pages/AdminInsightsPage";
+
 function App() {
     const { user, loading } = useAuthContext();
 
@@ -42,8 +49,15 @@ function App() {
                 <ErrorBoundary>
                     <HeaderBar />
                     <Routes>
+                        {/* Public Routes */}
                         <Route path="/" element={<MainPage />} />
                         <Route path="/cart" element={<CartPage />} />
+                        <Route path="/search" element={<SearchResultsPage />} />
+                        <Route path="/product/:productId" element={<ProductPage />} />
+                        <Route path="/store/:storeId" element={<StorePage />} />
+                        <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+
+                        {/* Protected User Routes */}
                         <Route
                             path="/orders"
                             element={
@@ -68,9 +82,6 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-                        <Route path="/search" element={<SearchResultsPage />} />
-                        <Route path="/product/:productId" element={<ProductPage />} />
-                        <Route path="/store/:storeId" element={<StorePage />} />
                         <Route
                             path="/my-stores"
                             element={
@@ -87,7 +98,50 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-                        <Route path="/order-confirmation/:orderId" element={<OrderConfirmationPage />} />
+
+                        {/* Protected Admin Routes */}
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute user={user} requireAdmin={true}>
+                                    <AdminDashboardPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute user={user} requireAdmin={true}>
+                                    <AdminUsersPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/stores"
+                            element={
+                                <ProtectedRoute user={user} requireAdmin={true}>
+                                    <AdminStoresPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/reports"
+                            element={
+                                <ProtectedRoute user={user} requireAdmin={true}>
+                                    <AdminReportsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/insights"
+                            element={
+                                <ProtectedRoute user={user} requireAdmin={true}>
+                                    <AdminInsightsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* 404 Route */}
                         <Route path="*" element={<div>404 Not Found</div>} />
                     </Routes>
                 </ErrorBoundary>
