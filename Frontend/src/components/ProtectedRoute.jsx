@@ -16,7 +16,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
     }
 
     // Check admin requirement if specified
-    if (requireAdmin && user.role !== "admin") {
+    if (requireAdmin && !user?.isAdmin) {
         return <Navigate to="/" />;
     }
 
