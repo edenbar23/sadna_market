@@ -2182,4 +2182,248 @@ h2 {
   animation: bounce 2s infinite;
 }
 
+.header {
+  min-height: 100px; /* Increased from 80px */
+  padding: 1.5rem 2rem; /* Increased padding */
+}
+
+/* Admin section positioned more to the left */
+.admin-section {
+  position: absolute;
+  left: 25%; /* Moved further left from 30% */
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+}
+
+/* Store section positioned to the left of logo */
+.store-section {
+  position: absolute;
+  left: 40%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+}
+
+/* Logo container in center */
+.logo-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+
+/* Adjust logo size for bigger header */
+.logo {
+  height: 110px; /* Increased from default */
+  object-fit: contain;
+}
+
+/* Clean store button - no background */
+.store-button {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 2px solid #4a90e2 !important;
+  color: #4a90e2 !important;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.store-button:hover {
+  background: #4a90e2 !important;
+  background-color: #4a90e2 !important;
+  color: white !important;
+  border-color: #357abd !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3) !important;
+}
+
+/* Clean stylish buttons for right side */
+.stylish-button {
+  background: #f8f9fa !important;
+  border: 2px solid #e9ecef !important;
+  color: #495057 !important;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stylish-button:hover {
+  background: white !important;
+  border-color: #4a90e2 !important;
+  color: #4a90e2 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Special styling for cart button */
+.cart-button.stylish-button {
+  border-color: #4a90e2 !important;
+  color: #4a90e2 !important;
+}
+
+.cart-button.stylish-button:hover {
+  background: #4a90e2 !important;
+  color: white !important;
+  border-color: #357abd !important;
+}
+
+/* Special styling for logout button */
+.logout-button.stylish-button {
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+}
+
+.logout-button.stylish-button:hover {
+  background: #dc3545 !important;
+  color: white !important;
+  border-color: #c82333 !important;
+}
+
+/* Cart button positioning for badge */
+.cart-button {
+  position: relative;
+}
+
+/* Subtle pulse animation for cart badge */
+@keyframes subtlePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-badge {
+  animation: subtlePulse 3s infinite;
+}
+
+/* Button focus states for accessibility */
+.stylish-button:focus, .store-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+}
+
+/* Active states */
+.stylish-button:active, .store-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  .admin-section {
+    left: 23%; /* Adjusted for new position */
+  }
+  .store-section {
+    left: 38%;
+  }
+}
+
+@media (max-width: 1200px) {
+  .admin-section {
+    left: 21%; /* Adjusted for new position */
+  }
+  .store-section {
+    left: 35%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header {
+    min-height: 80px; /* Smaller on mobile */
+    padding: 1rem 1.5rem;
+  }
+
+  .logo {
+    height: 70px; /* Smaller logo on tablet */
+  }
+
+  .admin-section,
+  .store-section,
+  .logo-container {
+    position: static;
+    transform: none;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .header-left {
+    order: 1;
+  }
+
+  .admin-section {
+    order: 2;
+  }
+
+  .store-section {
+    order: 3;
+  }
+
+  .logo-container {
+    order: 4;
+  }
+
+  .header-right {
+    order: 5;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    min-height: 70px; /* Even smaller on mobile */
+    padding: 1rem;
+  }
+
+  .logo {
+    height: 60px; /* Smaller logo on mobile */
+  }
+
+  .stylish-button, .store-button {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}
+
+/* Loading stores styling */
+.store-section span {
+  color: #666;
+  font-style: italic;
+  padding: 0.6rem 1.2rem;
+}
 

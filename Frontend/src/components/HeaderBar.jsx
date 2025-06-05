@@ -126,16 +126,26 @@ function HeaderBar() {
           {/* Left Side */}
           <div className="header-left">
             <UserProfileBadge user={user} />
+          </div>
 
+          {/* Admin Controls - More to the right */}
+          {user?.isAdmin && (
+              <div className="admin-section">
+                <AdminControls />
+              </div>
+          )}
+
+          {/* Store Management - Left side of logo */}
+          <div className="store-section">
             {isAuthenticated && (
                 !storesLoading ? (
                     userStores && userStores.length > 0 ? (
                         <Link to="/my-stores">
-                          <button className="button">My Stores</button>
+                          <button className="button store-button">🏪 My Stores</button>
                         </Link>
                     ) : (
                         <Link to="/create-store">
-                          <button className="button">Create Store</button>
+                          <button className="button store-button">➕ Create Store</button>
                         </Link>
                     )
                 ) : (
@@ -151,20 +161,13 @@ function HeaderBar() {
             </Link>
           </div>
 
-          {/* Admin Controls - Between Logo and Right Side */}
-          {user?.isAdmin && (
-              <div className="header-admin">
-                <AdminControls />
-              </div>
-          )}
-
           {/* Right Side Buttons */}
           <div className="header-right">
             {isAuthenticated ? (
                 <>
                   <Link to="/cart" className="cart-link">
-                    <button className="button cart-button">
-                      Cart
+                    <button className="button cart-button stylish-button">
+                      🛒 Cart
                       {cartItemCount > 0 && (
                           <span className="cart-badge" style={{
                             position: 'absolute',
@@ -190,18 +193,18 @@ function HeaderBar() {
                     </button>
                   </Link>
                   <Link to="/messages">
-                    <button className="button">Messages</button>
+                    <button className="button stylish-button">💬 Messages</button>
                   </Link>
                   <Link to="/orders">
-                    <button className="button">Orders</button>
+                    <button className="button stylish-button">📦 Orders</button>
                   </Link>
-                  <button className="button" onClick={handleLogout}>Logout</button>
+                  <button className="button stylish-button logout-button" onClick={handleLogout}>🚪 Logout</button>
                 </>
             ) : (
                 <>
                   <Link to="/cart" className="cart-link">
-                    <button className="button cart-button">
-                      Cart
+                    <button className="button cart-button stylish-button">
+                      🛒 Cart
                       {cartItemCount > 0 && (
                           <span className="cart-badge" style={{
                             position: 'absolute',
@@ -226,8 +229,8 @@ function HeaderBar() {
                       )}
                     </button>
                   </Link>
-                  <button className="button" onClick={() => setShowLogin(true)}>Login</button>
-                  <button className="button" onClick={() => setShowRegister(true)}>Register</button>
+                  <button className="button stylish-button" onClick={() => setShowLogin(true)}>🔑 Login</button>
+                  <button className="button stylish-button" onClick={() => setShowRegister(true)}>📝 Register</button>
                 </>
             )}
           </div>
