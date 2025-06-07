@@ -2,6 +2,7 @@ package com.sadna_market.market.AcceptanceTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
+import com.sadna_market.market.ApplicationLayer.DTOs.CheckoutResultDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
@@ -300,8 +301,14 @@ public class GuestTests {
                 "123"
         );
 
-        // Purchase the cart
-        Response<String> purchaseResponse = bridge.buyGuestCart(cartReq, creditCard);
+        // Create guest checkout request
+        GuestCheckoutRequest checkoutRequest = new GuestCheckoutRequest();
+        checkoutRequest.setCartItems(cartReq.getBaskets()); // or however you extract cart items from cartReq
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setContactEmail("test@example.com"); // required field
+        checkoutRequest.setShippingAddress("123 Test Street, Test City"); // required field
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processGuestCheckout(checkoutRequest);
 
         // Verify response
         Assertions.assertNotNull(purchaseResponse, "Purchase response should not be null");
@@ -321,8 +328,15 @@ public class GuestTests {
                 "123"
         );
 
-        // Try to purchase empty cart
-        Response<String> purchaseResponse = bridge.buyGuestCart(cartReq, creditCard);
+        // Create guest checkout request with empty cart
+        GuestCheckoutRequest checkoutRequest = new GuestCheckoutRequest();
+        checkoutRequest.setCartItems(cartReq.getBaskets()); // empty cart items
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setContactEmail("test@example.com"); // required field
+        checkoutRequest.setShippingAddress("123 Test Street, Test City"); // required field
+
+        // Try to process checkout with empty cart
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processGuestCheckout(checkoutRequest);
 
         // Verify error response
         Assertions.assertNotNull(purchaseResponse, "Purchase response should not be null");

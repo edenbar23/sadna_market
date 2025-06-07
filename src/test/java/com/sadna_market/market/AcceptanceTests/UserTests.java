@@ -334,8 +334,14 @@ public class UserTests {
         Response<String> addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Initial product addition should succeed");
 
-        // Purchase the cart
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
 
         // Verify response
         Assertions.assertNotNull(purchaseResponse, "Response should not be null");
@@ -354,10 +360,14 @@ public class UserTests {
                 "123"
         );
 
-        // Cart is empty by default since we haven't added anything
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
 
-        // Try to purchase the empty cart
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
 
         // Verify response indicates an error
         Assertions.assertNotNull(purchaseResponse, "Response should not be null");
@@ -380,8 +390,14 @@ public class UserTests {
         Response<String> addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Initial product addition should succeed");
 
-        // Try to purchase with invalid credit card
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
 
         // Verify response indicates an error
         Assertions.assertNotNull(purchaseResponse, "Response should not be null");
@@ -408,8 +424,14 @@ public class UserTests {
         Response<String> logoutResponse = bridge.logout(testUsername, testToken);
         Assertions.assertFalse(logoutResponse.isError(), "Logout should succeed");
 
-        // Try to purchase after logout
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
 
         // Verify response indicates an error
         Assertions.assertNotNull(purchaseResponse, "Response should not be null");
@@ -588,7 +610,15 @@ public class UserTests {
                 "12/25",
                 "123"
         );
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
 
         // Create a rating request
@@ -693,7 +723,15 @@ public class UserTests {
                 "12/25",
                 "123"
         );
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
 
         // Now retrieve order history
@@ -723,7 +761,15 @@ public class UserTests {
                 "12/25",
                 "123"
         );
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
 
         // Log out the user
@@ -813,7 +859,15 @@ public class UserTests {
                 "12/25",
                 "123"
         );
-        Response<String> purchaseResponse = bridge.buyUserCart(testUsername, testToken, creditCard);
+
+        // Create checkout request
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+
+        // Process the checkout
+        Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
 
         // Create a product review request
