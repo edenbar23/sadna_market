@@ -266,7 +266,7 @@ export default function OrdersPage() {
 
                     <div className="order-content">
                       {/* Store Information */}
-                      <div className="store-info">
+                      <div className="store-info_orders">
                         <div className="store-name">
                           {store?.data?.name || store?.name || order.storeName || "Unknown Store"}
                         </div>
