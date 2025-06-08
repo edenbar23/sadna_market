@@ -6,6 +6,7 @@ import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
+import com.sadna_market.market.InfrastructureLayer.Supply.PickupDTO;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -336,11 +337,13 @@ public class UserTests {
     void validCartPurchaseTest() {
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
+
         // First add product to cart
         Response<String> addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addResponse.isError(), "Initial product addition should succeed");
@@ -349,6 +352,7 @@ public class UserTests {
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
@@ -365,16 +369,18 @@ public class UserTests {
     void emptyCartPurchaseTest() {
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
 
         // Create checkout request
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
@@ -613,11 +619,12 @@ public class UserTests {
         // First add the product to cart and purchase it
         Response<String> addToCartResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
         Assertions.assertFalse(addToCartResponse.isError(), "Adding product to cart should succeed");
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
 
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
@@ -626,6 +633,7 @@ public class UserTests {
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
@@ -729,16 +737,19 @@ public class UserTests {
 
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
+
 
         // Create checkout request
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
@@ -767,16 +778,19 @@ public class UserTests {
 
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
+
 
         // Create checkout request
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
@@ -865,16 +879,19 @@ public class UserTests {
 
         // Create a credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
 
         // Create checkout request
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickupMethod);
+
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);

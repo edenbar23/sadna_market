@@ -7,6 +7,8 @@ import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.StoreDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
+import com.sadna_market.market.InfrastructureLayer.Supply.PickupDTO;
+import com.sadna_market.market.InfrastructureLayer.Supply.SupplyMethod;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -306,11 +308,13 @@ public class GuestTests {
 
         // Create credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
+
+        PickupDTO pickupMethod = new PickupDTO("Test Store Location", "Pickup123");
 
         // Create guest checkout request
         GuestCheckoutRequest checkoutRequest = new GuestCheckoutRequest();
@@ -318,6 +322,7 @@ public class GuestTests {
         checkoutRequest.setPaymentMethod(creditCard);
         checkoutRequest.setContactEmail("test@example.com"); // required field
         checkoutRequest.setShippingAddress("123 Test Street, Test City"); // required field
+        checkoutRequest.setSupplyMethod(pickupMethod); // required field
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processGuestCheckout(checkoutRequest);
 
@@ -333,8 +338,8 @@ public class GuestTests {
 
         // Create credit card for purchase
         CreditCardDTO creditCard = new CreditCardDTO(
-                "John Doe",
                 "4111111111111111",
+                "John Doe",
                 "12/25",
                 "123"
         );
