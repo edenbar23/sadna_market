@@ -6,6 +6,7 @@ import com.sadna_market.market.DomainLayer.IProductRepository;
 import com.sadna_market.market.DomainLayer.Product;
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.ProductJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
+@Profile({"dev", "prod", "default"})
 public class ProductJpaAdapter implements IProductRepository {
 
     @Autowired

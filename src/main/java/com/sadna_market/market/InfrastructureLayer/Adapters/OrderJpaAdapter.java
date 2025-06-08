@@ -5,6 +5,7 @@ import com.sadna_market.market.InfrastructureLayer.JpaRepos.OrderJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Repository
+@Profile({"dev", "prod", "default"})
 public class OrderJpaAdapter implements IOrderRepository {
     private static final Logger logger = LoggerFactory.getLogger(OrderJpaAdapter.class);
 

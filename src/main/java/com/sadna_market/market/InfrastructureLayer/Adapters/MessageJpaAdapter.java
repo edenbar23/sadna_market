@@ -4,6 +4,7 @@ import com.sadna_market.market.DomainLayer.IMessageRepository;
 import com.sadna_market.market.DomainLayer.Message;
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.MessageJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
+@Profile({"dev", "prod", "default"})
 public class MessageJpaAdapter implements IMessageRepository {
 
     @Autowired

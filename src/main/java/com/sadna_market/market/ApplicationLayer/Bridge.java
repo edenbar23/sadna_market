@@ -17,6 +17,7 @@ public class Bridge {
     private final StoreService storeService;
 
     private final MessageApplicationService messageService;
+    private final CheckoutApplicationService checkoutService;
 
 //    public Bridge() {
 //        // Create the repositories
@@ -55,12 +56,12 @@ public class Bridge {
             UserService userService,
             ProductService productService,
             StoreService storeService,
-            MessageApplicationService messageService) {
-
+            MessageApplicationService messageService, CheckoutApplicationService checkoutService) {
         this.userService = userService;
         this.productService = productService;
         this.storeService = storeService;
         this.messageService = messageService;
+        this.checkoutService = checkoutService;
     }
 
     /** Admin Test Methods */
@@ -122,6 +123,10 @@ public class Bridge {
 //        return userService.checkout(cart, paymentMethod);
 //    }
 
+    public Response<CheckoutResultDTO> processGuestCheckout(GuestCheckoutRequest request){
+        return checkoutService.processGuestCheckout(request);
+    }
+
     /** Registered User Methods */
     public Response<String> addProductToUserCart(String userName, String token, UUID storeId, UUID productId, int quantity){
         return userService.addToCart(userName, token, storeId, productId, quantity);
@@ -142,6 +147,9 @@ public class Bridge {
 //    public Response<String> buyUserCart(String userName, String token, PaymentMethod paymentMethod){
 //        return userService.checkout(userName, token, paymentMethod);
 //    }
+    public Response<CheckoutResultDTO> processUserCheckout(String username, String token, CheckoutRequest request){
+        return checkoutService.processUserCheckout(username, token, request);
+    }
 
     public Response<ProductRatingDTO> rateProduct(String token, ProductRateRequest request){
         return productService.rateProduct(token, request);

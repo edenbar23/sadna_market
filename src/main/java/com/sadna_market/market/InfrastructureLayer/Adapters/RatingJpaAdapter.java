@@ -6,6 +6,7 @@ import com.sadna_market.market.InfrastructureLayer.JpaRepos.ProductRatingJpaRepo
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.ProductReviewJpaRepository;
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.StoreRatingJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
+@Profile({"dev", "prod", "default"})
 public class RatingJpaAdapter implements IRatingRepository {
 
     @Autowired
