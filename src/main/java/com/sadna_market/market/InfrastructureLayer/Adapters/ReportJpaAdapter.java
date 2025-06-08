@@ -5,6 +5,7 @@ import com.sadna_market.market.DomainLayer.IReportRepository;
 import com.sadna_market.market.DomainLayer.Report;
 import com.sadna_market.market.InfrastructureLayer.JpaRepos.ReportJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
+@Profile({"dev", "prod", "default"})
 public class ReportJpaAdapter implements IReportRepository {
 
     @Autowired
