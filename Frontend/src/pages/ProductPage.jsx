@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProductInfo, getStoreProducts, rateProduct } from "../api/product";
+import { fetchStoreById } from "../api/store";
 import StoreActionPanel from "../components/StoreActionPanel";
 import ProductCard from "../components/ProductCard";
 import ProductInfo from "../components/ProductInfo";
@@ -56,14 +57,20 @@ export default function ProductPage() {
                 setSimilarProducts(similarProductsList.slice(0, 4));
               }
             }
+            const storeDetails = await fetchStoreById(productData.storeId);
+            if (storeDetails && !storeDetails.error) {
+              setStore(storeDetails);
+            } else {
+              console.error("Failed to fetch store details:", storeDetails?.error || "Unknown error");
+              // Set store info from product data
+              setStore({
+                id: productData.storeId,
+                name: productData.storeName || "Store",
+                rating: productData.storeRating || 0,
+                logo: "/assets/blank_store.png" // Default logo if not available
+              });
 
-            // Set store info from product data
-            setStore({
-              id: productData.storeId,
-              name: productData.storeName || "Store",
-              rating: productData.storeRating || 0,
-              logo: "/assets/blank_store.png" // Default logo if not available
-            });
+            }
           }
         }
       } catch (err) {

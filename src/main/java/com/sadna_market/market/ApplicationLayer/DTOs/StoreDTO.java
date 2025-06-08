@@ -20,7 +20,8 @@ public class StoreDTO {
     private Set<String> ownerUsernames;
     @Getter
     private Set<String> managerUsernames;
-
+    @Getter
+    private double rating;
     public StoreDTO(Store store) {
         this.storeId = store.getStoreId();
         this.name = store.getName();
@@ -31,7 +32,7 @@ public class StoreDTO {
         this.managerUsernames = store.getManagerUsernames();
     }
 
-    public StoreDTO(UUID storeId, String name, String description, boolean active, String founderUsername, Set<String> ownerUsernames, Set<String> managerUsernames) {
+    public StoreDTO(UUID storeId, String name, String description, boolean active, String founderUsername, Set<String> ownerUsernames, Set<String> managerUsernames,double rating) {
         this.storeId = storeId;
         this.name = name;
         this.description = description;
@@ -39,5 +40,6 @@ public class StoreDTO {
         this.founderUsername = founderUsername;
         this.ownerUsernames = ownerUsernames;
         this.managerUsernames = managerUsernames;
+        this.rating = rating;
     }
 }

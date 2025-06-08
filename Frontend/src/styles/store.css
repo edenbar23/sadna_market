@@ -1,0 +1,150 @@
+.store-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.store-buttons button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.store-buttons button:hover {
+    transform: translateY(-2px);
+}
+
+.store-buttons button:active {
+    transform: scale(0.98);
+}
+
+.store-buttons button:first-child {
+    background-color: #4f46e5; /* Indigo */
+    color: white;
+}
+
+.store-buttons button:first-child:hover {
+    background-color: #4338ca;
+}
+
+.report-btn {
+    background-color: #ef4444; /* Red */
+    color: white;
+}
+
+.report-btn:hover {
+    background-color: #dc2626;
+}
+
+.store-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 8px;
+    background-color: #f3f4f6;
+}
+
+.store-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-family: 'Inter', sans-serif;
+    background-color: transparent; /* make it transparent */
+    padding: 0; /* remove any default padding */
+    box-shadow: none; /* no shadow */
+}
+
+
+.store-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.store-rating {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+}
+
+.store-description {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    color: #374151;
+}
+
+
+
+.store-info h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+}
+
+.store-info p {
+    font-size: 1rem;
+    margin: 0;
+    color: #374151;
+    line-height: 1.4;
+}
+
+.store-info .store-rating {
+    font-weight: 500;
+    color: #f59e0b; /* amber-500 for stars */
+}
+
+.store-info .store-description {
+    color: #4b5563; /* gray-600 */
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+    max-width: 600px;
+}
+
+.store-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.store-buttons button {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.store-buttons button:hover {
+    transform: translateY(-2px);
+}
+
+.store-buttons button:active {
+    transform: scale(0.98);
+}
+
+.store-buttons button:first-child {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+}
+
+.store-buttons button:first-child:hover {
+    background-color: #2563eb; /* blue-600 */
+}
+
+.report-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.report-btn:hover {
+    background-color: #dc2626;
+}

@@ -340,7 +340,8 @@ public class StoreService {
                 store.isActive(),
                 store.getFounder().getUsername(),
                 store.getOwnerUsernames(),
-                store.getManagerUsernames()
+                store.getManagerUsernames(),
+                store.getRating()
         );
     }
 

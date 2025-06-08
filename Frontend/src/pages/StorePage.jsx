@@ -69,24 +69,11 @@ export default function StorePage() {
     return (
         <div className="store-page">
             <SearchBar storeId={storeId} />
-            <div className="store-header">
-                <img
-                    src={store.logo || "/assets/blank_store.png"}
-                    alt={`${store.name} logo`}
-                    className="store-logo"
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/assets/blank_store.png";
-                    }}
-                />
-                <div>
-                    <h1>{store.name}</h1>
-                    <p>Rating: {store.rating ? `${store.rating.toFixed(1)} ⭐` : 'Not rated yet'}</p>
-                    {store.description && <p>{store.description}</p>}
-                </div>
+            <div>
+                    <StoreActionPanel store={store} />
             </div>
 
-            <StoreActionPanel store={store} />
+
 
             <h2 className="store-products-title">Store Products</h2>
             <div className="store-products-scroll">
