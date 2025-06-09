@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import MessageModal from "./MessageModal.jsx";
+import ReportModal from "./ReportModal.jsx"; // <-- Import
 import "../index.css";
 
-export default function StoreActionPanel({ store }) {
-    const [showModal, setShowModal] = useState(false);
+export default function StoreActionPanel({ store, currentUser, productId }) {
+    const [showMessageModal, setShowMessageModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     return (
-        <div >
+        <div>
             <div className="store-header">
                 <img
                     src={store.logo || "/assets/blank_store.png"}
@@ -23,15 +25,29 @@ export default function StoreActionPanel({ store }) {
                         Rating: {store.rating ? `${store.rating.toFixed(1)} ⭐` : 'Not rated yet'}
                     </p>
                     {store.description && <p className="store-description">{store.description}</p>}
-                    <div className="store-buttons">
-                        <button onClick={() => setShowModal(true)}>Message Store</button>
-                        <button className="report-btn">Report Violation</button>
-                    </div>
+                    {currentUser &&
+                        (<div className="store-buttons">
+                            <button onClick={() => setShowMessageModal(true)}>Message Store</button>
+                            <button className="report-btn" onClick={() => setShowReportModal(true)}>
+                                Report Violation
+                            </button>
+                        </div>
+
+                    )}
                 </div>
             </div>
 
-            {showModal && (
-                <MessageModal store={store} onClose={() => setShowModal(false)} />
+            {showMessageModal && (
+                <MessageModal store={store} onClose={() => setShowMessageModal(false)} />
+            )}
+
+            {showReportModal && (
+                <ReportModal
+                    store={store}
+                    currentUser={currentUser}
+                    //productId={productId}
+                    onClose={() => setShowReportModal(false)}
+                />
             )}
         </div>
     );

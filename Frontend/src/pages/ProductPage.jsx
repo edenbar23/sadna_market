@@ -139,7 +139,7 @@ export default function ProductPage() {
               onRate={handleRateProduct}
               canRate={!!user}
           />
-          {store && <StoreActionPanel store={store} />}
+          {store && <StoreActionPanel store={store} currentUser={user} />}
         </div>
 
         {similarProducts.length > 0 && (

@@ -25,7 +25,7 @@ export default function MessageModal({ store, onClose }) {
 
         setStatus("sending");
         try {
-            await sendMessage(user.username, store.id, message, token);
+            await sendMessage(user.username, store.id||store.storeId, message, token);
             setStatus("sent");
             setTimeout(onClose, 1500);
         } catch (error) {
