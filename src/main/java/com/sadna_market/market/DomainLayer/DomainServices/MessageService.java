@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 
 import java.rmi.server.UID;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,8 +76,8 @@ public class MessageService {
 
         try {
             // Notify admin about the violation report
-            Admin admin = findAdmin();
-            if (admin != null) {
+            List<User> admins = findAdmin();
+            if (admins != null) {
                 Message notificationMessage = new Message(
                         "System",
                         UUID.randomUUID(), // Admin's inbox ID
@@ -488,12 +489,13 @@ public class MessageService {
         return message;
     }
 
-    private Admin findAdmin() {
+    private List<User> findAdmin() {
         // Find the admin user - implementation depends on how admins are stored
-        Optional<User> adminUser = userRepository.findByUsername("admin");
-        if (adminUser.isPresent() && adminUser.get() instanceof Admin) {
-            return (Admin) adminUser.get();
+        List<User> adminUsers = userRepository.findByIsAdmin(true);
+        if (!adminUsers.isEmpty()) {
+            return adminUsers;
         }
+        logger.warn("No admin users found");
         return null;
     }
 
