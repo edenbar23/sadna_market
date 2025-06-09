@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
@@ -19,19 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
         "external.api.enabled=true"
 })
 @DisplayName("Supply System Integration Tests")
-class SupplyIntegrationTest {
+class SupplyIntegrationTests {
 
+    @Autowired
     private SupplyService supplyService;
     private ShipmentDetails testShipment;
 
     @BeforeEach
     void setUp() {
-        ExternalAPIConfig config = new ExternalAPIConfig();
-        ExternalAPIClient apiClient = new ExternalAPIClient(config, new ObjectMapper());
-        ExternalSupplyAPI externalSupplyAPI = new ExternalSupplyAPI(apiClient, config);
-        ConcreteSupplyVisitor supplyVisitor = new ConcreteSupplyVisitor(externalSupplyAPI);
-        supplyService = new SupplyService(supplyVisitor, externalSupplyAPI);
-
         testShipment = new ShipmentDetails("SHP-001", "123 Main St, City, Country", 2, "user", false);
     }
 

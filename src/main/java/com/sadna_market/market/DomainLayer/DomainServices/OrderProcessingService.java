@@ -311,6 +311,7 @@ public class OrderProcessingService {
             try {
                 // Update order status to PAID
                 orderRepository.updateOrderStatus(order.getOrderId(), OrderStatus.PAID);
+                orderRepository.updeteOrderTransactionId(order.getOrderId(), paymentTransactionId);
 
                 // Update inventory (reduce stock)
                 updateInventoryAfterPayment(order);

@@ -152,6 +152,30 @@ public class OrderJpaAdapter implements IOrderRepository {
         }
     }
 
+
+    @Override
+    @Transactional
+    public boolean updeteOrderTransactionId(UUID orderId, int transactionId) {
+        logger.info("Updating transaction ID for order {} to {}", orderId, transactionId);
+
+        Optional<Order> orderOpt = orderJpaRepository.findById(orderId);
+        if (orderOpt.isPresent()) {
+            Order order = orderOpt.get();
+            boolean updated = order.updateTransactionId(transactionId);;
+            if (updated) {
+                orderJpaRepository.save(order);
+                logger.info("Transaction ID updated successfully for order {}", orderId);
+                return true;
+            } else {
+                logger.warn("Cannot update transaction ID for order {} in current status", orderId);
+                return false;
+            }
+        } else {
+            logger.error("Order not found: {}", orderId);
+            return false;
+        }
+    }
+
     @Override
     @Transactional
     public boolean setDeliveryId(UUID orderId, UUID deliveryId) {
