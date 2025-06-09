@@ -2,73 +2,53 @@ import React, { useState, useEffect } from "react";
 import "../index.css";
 import logo from "../assets/logo.png";
 import UserProfileBadge from "./UserProfileBadge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LoginBanner from "./LoginBanner";
 import RegisterBanner from "./RegisterBanner";
 import { fetchUserStores } from "../api/user";
 import AdminControls from "./AdminControls";
-import { useNavigate } from "react-router-dom";
-import { useAuthContext } from '../context/AuthContext';
-import { useCartContext } from '../context/CartContext';
-import { useCart } from '../hooks/useCart';
+import { useAuthContext } from "../context/AuthContext";
+import { useCartContext } from "../context/CartContext";
+import { useCart } from "../hooks/useCart";
+import CreateStoreModal from "@/components/CreateStoreModal.jsx";
+import {useStoreOperations} from "@/hooks/index.js";
 
 function HeaderBar() {
   const { user, isAuthenticated, logout } = useAuthContext();
   const { guestCart } = useCartContext();
   const { cart, fetchCart } = useCart();
+  const { handleCreateStore } = useStoreOperations(user);
+  const [storeCreated, setStoreCreated] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [userStores, setUserStores] = useState([]);
   const [storesLoading, setStoresLoading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
 
-  // Debug: Log all cart-related data
-  console.log('=== CART DEBUG INFO ===');
-  console.log('isAuthenticated:', isAuthenticated);
-  console.log('user:', user);
-  console.log('guestCart:', guestCart);
-  console.log('cart (from useCart):', cart);
-  console.log('refreshTrigger:', refreshTrigger);
-  console.log('========================');
+  const handleCreateStoreClick = () => setShowCreateModal(true);
+  const handleCloseModal = () => setShowCreateModal(false);
 
-  // Fetch cart data when component mounts or refreshTrigger changes
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('Fetching cart for authenticated user...');
-      fetchCart().then(cartData => {
-        console.log('Fetched cart data:', cartData);
-      }).catch(err => {
-        console.error('Error fetching cart:', err);
-      });
+      fetchCart().catch(console.error);
     }
   }, [isAuthenticated, user, fetchCart, refreshTrigger]);
 
-  // Add event listener for cart updates
   useEffect(() => {
-    const handleCartUpdate = () => {
-      console.log("Cart update event received - forcing re-render");
-      setRefreshTrigger(prev => prev + 1);
-    };
-
-    window.addEventListener('cartUpdated', handleCartUpdate);
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
+    const handleCartUpdate = () => setRefreshTrigger((prev) => prev + 1);
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
   }, []);
 
   useEffect(() => {
     const loadUserStores = async () => {
-      if (user && user.username && user.token) {
+      if (user?.username && user?.token) {
         setStoresLoading(true);
         try {
-          const storesResponse = await fetchUserStores(user.username, user.token);
-          if (storesResponse && storesResponse.data) {
-            setUserStores(storesResponse.data);
-            console.log("User stores loaded:", storesResponse.data);
-          } else {
-            setUserStores([]);
-          }
+          const res = await fetchUserStores(user.username, user.token);
+          setUserStores(res?.data || []);
         } catch (err) {
           console.error("Failed to fetch user stores:", err);
           setUserStores([]);
@@ -83,38 +63,24 @@ function HeaderBar() {
     loadUserStores();
   }, [user]);
 
-  // Calculate total cart items with detailed logging
   const getCartItemCount = () => {
-    console.log('Calculating cart item count...');
-
     if (isAuthenticated && cart) {
-      console.log('Using authenticated user cart:', cart);
-      const count = cart.totalItems || 0;
-      console.log('Authenticated cart count:', count);
-      return count;
-    } else if (!isAuthenticated && guestCart) {
-      console.log('Using guest cart:', guestCart);
-      let totalItems = 0;
-      if (guestCart && guestCart.baskets) {
-        Object.entries(guestCart.baskets).forEach(([storeId, storeBasket]) => {
-          console.log(`Store ${storeId}:`, storeBasket);
-          Object.entries(storeBasket).forEach(([productId, quantity]) => {
-            console.log(`  Product ${productId}: ${quantity}`);
-            totalItems += quantity;
-          });
-        });
-      }
-      console.log('Guest cart count:', totalItems);
-      return totalItems;
-    } else {
-      console.log('No cart data available');
-      return 0;
+      return cart.totalItems || 0;
+    } else if (!isAuthenticated && guestCart?.baskets) {
+      return Object.values(guestCart.baskets).reduce((acc, storeBasket) => {
+        return (
+            acc +
+            Object.values(storeBasket).reduce(
+                (sum, quantity) => sum + quantity,
+                0
+            )
+        );
+      }, 0);
     }
+    return 0;
   };
 
   const cartItemCount = getCartItemCount();
-  console.log('Final cart item count:', cartItemCount);
-
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -123,34 +89,53 @@ function HeaderBar() {
   return (
       <>
         <header className="header">
-          {/* Left Side */}
+          {/* Left: Profile */}
           <div className="header-left">
             <UserProfileBadge user={user} />
           </div>
 
-          {/* Admin Controls - More to the right */}
+          {/* Admin Controls */}
           {user?.isAdmin && (
               <div className="admin-section">
                 <AdminControls />
               </div>
           )}
 
-          {/* Store Management - Left side of logo */}
+          {/* Store Management */}
           <div className="store-section">
-            {isAuthenticated && (
-                !storesLoading ? (
-                    userStores && userStores.length > 0 ? (
+            {isAuthenticated &&
+                (!storesLoading ? (
+                    userStores.length > 0 ? (
                         <Link to="/my-stores">
                           <button className="button store-button">🏪 My Stores</button>
                         </Link>
                     ) : (
-                        <Link to="/create-store">
-                          <button className="button store-button">➕ Create Store</button>
-                        </Link>
+                        <button
+                            className="button store-button"
+                            onClick={handleCreateStoreClick}
+                        >
+                          ➕ Create Store
+                        </button>
                     )
                 ) : (
                     <span>Loading stores...</span>
-                )
+                ))}
+            {showCreateModal && (
+                <CreateStoreModal
+                    onSuccess={() => {
+                      setStoreCreated(true);
+                      // Reload stores after creation
+                      if (user?.username && user?.token) {
+                      setStoresLoading(true);
+                      fetchUserStores(user.username, user.token)
+                      .then((res) => setUserStores(res?.data || []))
+                      .catch(() => setUserStores([]))
+                      .finally(() => setStoresLoading(false));
+                      }
+                    }
+                }
+                    handleCreateStore={handleCreateStore} onClose={handleCloseModal}
+                    isLoading={false} />
             )}
           </div>
 
@@ -161,88 +146,59 @@ function HeaderBar() {
             </Link>
           </div>
 
-          {/* Right Side Buttons */}
+          {/* Right: Actions */}
           <div className="header-right">
+            <Link to="/cart" className="cart-link">
+              <button className="button cart-button stylish-button">
+                🛒 Cart
+                {cartItemCount > 0 && (
+                    <span className="cart-badge" style={badgeStyle}>
+                  {cartItemCount}
+                </span>
+                )}
+              </button>
+            </Link>
+
             {isAuthenticated ? (
                 <>
-                  <Link to="/cart" className="cart-link">
-                    <button className="button cart-button stylish-button">
-                      🛒 Cart
-                      {cartItemCount > 0 && (
-                          <span className="cart-badge" style={{
-                            position: 'absolute',
-                            top: '-8px',
-                            right: '-8px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold',
-                            minWidth: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '0 4px',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                            zIndex: 1
-                          }}>
-                          {cartItemCount}
-                        </span>
-                      )}
-                    </button>
-                  </Link>
                   <Link to="/messages">
                     <button className="button stylish-button">💬 Messages</button>
                   </Link>
                   <Link to="/orders">
                     <button className="button stylish-button">📦 Orders</button>
                   </Link>
-                  <button className="button stylish-button logout-button" onClick={handleLogout}>🚪 Logout</button>
+                  <button
+                      className="button stylish-button logout-button"
+                      onClick={handleLogout}
+                  >
+                    🚪 Logout
+                  </button>
                 </>
             ) : (
                 <>
-                  <Link to="/cart" className="cart-link">
-                    <button className="button cart-button stylish-button">
-                      🛒 Cart
-                      {cartItemCount > 0 && (
-                          <span className="cart-badge" style={{
-                            position: 'absolute',
-                            top: '-8px',
-                            right: '-8px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            fontSize: '0.75rem',
-                            fontWeight: 'bold',
-                            minWidth: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '0 4px',
-                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                            zIndex: 1
-                          }}>
-                          {cartItemCount}
-                        </span>
-                      )}
-                    </button>
-                  </Link>
-                  <button className="button stylish-button" onClick={() => setShowLogin(true)}>🔑 Login</button>
-                  <button className="button stylish-button" onClick={() => setShowRegister(true)}>📝 Register</button>
+                  <button
+                      className="button stylish-button"
+                      onClick={() => setShowLogin(true)}
+                  >
+                    🔑 Login
+                  </button>
+                  <button
+                      className="button stylish-button"
+                      onClick={() => setShowRegister(true)}
+                  >
+                    📝 Register
+                  </button>
                 </>
             )}
           </div>
         </header>
 
+        {/* Banners */}
         {showLogin && <LoginBanner onClose={() => setShowLogin(false)} />}
         {showRegister && (
             <RegisterBanner
                 onClose={() => setShowRegister(false)}
-                onRegister={() => {
-                  setShowRegister(false);
-                }}
+                onRegister={() => setShowRegister(false)}
                 onLogin={() => {
                   setShowRegister(false);
                   setShowLogin(true);
@@ -252,5 +208,24 @@ function HeaderBar() {
       </>
   );
 }
+
+const badgeStyle = {
+  position: "absolute",
+  top: "-8px",
+  right: "-8px",
+  backgroundColor: "#dc3545",
+  color: "white",
+  fontSize: "0.75rem",
+  fontWeight: "bold",
+  minWidth: "20px",
+  height: "20px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0 4px",
+  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+  zIndex: 1,
+};
 
 export default HeaderBar;
