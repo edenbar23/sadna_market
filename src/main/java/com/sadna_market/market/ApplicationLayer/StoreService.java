@@ -338,7 +338,7 @@ public class StoreService {
                 store.getName(),
                 store.getDescription(),
                 store.isActive(),
-                store.getFounder().getUsername(),
+                store.getFounderUserName(),
                 store.getOwnerUsernames(),
                 store.getManagerUsernames(),
                 store.getRating()

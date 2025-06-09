@@ -28,6 +28,7 @@ export function useStoreOperations(user) {
         try {
             const token = user.token || localStorage.getItem("authToken");
             const result = await createStore(storeData, token, user.username);
+            console.log("creating store", storeData, token, user.username);
             return result;
         } catch (err) {
             console.error("Failed to create store:", err);

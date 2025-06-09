@@ -76,11 +76,11 @@ public class StoreController {
     @PostMapping
     public ResponseEntity<Response<StoreDTO>> createStore(
             @RequestBody StoreRequest storeRequest,
-            @RequestHeader("Authorization") String token,
-            @RequestParam String username) {
+            @RequestHeader("Authorization") String token) {
 
+        String username = storeRequest.getFounderUsername();
         logger.info("Creating store with name: {} for user: {}", storeRequest.getStoreName(), username);
-        Response<StoreDTO> response = storeService.createStore(username, token, storeRequest);
+        Response<StoreDTO> response = storeService.createStore(storeRequest.getFounderUsername(), token, storeRequest);
 
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

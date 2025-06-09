@@ -94,9 +94,10 @@ export const fetchStoreOrders = async (storeId, token, username) => {
 
 // Store Management Functions
 export const createStore = async (storeData, token, username) => {
+  console.log('API: Creating store with data:', storeData, 'and username:', username);
+  storeData.founderUsername =username;
   const response = await apiClient.post('/stores', {
-    ...storeData,
-    founderUserName: username
+    ...storeData
   }, {
     headers: { Authorization: token }
   });
