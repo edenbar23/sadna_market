@@ -2,6 +2,8 @@ package com.sadna_market.market.InfrastructureLayer.Payment;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Generated;
+import lombok.Getter;
 
 /**
  * DTO for credit card payment information
@@ -9,15 +11,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class CreditCardDTO implements PaymentMethod {
     @JsonProperty("cardNumber")
+    @Getter
     public String cardNumber;
 
     @JsonProperty("cardHolderName")
+    @Getter
     public String cardHolderName;
 
     @JsonProperty("expiryDate")
+    @Getter
     public String expiryDate;
 
     @JsonProperty("cvv")
+    @Getter
     public String cvv;
 
     @JsonCreator

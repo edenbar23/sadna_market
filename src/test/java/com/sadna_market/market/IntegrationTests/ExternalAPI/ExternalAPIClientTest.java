@@ -11,6 +11,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
         "external.api.url=https://damp-lynna-wsep-1984852e.koyeb.app/",
         "external.api.enabled=true",
         "external.api.connection.timeout.seconds=10",
-        "external.api.request.timeout.seconds=30"
+        "external.api.request.timeout.seconds=30",
+        "system.init.enabled=false"
 })
 @DisplayName("External API Client Integration Tests")
 class ExternalAPIClientTest {

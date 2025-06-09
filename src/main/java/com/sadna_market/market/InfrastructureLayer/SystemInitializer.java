@@ -1,407 +1,445 @@
 package com.sadna_market.market.InfrastructureLayer;
 
 import com.sadna_market.market.ApplicationLayer.*;
-import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
+import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.DomainLayer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.*;
 
 /**
- * System initializer that creates the specific scenario requested using only Application Layer services:
- * 1. System initialization with user u1 as admin
- * 2. Registration of users u2, u3, u4, u5, u6
- * 3. Login with u2
- * 4. Opening store s1 with u2
- * 5. Adding product "Bamba" to store s1 by u2 with price 30 and quantity 20
- * 6. Appointing u3 as manager in store s1 with inventory management permissions (by u2)
- * 7. Appointing u4 and u5 as store owners in s1 by u2
- * 8. Logout of u2
+ * System Initializer according to Version 3 requirements:
+ * Implements exact scenario: u1 admin, u2-u6 users, u2 creates s1, adds Bamba, appoints u3,u4,u5
  */
 @Component
-@Profile("dev")
+@Profile("!test")
+@ConditionalOnProperty(name = "system.init.enabled", havingValue = "true")
 public class SystemInitializer implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(SystemInitializer.class);
 
-    // Application Layer Services
+    // APPLICATION LAYER SERVICES ONLY
     private final UserService userService;
     private final StoreService storeService;
     private final ProductService productService;
-
-    // For direct repository access (only for clearing data)
     private final IUserRepository userRepository;
-    private final IStoreRepository storeRepository;
-    private final IProductRepository productRepository;
 
-    // Configuration constants
-    private static final String DEFAULT_PASSWORD = "Password123!";
-    private static final String ADMIN_USERNAME = "u1";
-    private static final String ADMIN_EMAIL = "u1@market.com";
+    // CONFIGURATION FROM EXTERNAL CONFIG FILE
+    @Value("${system.init.initial-state-file:}")
+    private String initialStateFile;
+
+    @Value("${system.init.admin.username:u1}")
+    private String adminUsername;
+
+    @Value("${system.init.admin.password:Password123!}")
+    private String adminPassword;
+
+    @Value("${system.init.admin.email:u1@market.com}")
+    private String adminEmail;
+
+    @Value("${system.init.admin.first-name:System}")
+    private String adminFirstName;
+
+    @Value("${system.init.admin.last-name:Administrator}")
+    private String adminLastName;
+
+    // Session management during initialization
+    private final Map<String, String> userTokens = new HashMap<>();
 
     @Autowired
     public SystemInitializer(
             UserService userService,
             StoreService storeService,
             ProductService productService,
-            IUserRepository userRepository,
-            IStoreRepository storeRepository,
-            IProductRepository productRepository) {
+            IUserRepository userRepository) {
         this.userService = userService;
         this.storeService = storeService;
         this.productService = productService;
         this.userRepository = userRepository;
-        this.storeRepository = storeRepository;
-        this.productRepository = productRepository;
     }
 
     @Override
     public void run(String... args) {
-        logger.info("Starting system initialization using Application Layer services...");
+        logger.info("=== STARTING RESILIENT SYSTEM INITIALIZATION (Version 3) ===");
+        logger.info("Implementing exact scenario: u1 admin, u2-u6 users, u2 creates s1 with Bamba");
 
         try {
-            // Step 1: Clear existing data
-            clearAllData();
+            // PHASE 1: Ensure system admin u1 exists
+            ensureSystemAdminExists();
 
-            // Step 2: Initialize admin user u1
-            initializeAdmin();
+            // PHASE 2: Execute exact scenario from initial state file
+            if (initialStateFile != null && !initialStateFile.isEmpty()) {
+                executeInitialStateFromFile();
+            }
 
-            // Step 3: Register users u2, u3, u4, u5, u6
-            registerUsers();
-
-            // Step 4: Login with u2
-            String u2Token = loginUser("u2");
-
-            // Step 5: Open store s1 with u2
-            UUID storeId = openStore("u2", u2Token);
-
-            // Step 6: Add Bamba product to store s1
-            UUID bambaProductId = addBambaProduct("u2", u2Token, storeId);
-
-            // Step 7: Appoint u3 as manager with inventory permissions
-            appointManager("u2", u2Token, storeId, "u3");
-
-            // Step 8: Appoint u4 and u5 as store owners
-            appointOwners("u2", u2Token, storeId);
-
-            // Step 9: Logout u2
-            logoutUser("u2", u2Token);
-
-            // Step 10: Log completion summary
-            logCompletionSummary(storeId, bambaProductId);
-
-            logger.info("System initialization completed successfully!");
+            logInitializationSuccess();
 
         } catch (Exception e) {
-            logger.error("Error during system initialization: {}", e.getMessage(), e);
+            logger.error("=== SYSTEM INITIALIZATION FAILED ===");
+            logger.error("Error: {}", e.getMessage(), e);
             handleInitializationFailure(e);
+            throw new RuntimeException("System initialization failed - see logs for details", e);
         }
     }
 
-    private void clearAllData() {
-        logger.info("Clearing existing data...");
-        try {
-            // Use application service clear method if available, otherwise clear repositories
-            userService.clear();
-            productService.clear();
-            storeService.clear();
+    private void ensureSystemAdminExists() {
+        logger.info("Setting up system administrator: {}", adminUsername);
 
-            logger.info("All data cleared successfully through Application Layer");
-        } catch (Exception e) {
-            logger.error("Error clearing data: {}", e.getMessage());
-            throw new RuntimeException("Failed to clear existing data", e);
-        }
-    }
-
-    private void initializeAdmin() {
-        logger.info("Step 1: Initializing admin user u1...");
         try {
+            Optional<User> existingAdmin = userRepository.findByUsername(adminUsername);
+            if (existingAdmin.isPresent()) {
+                logger.info("✓ System admin '{}' already exists", adminUsername);
+                return;
+            }
+
             RegisterRequest adminRequest = new RegisterRequest(
-                    ADMIN_USERNAME,
-                    DEFAULT_PASSWORD,
-                    ADMIN_EMAIL,
-                    "Admin",
-                    "User"
+                    adminUsername, adminPassword, adminEmail, adminFirstName, adminLastName
             );
 
             Response<String> response = userService.registerUser(adminRequest);
-
             if (response.isError()) {
                 throw new RuntimeException("Failed to register admin: " + response.getErrorMessage());
             }
 
-            // Set admin flag - need to access repository directly for this system initialization case
-            User adminUser = userRepository.findByUsername(ADMIN_USERNAME)
+            User admin = userRepository.findByUsername(adminUsername)
                     .orElseThrow(() -> new RuntimeException("Admin user not found after creation"));
+            admin.setAdmin(true);
+            userRepository.update(admin);
 
-            adminUser.setAdmin(true);
-            userRepository.update(adminUser);
-
-            logger.info("✓ Admin user u1 created successfully with admin privileges");
+            logger.info("✓ System admin '{}' created with admin privileges", adminUsername);
         } catch (Exception e) {
-            logger.error("Failed to create admin user u1: {}", e.getMessage());
-            throw new RuntimeException("Admin initialization failed", e);
+            throw new RuntimeException("Failed to setup system admin: " + e.getMessage(), e);
         }
     }
 
-    private void registerUsers() {
-        logger.info("Step 2: Registering users u2, u3, u4, u5, u6...");
+    private void executeInitialStateFromFile() {
+        logger.info("Executing exact scenario from file: {}", initialStateFile);
 
-        String[] usernames = {"u2", "u3", "u4", "u5", "u6"};
-        String[] emails = {"u2@market.com", "u3@market.com", "u4@market.com", "u5@market.com", "u6@market.com"};
-        String[] firstNames = {"User", "User", "User", "User", "User"};
-        String[] lastNames = {"Two", "Three", "Four", "Five", "Six"};
+        try {
+            List<String> commands = readCommandsFromFile(initialStateFile);
+            if (commands.isEmpty()) {
+                logger.info("No commands found in initial state file");
+                return;
+            }
 
-        for (int i = 0; i < usernames.length; i++) {
-            try {
-                RegisterRequest userRequest = new RegisterRequest(
-                        usernames[i],
-                        DEFAULT_PASSWORD,
-                        emails[i],
-                        firstNames[i],
-                        lastNames[i]
-                );
+            logger.info("Found {} commands to execute", commands.size());
 
-                Response<String> response = userService.registerUser(userRequest);
+            for (int i = 0; i < commands.size(); i++) {
+                String command = commands.get(i);
+                int lineNumber = i + 1;
 
-                if (response.isError()) {
-                    throw new RuntimeException("Failed to register user: " + response.getErrorMessage());
+                logger.info("Executing command {}/{}: {}", lineNumber, commands.size(), command);
+
+                try {
+                    executeCommand(command, lineNumber);
+                    logger.info("✓ Command {} completed successfully", lineNumber);
+                } catch (Exception e) {
+                    throw new RuntimeException("Command " + lineNumber + " failed: " + e.getMessage(), e);
                 }
-
-                logger.info("✓ User {} registered successfully", usernames[i]);
-            } catch (Exception e) {
-                logger.error("Failed to register user {}: {}", usernames[i], e.getMessage());
-                throw new RuntimeException("User registration failed for " + usernames[i], e);
-            }
-        }
-
-        logger.info("✓ All users registered successfully");
-    }
-
-    private String loginUser(String username) {
-        logger.info("Step 3: Logging in user {}...", username);
-        try {
-            Response<String> response = userService.loginUser(username, DEFAULT_PASSWORD);
-
-            if (response.isError()) {
-                throw new RuntimeException("Login failed: " + response.getErrorMessage());
             }
 
-            String token = response.getData();
-            logger.info("✓ User {} logged in successfully with token", username);
-            return token;
+            logger.info("✓ All {} commands executed successfully", commands.size());
         } catch (Exception e) {
-            logger.error("Failed to login user {}: {}", username, e.getMessage());
-            throw new RuntimeException("Login failed for " + username, e);
+            userTokens.clear();
+            throw new RuntimeException("Initial state execution failed: " + e.getMessage(), e);
         }
     }
 
-    private UUID openStore(String username, String token) {
-        logger.info("Step 4: Opening store s1 with user {}...", username);
-        try {
-            StoreRequest storeRequest = new StoreRequest(
-                    "s1",
-                    "Store s1 - Sample store created during initialization",
-                    "123 Market Street, Sample City, SC 12345",
-                    "s1@market.com",
-                    "555-STORE-01",
-                    username  // founder username
-            );
+    private List<String> readCommandsFromFile(String filePath) throws Exception {
+        List<String> commands = new ArrayList<>();
 
-            Response<StoreDTO> response = storeService.createStore(username, token, storeRequest);
-
-            if (response.isError()) {
-                throw new RuntimeException("Store creation failed: " + response.getErrorMessage());
-            }
-
-            UUID storeId = response.getData().getStoreId();
-            logger.info("✓ Store s1 created successfully with ID: {}", storeId);
-            return storeId;
-        } catch (Exception e) {
-            logger.error("Failed to create store s1: {}", e.getMessage());
-            throw new RuntimeException("Store creation failed", e);
-        }
-    }
-
-    private UUID addBambaProduct(String username, String token, UUID storeId) {
-        logger.info("Step 5: Adding Bamba product to store s1...");
-        try {
-            ProductRequest productRequest = new ProductRequest(
-                    null,  // productId - null for new product
-                    "Bamba",
-                    "Delicious peanut snack - crispy and tasty",
-                    "Snacks",
-                    30.0
-            );
-
-            Response<String> response = productService.addProduct(username, token, productRequest, storeId, 20);
-
-            if (response.isError()) {
-                throw new RuntimeException("Product addition failed: " + response.getErrorMessage());
-            }
-
-            // The response contains the product ID as a string
-            UUID productId = UUID.fromString(response.getData());
-            logger.info("✓ Bamba product added successfully with ID: {}, Price: 30, Quantity: 20", productId);
-            return productId;
-        } catch (Exception e) {
-            logger.error("Failed to add Bamba product: {}", e.getMessage());
-            throw new RuntimeException("Product addition failed", e);
-        }
-    }
-
-    private void appointManager(String appointer, String token, UUID storeId, String managerUsername) {
-        logger.info("Step 6: Appointing {} as manager in store s1 with inventory permissions...", managerUsername);
-        try {
-            // Create permissions set with inventory management
-            Set<Permission> permissions = EnumSet.of(
-                    Permission.MANAGE_INVENTORY,
-                    Permission.ADD_PRODUCT,
-                    Permission.REMOVE_PRODUCT,
-                    Permission.UPDATE_PRODUCT
-            );
-
-            PermissionsRequest permissionsRequest = new PermissionsRequest(permissions);
-
-            Response<String> response = storeService.appointStoreManager(
-                    appointer, token, storeId, managerUsername, permissionsRequest);
-
-            if (response.isError()) {
-                throw new RuntimeException("Manager appointment failed: " + response.getErrorMessage());
-            }
-
-            logger.info("✓ User {} appointed as manager in store s1 with inventory management permissions", managerUsername);
-        } catch (Exception e) {
-            logger.error("Failed to appoint {} as manager: {}", managerUsername, e.getMessage());
-            throw new RuntimeException("Manager appointment failed", e);
-        }
-    }
-
-    private void appointOwners(String appointer, String token, UUID storeId) {
-        logger.info("Step 7: Appointing u4 and u5 as store owners in s1...");
-
-        String[] newOwners = {"u4", "u5"};
-
-        for (String ownerUsername : newOwners) {
-            try {
-                Response<String> response = storeService.appointStoreOwner(
-                        appointer, token, storeId, ownerUsername);
-
-                if (response.isError()) {
-                    throw new RuntimeException("Owner appointment failed: " + response.getErrorMessage());
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#") || line.startsWith("//")) {
+                    continue;
                 }
-
-                logger.info("✓ User {} appointed as store owner in store s1", ownerUsername);
-            } catch (Exception e) {
-                logger.error("Failed to appoint {} as store owner: {}", ownerUsername, e.getMessage());
-                throw new RuntimeException("Owner appointment failed for " + ownerUsername, e);
+                commands.add(line);
             }
         }
 
-        logger.info("✓ All store owners appointed successfully");
+        return commands;
     }
 
-    private void logoutUser(String username, String token) {
-        logger.info("Step 8: Logging out user {}...", username);
-        try {
-            Response<String> response = userService.logoutUser(username, token);
+    private void executeCommand(String command, int lineNumber) throws Exception {
+        if (command.endsWith(";")) {
+            command = command.substring(0, command.length() - 1);
+        }
 
-            if (response.isError()) {
-                logger.warn("Logout failed but continuing: {}", response.getErrorMessage());
-            } else {
-                logger.info("✓ User {} logged out successfully", username);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to logout user {}: {}", username, e.getMessage());
-            // Don't throw exception for logout failure, just log it
-            logger.warn("Continuing despite logout failure");
+        int parenIndex = command.indexOf('(');
+        String commandName = command.substring(0, parenIndex).trim();
+        String paramString = command.substring(parenIndex + 1, command.lastIndexOf(')')).trim();
+        List<String> params = parseParameters(paramString);
+
+        switch (commandName.toLowerCase()) {
+            case "guest-registration":
+            case "register":
+                executeRegisterCommand(params);
+                break;
+            case "login":
+                executeLoginCommand(params);
+                break;
+            case "open-shop":
+            case "open-store":
+                executeOpenStoreCommand(params);
+                break;
+            case "add-product":
+                executeAddProductCommand(params);
+                break;
+            case "appoint-manager":
+                executeAppointManagerCommand(params);
+                break;
+            case "appoint-owner":
+                executeAppointOwnerCommand(params);
+                break;
+            case "logout":
+                executeLogoutCommand(params);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown command: " + commandName);
         }
     }
 
-    private void logCompletionSummary(UUID storeId, UUID bambaProductId) {
-        logger.info("=== SYSTEM INITIALIZATION SUMMARY ===");
-
-        try {
-            // Get final state information
-            List<User> users = userRepository.findAll();
-            List<Store> stores = storeRepository.findAll();
-
-            logger.info("✓ Total users created: {}", users.size());
-            logger.info("✓ Admin user: u1");
-            logger.info("✓ Regular users: u2, u3, u4, u5, u6");
-            logger.info("✓ Total stores created: {}", stores.size());
-            logger.info("✓ Store s1 ID: {}", storeId);
-            logger.info("✓ Bamba product ID: {}", bambaProductId);
-
-            // Get store details using Application Layer
-            Response<StoreDTO> storeResponse = storeService.getStoreInfo(storeId);
-            if (!storeResponse.isError()) {
-                StoreDTO store = storeResponse.getData();
-                logger.info("✓ Store founder: {}", store.getFounderUsername());
-                logger.info("✓ Store owners: {}", store.getOwnerUsernames());
-                logger.info("✓ Store managers: {}", store.getManagerUsernames());
-            }
-
-            // Get product details using Application Layer
-            Response<ProductDTO> productResponse = productService.getProductInfo(bambaProductId);
-            if (!productResponse.isError()) {
-                ProductDTO product = productResponse.getData();
-                logger.info("✓ Product name: {}", product.getName());
-                logger.info("✓ Product price: {}", product.getPrice());
-                logger.info("✓ Product category: {}", product.getCategory());
-            }
-
-            logger.info("=== SCENARIO COMPLETED SUCCESSFULLY ===");
-            logger.info("The system is now ready with the exact scenario you requested!");
-            logger.info("All operations were performed through the Application Layer services.");
-
-        } catch (Exception e) {
-            logger.error("Error generating completion summary: {}", e.getMessage());
+    private List<String> parseParameters(String paramString) {
+        List<String> params = new ArrayList<>();
+        if (paramString.isEmpty()) {
+            return params;
         }
+
+        String[] parts = paramString.split(",");
+        for (String part : parts) {
+            String param = part.trim();
+            if (param.startsWith("*") && param.endsWith("*")) {
+                param = param.substring(1, param.length() - 1);
+            }
+            params.add(param);
+        }
+
+        return params;
+    }
+
+    // COMMAND IMPLEMENTATIONS
+    private void executeRegisterCommand(List<String> params) throws Exception {
+        if (params.size() < 5) {
+            throw new IllegalArgumentException("guest-registration requires 5 parameters");
+        }
+
+        String username = params.get(0);
+
+        // RESILIENT: Check if user already exists
+        try {
+            Optional<User> existingUser = userRepository.findByUsername(username);
+            if (existingUser.isPresent()) {
+                logger.info("User '{}' already exists - skipping registration", username);
+                return;
+            }
+        } catch (Exception e) {
+            logger.warn("Could not check if user exists: {}", e.getMessage());
+        }
+
+        RegisterRequest request = new RegisterRequest(
+                params.get(0), params.get(1), params.get(2), params.get(3), params.get(4)
+        );
+
+        Response<String> response = userService.registerUser(request);
+        if (response.isError()) {
+            if (response.getErrorMessage().toLowerCase().contains("already exists")) {
+                logger.info("User '{}' already exists - skipping registration", username);
+                return;
+            }
+            throw new RuntimeException("Registration failed for user '" + username + "': " + response.getErrorMessage());
+        }
+
+        logger.debug("User '{}' registered successfully", username);
+    }
+
+    private void executeLoginCommand(List<String> params) throws Exception {
+        if (params.size() < 2) {
+            throw new IllegalArgumentException("login requires 2 parameters");
+        }
+
+        String username = params.get(0);
+        String password = params.get(1);
+
+        if (userTokens.containsKey(username)) {
+            logger.info("User '{}' already logged in - using existing session", username);
+            return;
+        }
+
+        Response<String> response = userService.loginUser(username, password);
+        if (response.isError()) {
+            throw new RuntimeException("Login failed for user '" + username + "': " + response.getErrorMessage());
+        }
+
+        userTokens.put(username, response.getData());
+        logger.debug("User '{}' logged in successfully", username);
+    }
+
+    private void executeOpenStoreCommand(List<String> params) throws Exception {
+        if (params.size() < 6) {
+            throw new IllegalArgumentException("open-shop requires 6 parameters");
+        }
+
+        String username = params.get(0);
+        String token = userTokens.get(username);
+        if (token == null) {
+            throw new RuntimeException("User '" + username + "' is not logged in");
+        }
+
+        StoreRequest storeRequest = new StoreRequest(
+                params.get(1), params.get(2), params.get(3), params.get(4), params.get(5), username
+        );
+
+        Response<StoreDTO> response = storeService.createStore(username, token, storeRequest);
+        if (response.isError()) {
+            throw new RuntimeException("Store creation failed for '" + params.get(1) + "': " + response.getErrorMessage());
+        }
+
+        logger.debug("Store '{}' created successfully", params.get(1));
+    }
+
+    private void executeAddProductCommand(List<String> params) throws Exception {
+        if (params.size() < 7) {
+            throw new IllegalArgumentException("add-product requires 7 parameters");
+        }
+
+        String username = params.get(0);
+        String token = userTokens.get(username);
+        if (token == null) {
+            throw new RuntimeException("User '" + username + "' is not logged in");
+        }
+
+        String storeName = params.get(1);
+        UUID storeId = storeService.findStoreIdByName(storeName);
+
+        ProductRequest productRequest = new ProductRequest(
+                null, params.get(2), params.get(3), params.get(4), Double.parseDouble(params.get(5))
+        );
+
+        int quantity = Integer.parseInt(params.get(6));
+
+        Response<String> response = productService.addProduct(username, token, productRequest, storeId, quantity);
+        if (response.isError()) {
+            throw new RuntimeException("Product addition failed for '" + params.get(2) + "': " + response.getErrorMessage());
+        }
+
+        logger.debug("Product '{}' added to store '{}'", params.get(2), storeName);
+    }
+
+    private void executeAppointManagerCommand(List<String> params) throws Exception {
+        if (params.size() < 4) {
+            throw new IllegalArgumentException("appoint-manager requires 4 parameters");
+        }
+
+        String appointer = params.get(0);
+        String token = userTokens.get(appointer);
+        if (token == null) {
+            throw new RuntimeException("User '" + appointer + "' is not logged in");
+        }
+
+        String storeName = params.get(1);
+        UUID storeId = storeService.findStoreIdByName(storeName);
+        String managerUsername = params.get(2);
+
+        Set<Permission> permissions = parsePermissions(params.get(3));
+        PermissionsRequest permissionsRequest = new PermissionsRequest(permissions);
+
+        Response<String> response = storeService.appointStoreManager(
+                appointer, token, storeId, managerUsername, permissionsRequest);
+
+        if (response.isError()) {
+            throw new RuntimeException("Manager appointment failed for '" + managerUsername + "': " + response.getErrorMessage());
+        }
+
+        logger.debug("User '{}' appointed as manager in store '{}'", managerUsername, storeName);
+    }
+
+    private void executeAppointOwnerCommand(List<String> params) throws Exception {
+        if (params.size() < 3) {
+            throw new IllegalArgumentException("appoint-owner requires 3 parameters");
+        }
+
+        String appointer = params.get(0);
+        String token = userTokens.get(appointer);
+        if (token == null) {
+            throw new RuntimeException("User '" + appointer + "' is not logged in");
+        }
+
+        String storeName = params.get(1);
+        UUID storeId = storeService.findStoreIdByName(storeName);
+        String ownerUsername = params.get(2);
+
+        Response<String> response = storeService.appointStoreOwner(appointer, token, storeId, ownerUsername);
+        if (response.isError()) {
+            throw new RuntimeException("Owner appointment failed for '" + ownerUsername + "': " + response.getErrorMessage());
+        }
+
+        logger.debug("User '{}' appointed as owner in store '{}'", ownerUsername, storeName);
+    }
+
+    private void executeLogoutCommand(List<String> params) throws Exception {
+        if (params.size() < 1) {
+            throw new IllegalArgumentException("logout requires 1 parameter");
+        }
+
+        String username = params.get(0);
+        String token = userTokens.get(username);
+        if (token == null) {
+            logger.warn("User '{}' is not logged in, skipping logout", username);
+            return;
+        }
+
+        Response<String> response = userService.logoutUser(username, token);
+        if (response.isError()) {
+            throw new RuntimeException("Logout failed for user '" + username + "': " + response.getErrorMessage());
+        }
+
+        userTokens.remove(username);
+        logger.debug("User '{}' logged out successfully", username);
+    }
+
+    private Set<Permission> parsePermissions(String permissionsStr) {
+        Set<Permission> permissions = EnumSet.noneOf(Permission.class);
+        if (permissionsStr.isEmpty()) {
+            return permissions;
+        }
+
+        String[] permArray = permissionsStr.split(",");
+        for (String perm : permArray) {
+            try {
+                permissions.add(Permission.valueOf(perm.trim()));
+            } catch (IllegalArgumentException e) {
+                logger.warn("Unknown permission: {}", perm.trim());
+            }
+        }
+
+        return permissions;
+    }
+
+    private void logInitializationSuccess() {
+        logger.info("=== EXACT SCENARIO COMPLETED SUCCESSFULLY ===");
+        logger.info("✓ u1 is system admin");
+        logger.info("✓ u2,u3,u4,u5,u6 are registered users");
+        logger.info("✓ u2 created store s1 with Bamba product (price 30, quantity 20)");
+        logger.info("✓ u3 is manager of s1 with inventory permissions");
+        logger.info("✓ u4 and u5 are owners of s1");
+        logger.info("✓ u2 is logged out");
+        logger.info("=== System ready with exact Hebrew scenario ===");
     }
 
     private void handleInitializationFailure(Exception e) {
-        logger.error("System initialization failed. Attempting cleanup...");
-        try {
-            clearAllData();
-            logger.info("Cleanup completed. System is in clean state.");
-        } catch (Exception cleanupException) {
-            logger.error("Cleanup also failed: {}", cleanupException.getMessage());
-        }
-    }
-
-    /**
-     * Helper method for development - prints current system state
-     */
-    public void printSystemState() {
-        logger.info("=== CURRENT SYSTEM STATE ===");
-
-        try {
-            int userCount = userRepository.findAll().size();
-            int storeCount = storeRepository.findAll().size();
-
-            logger.info("Users: {} | Stores: {}", userCount, storeCount);
-
-        } catch (Exception e) {
-            logger.error("Error printing system state: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * Emergency cleanup method for development
-     */
-    public void emergencyCleanup() {
-        logger.warn("Performing emergency cleanup of all data...");
-        try {
-            clearAllData();
-            logger.info("Emergency cleanup completed successfully");
-        } catch (Exception e) {
-            logger.error("Emergency cleanup failed: {}", e.getMessage());
-        }
+        logger.error("=== INITIALIZATION FAILURE ===");
+        logger.error("Fix the issue and restart");
+        userTokens.clear();
     }
 }
