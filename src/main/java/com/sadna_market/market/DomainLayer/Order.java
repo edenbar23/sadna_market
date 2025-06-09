@@ -198,6 +198,21 @@ public class Order {
     }
 
     /**
+     * update Transaction ID for the order
+     */
+    public boolean updateTransactionId(int transactionId) {
+        if (this.status != OrderStatus.PAID) {
+            logger.warn("Cannot update transaction ID for order {} in status {}",
+                    orderId, status);
+            return false;
+        }
+
+        this.transactionId = transactionId;
+        logger.info("Transaction ID updated for order {}: {}", orderId, transactionId);
+        return true;
+    }
+
+    /**
      * Validates if a status transition is allowed
      */
     private boolean isValidStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {

@@ -1,5 +1,7 @@
 package com.sadna_market.market.DomainLayer;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +98,9 @@ public interface IOrderRepository {
      * @return true if the update was successful
      */
     boolean updateOrderStatus(UUID orderId, OrderStatus newStatus);
+
+    @Transactional
+    boolean updeteOrderTransactionId(UUID orderId, int transactionId);
 
     /**
      * Sets the delivery ID for an order

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
@@ -26,13 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("External API Client Integration Tests")
 class ExternalAPIClientTest {
 
+    @Autowired
     private ExternalAPIClient apiClient;
 
-    @BeforeEach
-    void setUp() {
-        ExternalAPIConfig config = new ExternalAPIConfig();
-        apiClient = new ExternalAPIClient(config, new ObjectMapper());
-    }
 
     @Test
     @DisplayName("Should return true when handshake succeeds")

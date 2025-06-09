@@ -202,6 +202,32 @@ public class InMemoryOrderRepository implements IOrderRepository {
     }
 
     @Override
+    public boolean updeteOrderTransactionId(UUID orderId, int transactionId) {
+        if (orderId == null) {
+            logger.error("Cannot update transaction ID for order with null ID");
+            return false;
+        }
+
+        logger.debug("Updating transaction ID for order: {}, transactionId: {}", orderId, transactionId);
+
+        Order order = orders.get(orderId);
+        if (order == null) {
+            logger.warn("Cannot update transaction ID - order not found with ID: {}", orderId);
+            return false;
+        }
+
+        boolean updated = order.updateTransactionId(transactionId);
+        if (updated) {
+            logger.info("Transaction ID updated for order: {}, transactionId: {}", orderId, transactionId);
+        } else {
+            logger.warn("Could not update transaction ID for order {}, invalid status: {}",
+                    orderId, order.getStatus());
+        }
+
+        return updated;
+    }
+
+    @Override
     public boolean setDeliveryId(UUID orderId, UUID deliveryId) {
         if (orderId == null) {
             logger.error("Cannot set delivery ID for order with null ID");
