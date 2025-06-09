@@ -354,6 +354,30 @@ public class StoreService {
         return messageDTOs;
     }
 
+    /**
+     * Find store ID by store name (needed for initialization commands)
+     * This method is required for the initial state commands that reference stores by name
+     */
+    public UUID findStoreIdByName(String storeName) throws Exception {
+        logger.info("Finding store by name: {}", storeName);
+
+        try {
+            List<Store> stores = storeRepository.findAll();
+            for (Store store : stores) {
+                if (store.getName().equals(storeName)) {
+                    logger.debug("Found store '{}' with ID: {}", storeName, store.getStoreId());
+                    return store.getStoreId();
+                }
+            }
+            throw new RuntimeException("Store not found: " + storeName);
+        } catch (Exception e) {
+            logger.error("Failed to find store by name '{}': {}", storeName, e.getMessage());
+            throw new Exception("Failed to find store by name '" + storeName + "': " + e.getMessage(), e);
+        }
+    }
+
+
+
     public void clear() {
         storeRepository.clear();
     }

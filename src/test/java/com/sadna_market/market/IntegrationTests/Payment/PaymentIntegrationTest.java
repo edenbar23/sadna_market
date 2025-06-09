@@ -10,15 +10,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@TestPropertySource(properties = {
-        "external.api.url=https://damp-lynna-wsep-1984852e.koyeb.app/",
-        "external.api.enabled=true"
-})
+@ActiveProfiles("test")
 @DisplayName("Payment System Integration Tests")
 class PaymentIntegrationTest {
 

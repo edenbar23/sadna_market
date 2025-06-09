@@ -2,6 +2,7 @@ package com.sadna_market.market.InfrastructureLayer.Supply;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 /**
  * DTO for standard shipping method
@@ -9,9 +10,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class StandardShippingDTO implements SupplyMethod {
     @JsonProperty("carrier")
+    @Getter
     public String carrier;
 
     @JsonProperty("estimatedDays")
+    @Getter
     public int estimatedDays;
 
     @JsonCreator
