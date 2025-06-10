@@ -12,6 +12,7 @@ import { useCartContext } from "../context/CartContext";
 import { useCart } from "../hooks/useCart";
 import CreateStoreModal from "@/components/CreateStoreModal.jsx";
 import {useStoreOperations} from "@/hooks/index.js";
+import NotificationBell from './NotificationBell';
 
 function HeaderBar() {
   const { user, isAuthenticated, logout } = useAuthContext();
@@ -211,6 +212,9 @@ function HeaderBar() {
                 )}
               </button>
             </Link>
+
+            {/* Add Notification Bell for authenticated users */}
+            {isAuthenticated && user && <NotificationBell />}
 
             {isAuthenticated ? (
                 <>

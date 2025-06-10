@@ -3,6 +3,8 @@ package com.sadna_market.market.ApplicationLayer;
 import com.sadna_market.market.ApplicationLayer.DTOs.OrderDTO;
 import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
+import com.sadna_market.market.DomainLayer.Events.DomainEventPublisher;
+import com.sadna_market.market.DomainLayer.Events.OrderProcessedEvent;
 import com.sadna_market.market.DomainLayer.IOrderRepository;
 import com.sadna_market.market.DomainLayer.Order;
 import com.sadna_market.market.DomainLayer.OrderStatus;
@@ -112,6 +114,9 @@ public class OrderService {
             boolean success = orderProcessingService.markOrderAsCompleted(orderId);
 
             if (success) {
+                orderProcessingService.getOrderById(orderId).ifPresent(orderNot -> DomainEventPublisher.publish(new OrderProcessedEvent(
+                        username, orderId, order.getStoreId()
+                )));
                 logger.info("Successfully marked order {} as completed by user {}", orderId, username);
                 return Response.success("Order marked as completed successfully");
             } else {

@@ -8,6 +8,7 @@ import java.util.UUID;
  */
 @Getter
 public class StoreCreatedEvent extends DomainEvent {
+    private final UUID storeId;
     private final String founderUsername;
     private final String storeName;
     private final String description;
@@ -15,9 +16,10 @@ public class StoreCreatedEvent extends DomainEvent {
     private final String email;
     private final String phone;
 
-    public StoreCreatedEvent(String founderUsername, String storeName, String description,
+    public StoreCreatedEvent(UUID storeId,String founderUsername, String storeName, String description,
                              String address, String email, String phone) {
         super();
+        this.storeId = storeId;
         this.founderUsername = founderUsername;
         this.storeName = storeName;
         this.description = description;

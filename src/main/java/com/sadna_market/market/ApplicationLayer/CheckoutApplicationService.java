@@ -6,6 +6,8 @@ import com.sadna_market.market.ApplicationLayer.Requests.GuestCheckoutRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.OrderProcessingService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.DomainLayer.Events.DomainEventPublisher;
+import com.sadna_market.market.DomainLayer.Events.OrderProcessedEvent;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import com.sadna_market.market.InfrastructureLayer.Payment.*;
 import com.sadna_market.market.InfrastructureLayer.Supply.*;
@@ -128,6 +130,11 @@ public class CheckoutApplicationService {
                     .map(SupplyResult::getTransactionId)
                     .toList();
             orderProcessingService.finalizeOrders(orders, paymentResult.getTransactionId(), supplyTransactionIds);
+            for (Order order : orders) {
+                DomainEventPublisher.publish(new OrderProcessedEvent(
+                        username, order.getOrderId(), order.getStoreId()
+                ));
+            }
 
             // 8. Clear user cart
             logger.info("Clearing cart for user: {}", username);
@@ -202,6 +209,11 @@ public class CheckoutApplicationService {
                     .map(SupplyResult::getTransactionId)
                     .toList();
             orderProcessingService.finalizeOrders(orders, paymentResult.getTransactionId(), supplyTransactionIds);
+            for (Order order : orders) {
+                DomainEventPublisher.publish(new OrderProcessedEvent(
+                        "GUEST", order.getOrderId(), order.getStoreId()
+                ));
+            }
 
             // 7. Create success response
             CheckoutResultDTO result = createCheckoutResult(orders, paymentResult, supplyResults);

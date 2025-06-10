@@ -5,6 +5,7 @@ import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.RatingService;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
+import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,10 @@ public class StoreService {
             StoreDTO storeDTO = convertToDTO(store);
 
             logger.info("Store created successfully: {}", storeDTO.getStoreId());
+            DomainEventPublisher.publish(new StoreCreatedEvent(storeDTO.getStoreId(),
+                    username, storeRequest.getStoreName(), storeRequest.getDescription(),
+                    storeRequest.getAddress(), storeRequest.getEmail(), storeRequest.getPhoneNumber()
+            ));
             return Response.success(storeDTO);
 
         } catch (Exception e) {
@@ -71,6 +76,7 @@ public class StoreService {
             authentication.validateToken(username, token);
 
             storeManagementService.closeStore(username, storeId);
+            DomainEventPublisher.publish(new StoreClosedEvent(username, storeId));
             return Response.success("Store closed successfully");
 
         } catch (Exception e) {
@@ -87,6 +93,7 @@ public class StoreService {
             authentication.validateToken(username, token);
 
             storeManagementService.reopenStore(username, storeId);
+            DomainEventPublisher.publish(new StoreReopenedEvent(username, storeId));
             return Response.success("Store reopened successfully");
 
         } catch (Exception e) {
@@ -153,6 +160,12 @@ public class StoreService {
             authentication.validateToken(appointerUsername, token);
 
             storeManagementService.appointStoreOwner(appointerUsername, storeId, newOwnerUsername);
+            Store store = storeRepository.findById(storeId).orElse(null);
+            String storeName = store != null ? store.getName() : "Unknown Store";
+
+            DomainEventPublisher.publish(new RoleAssignedEvent(
+                    newOwnerUsername, storeId, storeName, RoleType.STORE_OWNER, appointerUsername
+            ));
             return Response.success("Store owner appointed successfully");
 
         } catch (Exception e) {
@@ -169,6 +182,12 @@ public class StoreService {
             authentication.validateToken(removerUsername, token);
 
             storeManagementService.removeStoreOwner(removerUsername, storeId, ownerToRemove);
+            Store store = storeRepository.findById(storeId).orElse(null);
+            String storeName = store != null ? store.getName() : "Unknown Store";
+
+            DomainEventPublisher.publish(new RoleRemovedEvent(
+                    ownerToRemove, storeId, storeName, RoleType.STORE_OWNER, removerUsername
+            ));
             return Response.success("Store owner removed successfully");
 
         } catch (Exception e) {
@@ -189,6 +208,12 @@ public class StoreService {
                     permissionsRequest.getPermissions() : new HashSet<>();
 
             storeManagementService.appointStoreManager(appointerUsername, storeId, newManagerUsername, permissions);
+            Store store = storeRepository.findById(storeId).orElse(null);
+            String storeName = store != null ? store.getName() : "Unknown Store";
+
+            DomainEventPublisher.publish(new RoleAssignedEvent(
+                    newManagerUsername, storeId, storeName, RoleType.STORE_MANAGER, appointerUsername
+            ));
             return Response.success("Store manager appointed successfully");
 
         } catch (Exception e) {
@@ -205,6 +230,13 @@ public class StoreService {
             authentication.validateToken(removerUsername, token);
 
             storeManagementService.removeStoreManager(removerUsername, storeId, managerToRemove);
+            Store store = storeRepository.findById(storeId).orElse(null);
+            String storeName = store != null ? store.getName() : "Unknown Store";
+
+            DomainEventPublisher.publish(new RoleRemovedEvent(
+                    managerToRemove, storeId, storeName, RoleType.STORE_MANAGER, removerUsername
+            ));
+
             return Response.success("Store manager removed successfully");
 
         } catch (Exception e) {
