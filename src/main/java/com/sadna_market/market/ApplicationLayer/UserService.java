@@ -59,7 +59,7 @@ public class UserService {
     public Response<String> registerUser(RegisterRequest user) {
         try {
             logger.info("Registering user with username: {}", user.getUserName());
-            userAccessService.registerUser(user.getUserName(), user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName());
+            userAccessService.registerUser(user.getUserName(), user.getPassword(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getIsAdmin());
             logger.info("User registered successfully");
             authentication.saveUser(user.getUserName(), user.getPassword());
             return Response.success("User registered successfully");
@@ -556,4 +556,5 @@ public class UserService {
 
         return new CartDTO(storeCartDTOs, totalItems, totalPrice);
     }
+
 }

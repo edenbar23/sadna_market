@@ -67,8 +67,10 @@ public class SystemAdminTests {
                 "System",
                 "Admin"
         );
+        adminRequest.setIsAdmin();
         Response<String> adminRegisterResponse = bridge.registerUser(adminRequest);
         Assertions.assertFalse(adminRegisterResponse.isError(), "Admin registration should succeed");
+
 
         // Register regular user
         regularUsername = "regular";
