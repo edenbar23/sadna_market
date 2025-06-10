@@ -572,17 +572,3 @@ public class ApiResponse<T> {
     public T getData() { return data; }
     public void setData(T data) { this.data = data; }
 }
-
-// ==========================================
-// EXCEPTION CLASS
-// ==========================================
-
-public class CartMergeException extends RuntimeException {
-    public CartMergeException(String message) {
-        super(message);
-    }
-
-    public CartMergeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
