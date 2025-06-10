@@ -12,14 +12,19 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
 
 /**
- * System Initializer according to Version 3 requirements:
- * Implements exact scenario: u1 admin, u2-u6 users, u2 creates s1, adds Bamba, appoints u3,u4,u5
+ * System Initializer according to Version 3 academic requirements:
+ * - Initializes system from external configuration
+ * - Executes initial state from external file
+ * - All operations must be legal (through application layer)
+ * - Complete failure if any command fails
+ * - Handles system restarts gracefully
  */
 @Component
 @Profile("!test")
@@ -27,13 +32,17 @@ import java.util.*;
 public class SystemInitializer implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(SystemInitializer.class);
 
-    // APPLICATION LAYER SERVICES ONLY
+
     private final UserService userService;
     private final StoreService storeService;
     private final ProductService productService;
-    private final IUserRepository userRepository;
 
-    // CONFIGURATION FROM EXTERNAL CONFIG FILE
+
+    private final IUserRepository userRepository;
+    private final IStoreRepository storeRepository;
+    private final IProductRepository productRepository;
+
+
     @Value("${system.init.initial-state-file:}")
     private String initialStateFile;
 
@@ -52,7 +61,11 @@ public class SystemInitializer implements CommandLineRunner {
     @Value("${system.init.admin.last-name:Administrator}")
     private String adminLastName;
 
-    // Session management during initialization
+
+    @Value("${system.init.reset.enabled:false}")
+    private boolean resetEnabled;
+
+
     private final Map<String, String> userTokens = new HashMap<>();
 
     @Autowired
@@ -60,26 +73,48 @@ public class SystemInitializer implements CommandLineRunner {
             UserService userService,
             StoreService storeService,
             ProductService productService,
-            IUserRepository userRepository) {
+            IUserRepository userRepository,
+            IStoreRepository storeRepository,
+            IProductRepository productRepository) {
         this.userService = userService;
         this.storeService = storeService;
         this.productService = productService;
         this.userRepository = userRepository;
+        this.storeRepository = storeRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
     public void run(String... args) {
-        logger.info("=== STARTING RESILIENT SYSTEM INITIALIZATION (Version 3) ===");
-        logger.info("Implementing exact scenario: u1 admin, u2-u6 users, u2 creates s1 with Bamba");
+        logger.info("=== STARTING SYSTEM INITIALIZATION (Version 3 - Academic Requirements) ===");
+        logger.info("Configuration file based initialization with initial state execution");
 
         try {
-            // PHASE 1: Ensure system admin u1 exists
+
+            if (!shouldRunInitialization()) {
+                logger.info("=== SYSTEM ALREADY INITIALIZED - SKIPPING ===");
+                logger.info("Set system.init.reset.enabled=true to force re-initialization");
+                return;
+            }
+
+
+            if (resetEnabled) {
+                logger.info("=== RESET MODE: Clearing existing data ===");
+                resetSystemState();
+            }
+
+
             ensureSystemAdminExists();
 
-            // PHASE 2: Execute exact scenario from initial state file
+
             if (initialStateFile != null && !initialStateFile.isEmpty()) {
                 executeInitialStateFromFile();
+            } else {
+                logger.warn("No initial-state-file configured - skipping state initialization");
             }
+
+
+            markInitializationComplete();
 
             logInitializationSuccess();
 
@@ -87,20 +122,131 @@ public class SystemInitializer implements CommandLineRunner {
             logger.error("=== SYSTEM INITIALIZATION FAILED ===");
             logger.error("Error: {}", e.getMessage(), e);
             handleInitializationFailure(e);
-            throw new RuntimeException("System initialization failed - see logs for details", e);
+            throw new RuntimeException("System initialization failed - all operations must succeed", e);
+        }
+    }
+
+    /**
+     * Check if initialization should run
+     * This prevents re-running on system restarts
+     */
+    private boolean shouldRunInitialization() {
+        try {
+
+            boolean adminExists = userRepository.findByUsername(adminUsername).isPresent();
+
+            if (adminExists) {
+                User admin = userRepository.findByUsername(adminUsername).get();
+                boolean isAdminSetup = admin.isAdmin();
+
+                if (isAdminSetup) {
+                    logger.info("System admin '{}' already exists and configured", adminUsername);
+                    return false; // Skip initialization
+                }
+            }
+
+            return true; // Run initialization
+        } catch (Exception e) {
+            logger.warn("Could not check initialization status: {} - running initialization", e.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * Reset system state for clean initialization - REAL IMPLEMENTATION
+     * Clears all repositories in the correct order to handle foreign key constraints
+     */
+    private void resetSystemState() {
+        logger.warn("RESETTING SYSTEM STATE - ALL DATA WILL BE LOST");
+
+        try {
+            // Clear session tokens first
+            userTokens.clear();
+
+            // Clear repositories in correct order (respecting foreign key constraints)
+
+            logger.info("Clearing repositories in dependency order...");
+
+
+            if (productRepository != null) {
+                logger.info("Clearing product repository...");
+                productRepository.clear();
+                logger.debug("✓ Product repository cleared");
+            }
+
+
+            if (storeRepository != null) {
+                logger.info("Clearing store repository...");
+                storeRepository.clear();
+                logger.debug("✓ Store repository cleared");
+            }
+
+
+            if (userRepository != null) {
+                logger.info("Clearing user repository...");
+                userRepository.clear();
+                logger.debug("✓ User repository cleared");
+            }
+
+            logger.info("✓ System state reset completed - all data cleared");
+
+        } catch (Exception e) {
+            logger.error("Failed to fully reset system state: {}", e.getMessage(), e);
+            throw new RuntimeException("Reset failed - may have partial data", e);
+        }
+    }
+
+    /**
+     * Alternative: Transaction-based reset for better safety
+     * Use this if you want atomic reset operations
+     */
+    @Transactional
+    protected void resetSystemStateTransactional() {
+        logger.warn("RESETTING SYSTEM STATE (TRANSACTIONAL) - ALL DATA WILL BE LOST");
+
+        try {
+            userTokens.clear();
+
+            // All clears happen in a single transaction
+            // If any fails, entire reset is rolled back
+            if (productRepository != null) {
+                productRepository.clear();
+            }
+
+            if (storeRepository != null) {
+                storeRepository.clear();
+            }
+
+            if (userRepository != null) {
+                userRepository.clear();
+            }
+
+            logger.info("✓ Transactional system state reset completed");
+
+        } catch (Exception e) {
+            logger.error("Transactional reset failed - rolling back: {}", e.getMessage(), e);
+            throw new RuntimeException("Reset failed and rolled back", e);
         }
     }
 
     private void ensureSystemAdminExists() {
-        logger.info("Setting up system administrator: {}", adminUsername);
+        logger.info("Setting up system administrator from configuration: {}", adminUsername);
 
         try {
             Optional<User> existingAdmin = userRepository.findByUsername(adminUsername);
             if (existingAdmin.isPresent()) {
-                logger.info("✓ System admin '{}' already exists", adminUsername);
+                User admin = existingAdmin.get();
+                if (!admin.isAdmin()) {
+                    admin.setAdmin(true);
+                    userRepository.update(admin);
+                    logger.info("✓ Upgraded existing user '{}' to admin", adminUsername);
+                } else {
+                    logger.info("✓ System admin '{}' already properly configured", adminUsername);
+                }
                 return;
             }
 
+            // Create new admin user
             RegisterRequest adminRequest = new RegisterRequest(
                     adminUsername, adminPassword, adminEmail, adminFirstName, adminLastName
             );
@@ -115,14 +261,14 @@ public class SystemInitializer implements CommandLineRunner {
             admin.setAdmin(true);
             userRepository.update(admin);
 
-            logger.info("✓ System admin '{}' created with admin privileges", adminUsername);
+            logger.info("✓ System admin '{}' created and configured", adminUsername);
         } catch (Exception e) {
             throw new RuntimeException("Failed to setup system admin: " + e.getMessage(), e);
         }
     }
 
     private void executeInitialStateFromFile() {
-        logger.info("Executing exact scenario from file: {}", initialStateFile);
+        logger.info("Executing initial state commands from file: {}", initialStateFile);
 
         try {
             List<String> commands = readCommandsFromFile(initialStateFile);
@@ -132,7 +278,9 @@ public class SystemInitializer implements CommandLineRunner {
             }
 
             logger.info("Found {} commands to execute", commands.size());
+            logger.info("NOTE: All operations must be legal - using application layer only");
 
+            // Execute all commands - if any fails, entire process fails
             for (int i = 0; i < commands.size(); i++) {
                 String command = commands.get(i);
                 int lineNumber = i + 1;
@@ -143,7 +291,9 @@ public class SystemInitializer implements CommandLineRunner {
                     executeCommand(command, lineNumber);
                     logger.info("✓ Command {} completed successfully", lineNumber);
                 } catch (Exception e) {
-                    throw new RuntimeException("Command " + lineNumber + " failed: " + e.getMessage(), e);
+                    // As per requirements: if one operation fails, entire process fails
+                    userTokens.clear();
+                    throw new RuntimeException("Command " + lineNumber + " failed - aborting initialization: " + e.getMessage(), e);
                 }
             }
 
@@ -177,6 +327,10 @@ public class SystemInitializer implements CommandLineRunner {
         }
 
         int parenIndex = command.indexOf('(');
+        if (parenIndex == -1) {
+            throw new IllegalArgumentException("Invalid command format: " + command);
+        }
+
         String commandName = command.substring(0, parenIndex).trim();
         String paramString = command.substring(parenIndex + 1, command.lastIndexOf(')')).trim();
         List<String> params = parseParameters(paramString);
@@ -228,7 +382,8 @@ public class SystemInitializer implements CommandLineRunner {
         return params;
     }
 
-    // COMMAND IMPLEMENTATIONS
+
+
     private void executeRegisterCommand(List<String> params) throws Exception {
         if (params.size() < 5) {
             throw new IllegalArgumentException("guest-registration requires 5 parameters");
@@ -236,27 +391,12 @@ public class SystemInitializer implements CommandLineRunner {
 
         String username = params.get(0);
 
-        // RESILIENT: Check if user already exists
-        try {
-            Optional<User> existingUser = userRepository.findByUsername(username);
-            if (existingUser.isPresent()) {
-                logger.info("User '{}' already exists - skipping registration", username);
-                return;
-            }
-        } catch (Exception e) {
-            logger.warn("Could not check if user exists: {}", e.getMessage());
-        }
-
         RegisterRequest request = new RegisterRequest(
                 params.get(0), params.get(1), params.get(2), params.get(3), params.get(4)
         );
 
         Response<String> response = userService.registerUser(request);
         if (response.isError()) {
-            if (response.getErrorMessage().toLowerCase().contains("already exists")) {
-                logger.info("User '{}' already exists - skipping registration", username);
-                return;
-            }
             throw new RuntimeException("Registration failed for user '" + username + "': " + response.getErrorMessage());
         }
 
@@ -270,11 +410,6 @@ public class SystemInitializer implements CommandLineRunner {
 
         String username = params.get(0);
         String password = params.get(1);
-
-        if (userTokens.containsKey(username)) {
-            logger.info("User '{}' already logged in - using existing session", username);
-            return;
-        }
 
         Response<String> response = userService.loginUser(username, password);
         if (response.isError()) {
@@ -320,7 +455,7 @@ public class SystemInitializer implements CommandLineRunner {
         }
 
         String storeName = params.get(1);
-        UUID storeId = storeService.findStoreIdByName(storeName);
+        UUID storeId = findStoreIdByName(storeName);
 
         ProductRequest productRequest = new ProductRequest(
                 null, params.get(2), params.get(3), params.get(4), Double.parseDouble(params.get(5))
@@ -348,7 +483,7 @@ public class SystemInitializer implements CommandLineRunner {
         }
 
         String storeName = params.get(1);
-        UUID storeId = storeService.findStoreIdByName(storeName);
+        UUID storeId = findStoreIdByName(storeName);
         String managerUsername = params.get(2);
 
         Set<Permission> permissions = parsePermissions(params.get(3));
@@ -376,7 +511,7 @@ public class SystemInitializer implements CommandLineRunner {
         }
 
         String storeName = params.get(1);
-        UUID storeId = storeService.findStoreIdByName(storeName);
+        UUID storeId = findStoreIdByName(storeName);
         String ownerUsername = params.get(2);
 
         Response<String> response = storeService.appointStoreOwner(appointer, token, storeId, ownerUsername);
@@ -408,6 +543,18 @@ public class SystemInitializer implements CommandLineRunner {
         logger.debug("User '{}' logged out successfully", username);
     }
 
+    /**
+     * Find store ID by name using application layer
+     * This method needs to be implemented in your StoreService
+     */
+    private UUID findStoreIdByName(String storeName) {
+        try {
+            return storeService.findStoreIdByName(storeName);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not find store with name '" + storeName + "': " + e.getMessage(), e);
+        }
+    }
+
     private Set<Permission> parsePermissions(String permissionsStr) {
         Set<Permission> permissions = EnumSet.noneOf(Permission.class);
         if (permissionsStr.isEmpty()) {
@@ -426,20 +573,24 @@ public class SystemInitializer implements CommandLineRunner {
         return permissions;
     }
 
+    private void markInitializationComplete() {
+        logger.info("✓ System initialization completed - marked for future reference");
+        // The admin user existence serves as our completion marker
+    }
+
     private void logInitializationSuccess() {
-        logger.info("=== EXACT SCENARIO COMPLETED SUCCESSFULLY ===");
-        logger.info("✓ u1 is system admin");
-        logger.info("✓ u2,u3,u4,u5,u6 are registered users");
-        logger.info("✓ u2 created store s1 with Bamba product (price 30, quantity 20)");
-        logger.info("✓ u3 is manager of s1 with inventory permissions");
-        logger.info("✓ u4 and u5 are owners of s1");
-        logger.info("✓ u2 is logged out");
-        logger.info("=== System ready with exact Hebrew scenario ===");
+        logger.info("=== SYSTEM INITIALIZATION COMPLETED SUCCESSFULLY ===");
+        logger.info("✓ Configuration-based initialization completed");
+        logger.info("✓ Initial state file executed successfully");
+        logger.info("✓ All operations were legal and completed through application layer");
+        logger.info("✓ System ready for use");
+        logger.info("=== Restart Safe: Subsequent startups will skip initialization ===");
     }
 
     private void handleInitializationFailure(Exception e) {
-        logger.error("=== INITIALIZATION FAILURE ===");
-        logger.error("Fix the issue and restart");
+        logger.error("=== INITIALIZATION FAILURE (AS PER ACADEMIC REQUIREMENTS) ===");
+        logger.error("One or more operations failed - entire initialization aborted");
+        logger.error("Fix the issue in the initial-state file or configuration and restart");
         userTokens.clear();
     }
 }

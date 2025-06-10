@@ -10,4 +10,7 @@ public interface IAuthRepository {
     void removeUser(String username);
     void clear();
     boolean hasMember(String username);
+    void saveUserToken(String username, String token);
+    String getUserToken(String username);
+    void clearUserToken(String username);
 }

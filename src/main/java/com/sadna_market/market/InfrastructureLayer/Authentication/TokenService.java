@@ -3,7 +3,6 @@ package com.sadna_market.market.InfrastructureLayer.Authentication;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,9 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.sql.Date;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Component
@@ -21,56 +22,82 @@ public class TokenService {
 
     private static final Logger logger = LogManager.getLogger(TokenService.class);
 
-    // This could be loaded from a configuration file or environment variable
-    @Value("${market.jwt.expiration:86400000}") // Default to 24 hours
-    private long sessionExpirationTime = 86400000; // 24 hours in milliseconds
+    @Value("${market.jwt.expiration:86400000}")
+    private long sessionExpirationTime = 86400000;
 
-    // Getter for the key (for testing)
-    // Generate a secure key for signing JWT tokens
+    @Value("${market.jwt.secret:MySecretJWTKey1234567890!@#$%^&*()}")
+    private String jwtSecret;
+
+    // Thread-safe blacklist
+    private final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
+
     @Getter
-    private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-
-    private final Set<String> blacklistedTokens = new HashSet<>();
-
+    private SecretKey key;
 
     public TokenService() {
-        logger.info("TokenService initialized with key");
+        logger.info("TokenService initialized");
+    }
+
+    /**
+     * FIXED: Get consistent signing key from configuration (same across restarts)
+     */
+    private SecretKey getSigningKey() {
+        if (key == null) {
+            // Create consistent key from secret string
+            byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            // Ensure we have at least 32 bytes for HS256
+            byte[] finalKey = new byte[32];
+
+            if (keyBytes.length >= 32) {
+                System.arraycopy(keyBytes, 0, finalKey, 0, 32);
+            } else {
+                System.arraycopy(keyBytes, 0, finalKey, 0, keyBytes.length);
+                // Fill remaining with pattern for consistency
+                for (int i = keyBytes.length; i < 32; i++) {
+                    finalKey[i] = (byte) (i % 256);
+                }
+            }
+
+            key = new SecretKeySpec(finalKey, SignatureAlgorithm.HS256.getJcaName());
+            logger.info("JWT signing key initialized from configuration");
+        }
+        return key;
     }
 
     public String generateToken(String username) {
         logger.info("Generating token for user: {}", username);
-        logger.info("(generating token) encoding key: {}", key);
+        logger.debug("Token expiration time: {} ms", sessionExpirationTime);
+
         String output = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + sessionExpirationTime))
-                .signWith(key)
+                .signWith(getSigningKey()) // FIXED: Uses consistent key
                 .compact();
-        logger.info("Generated token: {}", output);
+
+        logger.debug("Token generated successfully for user: {}", username);
         return output;
     }
 
     public boolean validateToken(String token) {
-        logger.info("Token expiration time set to: {} ms", sessionExpirationTime);
-        logger.info("Validating token: {}", token);
-        logger.info("(validating token) encoding key: {}", key);
+        logger.debug("Validating token");
 
         // Check if token is blacklisted
         if (blacklistedTokens.contains(token)) {
-            logger.info("Token is blacklisted");
+            logger.debug("Token is blacklisted");
             return false;
         }
 
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(key)
+                    .setSigningKey(getSigningKey()) // FIXED: Uses consistent key
                     .build()
                     .parseClaimsJws(token);
 
-            logger.info("Token is valid");
+            logger.debug("Token is valid");
             return true;
         } catch (Exception e) {
-            logger.error("Token validation failed: {}", e.getMessage());
+            logger.warn("Token validation failed: {}", e.getMessage());
             return false;
         }
     }
@@ -90,7 +117,7 @@ public class TokenService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getSigningKey()) // FIXED: Uses consistent key
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -100,10 +127,22 @@ public class TokenService {
         if (token != null && !token.isEmpty()) {
             logger.info("Invalidating token");
             blacklistedTokens.add(token);
-            logger.info("Token added to blacklist");
+            logger.debug("Token added to blacklist. Blacklist size: {}", blacklistedTokens.size());
         }
     }
 
+    /**
+     * Get current blacklist size (for monitoring)
+     */
+    public int getBlacklistSize() {
+        return blacklistedTokens.size();
+    }
 
-
+    /**
+     * Clear blacklist (for testing)
+     */
+    public void clearBlacklist() {
+        blacklistedTokens.clear();
+        logger.info("Token blacklist cleared");
+    }
 }
