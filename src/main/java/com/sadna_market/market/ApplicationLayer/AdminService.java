@@ -4,6 +4,10 @@ import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService;
 import com.sadna_market.market.DomainLayer.DomainServices.UserAccessService;
+import com.sadna_market.market.DomainLayer.Events.DomainEventPublisher;
+import com.sadna_market.market.DomainLayer.Events.StoreClosedEvent;
+import com.sadna_market.market.DomainLayer.Events.StoreReopenedEvent;
+import com.sadna_market.market.DomainLayer.Events.ViolationReplyEvent;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +88,8 @@ public class AdminService {
             }
 
             // Close store through domain service
-            storeManagementService.closeStore(store.getFounderUserName(), storeId);
+            storeManagementService.adminCloseStore(adminUsername, storeId);
+            DomainEventPublisher.publish(new StoreClosedEvent(adminUsername, storeId));
 
             logger.info("Store {} closed successfully by admin {}", store.getName(), adminUsername);
             return Response.success("Store closed successfully");
@@ -94,6 +99,41 @@ public class AdminService {
             return Response.error(e.getMessage());
         }
     }
+
+        public Response<String> reopenStore(String adminUsername, String token, UUID storeId) {
+            try {
+                logger.info("Admin {} attempting to reopen store {}", adminUsername, storeId);
+
+                // Application layer validations
+                authentication.validateToken(adminUsername, token);
+                validateAdminPermissions(adminUsername);
+
+                // Verify store exists
+                Optional<Store> storeOpt = storeRepository.findById(storeId);
+                if (storeOpt.isEmpty()) {
+                    return Response.error("Store not found");
+                }
+
+                Store store = storeOpt.get();
+                if (store.isActive()) {
+                    return Response.error("Store is already open");
+                }
+
+                // Use admin-specific method
+                storeManagementService.adminReopenStore(adminUsername, storeId);
+
+                // Publish the event after successful reopening
+                DomainEventPublisher.publish(new StoreReopenedEvent(adminUsername,storeId));
+
+                logger.info("Store {} reopened successfully by admin {}", store.getName(), adminUsername);
+                return Response.success("Store reopened successfully");
+
+            } catch (Exception e) {
+                logger.error("Error reopening store: {}", e.getMessage());
+                return Response.error(e.getMessage());
+            }
+        }
+
 
     // ==================== ADMIN USER MANAGEMENT ====================
 
@@ -179,6 +219,9 @@ public class AdminService {
 
             // Respond through domain service
             userAccessService.replyViolationReport(adminUsername, reportId, report.getUsername(), responseMessage);
+            DomainEventPublisher.publish(new ViolationReplyEvent(
+                    adminUsername, reportId, report.getUsername(), responseMessage
+            ));
 
             logger.info("Admin {} responded to report {} successfully", adminUsername, reportId);
             return Response.success("Response sent successfully");

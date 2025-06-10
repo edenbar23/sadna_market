@@ -16,7 +16,6 @@
 	<name>market</name>
 	<description>Backend of market system</description>
 
-
 	<properties>
 		<!-- Default Java version if not specified -->
 		<java.version>17</java.version>
@@ -41,6 +40,12 @@
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+
+		<!-- WebSocket Dependencies -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 
 		<!-- Jackson for JSON processing -->
