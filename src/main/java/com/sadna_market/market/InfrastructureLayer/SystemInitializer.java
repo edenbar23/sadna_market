@@ -62,7 +62,7 @@ public class SystemInitializer implements CommandLineRunner {
     private String adminLastName;
 
 
-    @Value("${system.init.reset.enabled:false}")
+    @Value("${system.init.reset.enabled}")
     private boolean resetEnabled;
 
 
