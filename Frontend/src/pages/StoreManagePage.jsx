@@ -59,8 +59,9 @@ export default function StoreManagePage() {
         all: false,
         pending: false,
         paid: false,
+        shipped: false,
         cancelled: false,
-        delivered: false
+        completed: false
     });
 
     // Helper function to format dates
@@ -241,14 +242,18 @@ export default function StoreManagePage() {
     };
 
     if (isLoading) {
-        return <div className="store-manage-container">Loading store data...</div>;
+        return (
+            <div className="store-manage-container">
+                <div className="loading-indicator">Loading store data...</div>
+            </div>
+        );
     }
 
     if (error) {
         return (
             <div className="store-manage-container">
                 <div className="error-message">Error: {error}</div>
-                <button onClick={() => navigate("/my-stores")} className="btn">
+                <button onClick={() => navigate("/my-stores")} className="store-manage-btn">
                     Back to My Stores
                 </button>
             </div>
@@ -259,7 +264,7 @@ export default function StoreManagePage() {
         return (
             <div className="store-manage-container">
                 <div className="error-message">Store not found</div>
-                <button onClick={() => navigate("/my-stores")} className="btn">
+                <button onClick={() => navigate("/my-stores")} className="store-manage-btn">
                     Back to My Stores
                 </button>
             </div>
@@ -271,80 +276,103 @@ export default function StoreManagePage() {
 
     return (
         <div className="store-manage-container">
-            <div className="store-header">
-                <h1 className="store-title">{store.name}</h1>
-                <span className={`store-status ${store.active ? "active" : "inactive"}`}>
+            <div className="store-manage-header">
+                <h1 className="store-manage-title">{store.name}</h1>
+                <span className={`store-manage-status ${store.active ? "active" : "inactive"}`}>
                     {store.active ? "Active" : "Closed"}
                 </span>
             </div>
 
-            <div className="store-actions">
-                <button className="btn" onClick={() => {
+            <div className="store-manage-actions">
+                <button className="store-manage-btn" onClick={() => {
                     setAppointmentType("owner");
                     setShowAppointUserModal(true);
                 }}>
                     Appoint Owner
                 </button>
-                <button className="btn" onClick={() => {
+                <button className="store-manage-btn" onClick={() => {
                     setAppointmentType("manager");
                     setShowAppointUserModal(true);
                 }}>
                     Appoint Manager
                 </button>
-                <button className="btn" onClick={handleStatusToggle}>
-                    {store.active ? "Close Store" : "Activate Store"}
+                <button className="store-manage-btn secondary" onClick={handleStatusToggle}>
+                    {store.active ? "Close Store" : "Reopen Store"}
                 </button>
-                <button className="btn" onClick={() => navigate("/my-stores")}>
-                    Back to My Stores
+                <button className="store-manage-btn" onClick={() => setShowAddProductModal(true)}>
+                    Add Product
                 </button>
             </div>
 
-            <section className="store-section">
-                <h2 className="store-section-title">Store Crew</h2>
-                {personnel && personnel.length > 0 ? (
+            {/* Store Personnel Section */}
+            <section className="store-manage-section">
+                <h2 className="store-manage-section-title">Store Personnel</h2>
+
+                {personnel.length > 0 ? (
                     <div className="personnel-list">
                         {personnel.map((person) => (
-                            <div key={person.username} className="personnel-card">
+                            <div key={`${person.role}-${person.username}`} className="personnel-item">
                                 <div className="personnel-info">
-                                    <span className="personnel-name">{person.username}</span>
-                                    <span className="personnel-role">{person.role}</span>
+                                    <div className="personnel-username">@{person.username}</div>
+                                    <div className={`personnel-role ${person.role}`}>{person.role}</div>
                                 </div>
-                                <button
-                                    className="personnel-remove"
-                                    onClick={() => handleRemoveUser(person.username, person.role === "owner")}
-                                >
-                                    Remove
-                                </button>
+                                <div className="personnel-actions">
+                                    <button
+                                        className="personnel-remove-btn"
+                                        onClick={() => handleRemoveUser(person.username, person.role === "owner")}
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-muted">No crew members assigned yet.</p>
+                    <div className="empty-state">
+                        <div className="empty-state-icon">👥</div>
+                        <div className="empty-state-text">No personnel assigned</div>
+                        <div className="empty-state-subtext">Use the buttons above to appoint owners or managers</div>
+                    </div>
                 )}
             </section>
 
-            <div className="store-section">
-                <div className="section-header">
-                    <h2 className="store-section-title">Manage Products</h2>
-                    <button
-                        className="btn add-product-btn"
-                        onClick={() => setShowAddProductModal(true)}
-                    >
-                        Add Product
-                    </button>
-                </div>
-                <div className="products-scroll">
-                    {products.length > 0 ? (
-                        products.map((product) => (
-                            <div key={product.productId} className="product-card">
-                                <div className="product-info">
-                                    <h3 className="product-name">{product.name}</h3>
-                                    <p className="product-price">Price: ${product.price}</p>
-                                    <p className="product-stock">Stock: {product.quantity || 'N/A'}</p>
+            {/* Store Products Section */}
+            <section className="store-manage-section">
+                <h2 className="store-manage-section-title">Store Products</h2>
+
+                {products && products.length > 0 ? (
+                    <div className="products-grid">
+                        {products.map((product) => (
+                            <div key={product.productId} className="product-manage-card">
+                                <div className="product-manage-info">
+                                    <h3 className="product-manage-name">{product.name}</h3>
+                                    <p className="product-manage-price">Price: ${product.price}</p>
+
+                                    {/* ✅ Now shows actual available stock */}
+                                    <p className="product-manage-stock">
+                                        Stock: {product.quantity !== undefined ? product.quantity : 'N/A'}
+                                    </p>
+
+                                    {/* ✅ Visual stock indicators */}
+                                    {product.quantity === 0 && (
+                                        <p className="product-manage-out-of-stock" style={{color: 'red', fontSize: '0.8rem'}}>
+                                            Out of Stock
+                                        </p>
+                                    )}
+                                    {product.quantity > 0 && product.quantity <= 5 && (
+                                        <p className="product-manage-low-stock" style={{color: 'orange', fontSize: '0.8rem'}}>
+                                            Low Stock
+                                        </p>
+                                    )}
+                                    {product.quantity > 5 && (
+                                        <p className="product-manage-in-stock" style={{color: 'green', fontSize: '0.8rem'}}>
+                                            In Stock
+                                        </p>
+                                    )}
                                 </div>
-                                <div className="product-actions">
+                                <div className="product-manage-actions">
                                     <button
-                                        className="product-edit"
+                                        className="product-edit-btn"
                                         onClick={() => {
                                             setSelectedProduct(product);
                                             setShowEditProductModal(true);
@@ -353,91 +381,71 @@ export default function StoreManagePage() {
                                         Edit
                                     </button>
                                     <button
-                                        className="product-delete"
+                                        className="product-delete-btn"
                                         onClick={() => handleDeleteProductConfirm(product.productId)}
                                     >
                                         Delete
                                     </button>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-muted">No products in this store yet.</p>
-                    )}
-                </div>
-            </div>
-
-            <section className="store-section">
-                <h2 className="store-section-title">Store Messages</h2>
-                <StoreMessagesList storeId={storeId} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="empty-state">
+                        <div className="empty-state-icon">📦</div>
+                        <div className="empty-state-text">No products in this store yet</div>
+                        <div className="empty-state-subtext">Add your first product to get started</div>
+                    </div>
+                )}
             </section>
 
-            <section className="store-section">
-                <h2 className="store-section-title">Store Orders</h2>
+            {/* Store Messages Section */}
+            <section className="store-manage-section">
+                <h2 className="store-manage-section-title">Store Messages</h2>
+                <div className="store-messages-container">
+                    <StoreMessagesList storeId={storeId} />
+                </div>
+            </section>
+
+            {/* Store Orders Section */}
+            <section className="store-manage-section">
+                <h2 className="store-manage-section-title">Store Orders</h2>
 
                 {/* Debug info */}
-                <div className="debug-info" style={{ backgroundColor: '#f8f9fa', padding: '10px', borderRadius: '4px', marginBottom: '20px', fontSize: '12px' }}>
-                    <p>Store Name: {store.name}</p>
-                    <p>Orders loaded: {orders ? orders.length : 'null'}</p>
-                    <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
-                    {error && <p>Error: {error}</p>}
+                <div className="debug-info">
+                    <p><strong>Store Name:</strong> {store.name}</p>
+                    <p><strong>Orders loaded:</strong> {orders ? orders.length : 'null'}</p>
+                    <p><strong>Loading:</strong> {isLoading ? 'Yes' : 'No'}</p>
+                    {error && <p><strong>Error:</strong> {error}</p>}
                 </div>
 
                 {isLoading ? (
                     <div className="loading-indicator">Loading orders...</div>
                 ) : orders && orders.length > 0 ? (
-                    <div className="orders-container">
+                    <div className="orders-section">
                         {/* All Orders */}
-                        <div className="order-subsection">
+                        <div className="orders-category">
                             <div
-                                className="order-subsection-header"
+                                className="orders-category-header"
                                 onClick={() => toggleOrderSection('all')}
-                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.all ? '0' : '10px', backgroundColor: '#f8f9fa' }}
                             >
-                                <h3>All Orders ({orders.length})</h3>
-                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                                    {openOrderSections.all ? '▼' : '▶'}
+                                <h3 className="orders-category-title">All Orders ({orders.length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.all ? 'open' : ''}`}>
+                                    ▶
                                 </span>
                             </div>
-
                             {openOrderSections.all && (
-                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
-                                    {orders.map(order => (
-                                        <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
-                                            <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
-                                                <span>Order: {order.orderId}</span>
-                                                <span>{formatOrderDate(order.orderDate)}</span>
-                                                <span>Buyer: {order.userName}</span>
+                                <div className="orders-list">
+                                    {orders.map((order) => (
+                                        <div key={order.orderId} className="order-manage-item">
+                                            <div className="order-manage-info">
+                                                <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                <div className="order-manage-total">Total: ${order.totalCost}</div>
                                             </div>
-
-                                            <div className="order-products" style={{ marginBottom: '10px' }}>
-                                                <h4 style={{ fontSize: '14px', marginBottom: '5px' }}>Products:</h4>
-                                                {order.products && Object.keys(order.products).length > 0 ? (
-                                                    Object.entries(order.products).map(([productId, quantity]) => (
-                                                        <div key={productId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', padding: '2px 0' }}>
-                                                            <span>{getProductName(productId)}</span>
-                                                            <span>Qty: {quantity}</span>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <p style={{ fontSize: '12px', color: '#888' }}>No products found</p>
-                                                )}
-                                            </div>
-
-                                            <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                                                <div>
-                                                    <span style={{ marginRight: '15px' }}>Total: ${order.totalPrice?.toFixed(2) || '0.00'}</span>
-                                                    <span style={{ marginRight: '15px' }}>Final: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
-                                                </div>
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    borderRadius: '12px',
-                                                    backgroundColor: order.status === 'PAID' ? '#d4edda' : order.status === 'PENDING' ? '#fff3cd' : '#f8d7da',
-                                                    color: order.status === 'PAID' ? '#155724' : order.status === 'PENDING' ? '#856404' : '#721c24'
-                                                }}>
-                                                    {order.status || 'Unknown'}
-                                                </span>
-                                            </div>
+                                            <span className={`order-manage-status ${order.status?.toLowerCase()}`}>
+                                                {order.status}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
@@ -445,86 +453,184 @@ export default function StoreManagePage() {
                         </div>
 
                         {/* Pending Orders */}
-                        <div className="order-subsection">
+                        <div className="orders-category">
                             <div
-                                className="order-subsection-header"
+                                className="orders-category-header pending"
                                 onClick={() => toggleOrderSection('pending')}
-                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.pending ? '0' : '10px', backgroundColor: '#fff3cd' }}
                             >
-                                <h3>Pending Orders ({orders.filter(o => o.status === "PENDING").length})</h3>
-                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                                    {openOrderSections.pending ? '▼' : '▶'}
+                                <h3 className="orders-category-title">Pending Orders ({orders.filter(o => o.status === "PENDING").length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.pending ? 'open' : ''}`}>
+                                    ▶
                                 </span>
                             </div>
-
                             {openOrderSections.pending && (
-                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                                <div className="orders-list">
                                     {orders.filter(o => o.status === "PENDING").length > 0 ? (
-                                        orders.filter(o => o.status === "PENDING").map(order => (
-                                            <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
-                                                <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
-                                                    <span>{formatOrderDate(order.orderDate)}</span>
-                                                    <span>Buyer: {order.userName}</span>
+                                        orders.filter(o => o.status === "PENDING").map((order) => (
+                                            <div key={order.orderId} className="order-manage-item">
+                                                <div className="order-manage-info">
+                                                    <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                    <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                    <div className="order-manage-total">Total: ${order.totalCost}</div>
                                                 </div>
-                                                <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span>Total: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
-                                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                                        <button style={{ padding: '5px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                            Approve
-                                                        </button>
-                                                        <button style={{ padding: '5px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                                                            Decline
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                <span className="order-manage-status pending">
+                                                    {order.status}
+                                                </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No pending orders.</p>
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No pending orders</div>
+                                        </div>
                                     )}
                                 </div>
                             )}
                         </div>
 
                         {/* Paid Orders */}
-                        <div className="order-subsection">
+                        <div className="orders-category">
                             <div
-                                className="order-subsection-header"
+                                className="orders-category-header paid"
                                 onClick={() => toggleOrderSection('paid')}
-                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', marginBottom: openOrderSections.paid ? '0' : '10px', backgroundColor: '#d4edda' }}
                             >
-                                <h3>Paid Orders ({orders.filter(o => o.status === "PAID").length})</h3>
-                                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                                    {openOrderSections.paid ? '▼' : '▶'}
+                                <h3 className="orders-category-title">Paid Orders ({orders.filter(o => o.status === "PAID").length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.paid ? 'open' : ''}`}>
+                                    ▶
                                 </span>
                             </div>
-
                             {openOrderSections.paid && (
-                                <div className="orders-scroll" style={{ border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 4px 4px', maxHeight: '400px', overflowY: 'auto', padding: '10px' }}>
+                                <div className="orders-list">
                                     {orders.filter(o => o.status === "PAID").length > 0 ? (
-                                        orders.filter(o => o.status === "PAID").map(order => (
-                                            <div key={order.orderId} className="order-card" style={{ border: '1px solid #eee', borderRadius: '4px', padding: '15px', marginBottom: '10px', backgroundColor: '#fff' }}>
-                                                <div className="order-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px', color: '#666' }}>
-                                                    <span>{formatOrderDate(order.orderDate)}</span>
-                                                    <span>Buyer: {order.userName}</span>
+                                        orders.filter(o => o.status === "PAID").map((order) => (
+                                            <div key={order.orderId} className="order-manage-item">
+                                                <div className="order-manage-info">
+                                                    <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                    <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                    <div className="order-manage-total">Total: ${order.totalCost}</div>
                                                 </div>
-                                                <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span>Total: ${order.finalPrice?.toFixed(2) || '0.00'}</span>
-                                                    <span style={{ color: '#155724', fontWeight: 'bold' }}>PAID</span>
-                                                </div>
+                                                <span className="order-manage-status paid">
+                                                    {order.status}
+                                                </span>
                                             </div>
                                         ))
                                     ) : (
-                                        <p style={{ textAlign: 'center', color: '#888', padding: '20px' }}>No paid orders.</p>
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No paid orders</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        {/* Shipped Orders */}
+                        <div className="orders-category">
+                            <div
+                                className="orders-category-header shipped"
+                                onClick={() => toggleOrderSection('shipped')}
+                            >
+                                <h3 className="orders-category-title">Shipped Orders ({orders.filter(o => o.status === "SHIPPED").length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.shipped ? 'open' : ''}`}>
+                        ▶
+                    </span>
+                            </div>
+                            {openOrderSections.shipped && (
+                                <div className="orders-list">
+                                    {orders.filter(o => o.status === "SHIPPED").length > 0 ? (
+                                        orders.filter(o => o.status === "SHIPPED").map((order) => (
+                                            <div key={order.orderId} className="order-manage-item">
+                                                <div className="order-manage-info">
+                                                    <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                    <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                    <div className="order-manage-total">Total: ${order.totalCost}</div>
+                                                </div>
+                                                <span className="order-manage-status shipped">
+                                        {order.status}
+                                    </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No shipped orders</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Cancelled Orders */}
+                        <div className="orders-category">
+                            <div
+                                className="orders-category-header cancelled"
+                                onClick={() => toggleOrderSection('cancelled')}
+                            >
+                                <h3 className="orders-category-title">Cancelled Orders ({orders.filter(o => o.status === "CANCELLED").length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.cancelled ? 'open' : ''}`}>
+                                    ▶
+                                </span>
+                            </div>
+                            {openOrderSections.cancelled && (
+                                <div className="orders-list">
+                                    {orders.filter(o => o.status === "CANCELLED").length > 0 ? (
+                                        orders.filter(o => o.status === "CANCELLED").map((order) => (
+                                            <div key={order.orderId} className="order-manage-item">
+                                                <div className="order-manage-info">
+                                                    <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                    <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                    <div className="order-manage-total">Total: ${order.totalCost}</div>
+                                                </div>
+                                                <span className="order-manage-status cancelled">
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No cancelled orders</div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Completed Orders */}
+                        <div className="orders-category">
+                            <div
+                                className="orders-category-header completed"
+                                onClick={() => toggleOrderSection('completed')}
+                            >
+                                <h3 className="orders-category-title">Completed Orders ({orders.filter(o => o.status === "COMPLETED").length})</h3>
+                                <span className={`orders-expand-icon ${openOrderSections.completed ? 'open' : ''}`}>
+                                    ▶
+                                </span>
+                            </div>
+                            {openOrderSections.completed && (
+                                <div className="orders-list">
+                                    {orders.filter(o => o.status === "COMPLETED").length > 0 ? (
+                                        orders.filter(o => o.status === "COMPLETED").map((order) => (
+                                            <div key={order.orderId} className="order-manage-item">
+                                                <div className="order-manage-info">
+                                                    <div className="order-manage-id">Order #{order.orderId?.substring(0, 8)}...</div>
+                                                    <div className="order-manage-date">{formatOrderDate(order.orderDate)}</div>
+                                                    <div className="order-manage-total">Total: ${order.totalCost}</div>
+                                                </div>
+                                                <span className="order-manage-status completed">
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="empty-state">
+                                            <div className="empty-state-text">No completed orders</div>
+                                        </div>
                                     )}
                                 </div>
                             )}
                         </div>
                     </div>
                 ) : (
-                    <div className="no-data-message">
-                        <p>No orders found for this store.</p>
-                        <button onClick={loadStoreData} className="btn">Refresh Orders</button>
+                    <div className="empty-state">
+                        <div className="empty-state-icon">📋</div>
+                        <div className="empty-state-text">No orders yet</div>
+                        <div className="empty-state-subtext">Orders will appear here when customers make purchases</div>
                     </div>
                 )}
             </section>
@@ -550,7 +656,7 @@ export default function StoreManagePage() {
 
             {showAppointUserModal && (
                 <AppointUserModal
-                    type={appointmentType}
+                    appointmentType={appointmentType}
                     onClose={() => setShowAppointUserModal(false)}
                     onSubmit={handleAppointUser}
                 />
