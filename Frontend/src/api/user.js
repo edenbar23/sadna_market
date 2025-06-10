@@ -55,6 +55,13 @@ export const loginUser = async (username, password) => {
     return response;
 };
 
+export const loginUserCart = async (username, password,cart) => {
+    const response = await apiClient.post('/login-cart', cart, {
+        params: { username, password }
+    });
+    return response;
+};
+
 export const logoutUser = async (username, token) => {
     const response = await apiClient.post(`/${username}/logout`, null, {
         headers: { Authorization: token }

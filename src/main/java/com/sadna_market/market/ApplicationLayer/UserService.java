@@ -87,6 +87,21 @@ public class UserService {
         }
     }
 
+    //req 1.4
+    public Response<String> loginUser(String username, String password,CartRequest cart) {
+        try {
+            logger.info("Logging in user with username: {}", username);
+            String token = authentication.createUserSessionToken(username, password);
+            logger.info("Token generated successfully: {}", token);
+            userAccessService.loginUser(username, password,new Cart(cart));
+            logger.info("User logged in successfully");
+            return Response.success(token);
+        } catch (Exception e) {
+            logger.error("Error logging in user: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
     //req 3.1
     public Response<String> logoutUser(String username, String token) {
         try {

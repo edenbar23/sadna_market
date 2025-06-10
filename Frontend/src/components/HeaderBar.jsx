@@ -5,7 +5,7 @@ import UserProfileBadge from "./UserProfileBadge";
 import { Link, useNavigate } from "react-router-dom";
 import LoginBanner from "./LoginBanner";
 import RegisterBanner from "./RegisterBanner";
-import { fetchUserStores } from "../api/user";
+import {fetchUserStores, loginUserCart} from "../api/user";
 import AdminControls from "./AdminControls";
 import { useAuthContext } from "../context/AuthContext";
 import { useCartContext } from "../context/CartContext";
@@ -29,6 +29,59 @@ function HeaderBar() {
 
   const handleCreateStoreClick = () => setShowCreateModal(true);
   const handleCloseModal = () => setShowCreateModal(false);
+
+  const handleLoginDecision = async (username, password, fallbackLogin) => {
+    const hasGuestCartItems =
+        guestCart &&
+        guestCart.baskets &&
+        Object.values(guestCart.baskets).some((store) =>
+            Object.values(store).some((quantity) => quantity > 0)
+        );
+
+    if (hasGuestCartItems) {
+      try {
+        // Convert guest cart to the format expected by backend
+        const cartRequest = {
+          baskets: guestCart.baskets // This should match CartRequest structure
+        };
+
+        console.log("Sending cart data to backend:", cartRequest);
+
+        const response = await loginUserCart(username, password, cartRequest);
+
+        // Check if login was successful and we got a token
+        if (!response.error && response.data) {
+          const token = response.data; // The token is directly in response.data
+
+          // Create minimal user object (AuthContext will fetch full details)
+          const minimalUser = {
+            username,
+            token: token
+          };
+
+          // Save to localStorage
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(minimalUser));
+
+          // Clear guest cart since it's been merged
+          // You might want to dispatch a cart clear action here
+
+          // Trigger storage event and reload - AuthContext will handle the rest
+          window.dispatchEvent(new Event("storage"));
+          window.location.reload();
+        } else {
+          console.error("Login failed, response:", response);
+          alert("Login failed.");
+        }
+      } catch (err) {
+        console.error("Login with cart failed:", err);
+        alert("Login failed: " + (err.message || "Unknown error"));
+      }
+    } else {
+      // Use fallback login if guest cart is empty
+      fallbackLogin(username, password);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -126,14 +179,14 @@ function HeaderBar() {
                       setStoreCreated(true);
                       // Reload stores after creation
                       if (user?.username && user?.token) {
-                      setStoresLoading(true);
-                      fetchUserStores(user.username, user.token)
-                      .then((res) => setUserStores(res?.data || []))
-                      .catch(() => setUserStores([]))
-                      .finally(() => setStoresLoading(false));
+                        setStoresLoading(true);
+                        fetchUserStores(user.username, user.token)
+                            .then((res) => setUserStores(res?.data || []))
+                            .catch(() => setUserStores([]))
+                            .finally(() => setStoresLoading(false));
                       }
                     }
-                }
+                    }
                     handleCreateStore={handleCreateStore} onClose={handleCloseModal}
                     isLoading={false} />
             )}
@@ -194,7 +247,15 @@ function HeaderBar() {
         </header>
 
         {/* Banners */}
-        {showLogin && <LoginBanner onClose={() => setShowLogin(false)} />}
+        {showLogin && (
+            <LoginBanner
+                onClose={() => setShowLogin(false)}
+                onLoginWithCart={(username, password, fallbackLogin) =>
+                    handleLoginDecision(username, password, fallbackLogin)
+                }
+            />
+        )}
+
         {showRegister && (
             <RegisterBanner
                 onClose={() => setShowRegister(false)}

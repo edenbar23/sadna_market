@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +39,19 @@ public class Cart {
         //should validate storeId and productId before creating the cart
         this.shoppingBaskets = new ArrayList<>();
         for (Map.Entry<UUID, Map<UUID, Integer>> entry : shoppingBaskets.entrySet()) {
+            UUID storeId = entry.getKey();
+            Map<UUID, Integer> products = entry.getValue();
+            ShoppingBasket basket = new ShoppingBasket(storeId, this); // Use Cart-aware constructor
+            for (Map.Entry<UUID, Integer> productEntry : products.entrySet()) {
+                basket.addProduct(productEntry.getKey(), productEntry.getValue());
+            }
+            this.shoppingBaskets.add(basket);
+        }
+    }
+
+    public Cart(CartRequest cartRequest) {
+        this.shoppingBaskets = new ArrayList<>();
+        for (Map.Entry<UUID, Map<UUID, Integer>> entry : cartRequest.getBaskets().entrySet()) {
             UUID storeId = entry.getKey();
             Map<UUID, Integer> products = entry.getValue();
             ShoppingBasket basket = new ShoppingBasket(storeId, this); // Use Cart-aware constructor
@@ -142,5 +156,23 @@ public class Cart {
             sb.append("Products: ").append(basket.getProductsList()).append("\n");
         }
         return sb.toString();
+    }
+
+    public void addToShoppingBasket(ShoppingBasket basket) {
+        if (basket == null) {
+            throw new IllegalArgumentException("Basket cannot be null");
+        }
+        if(shoppingBaskets.contains(basket)) {
+            //adding to this basket the products from basket:
+            for(Map.Entry<UUID, Integer> entry : basket.getProductsList().entrySet()) {
+                UUID productId = entry.getKey();
+                int quantity = entry.getValue();
+                this.addToCart(basket.getStoreId(), productId, quantity);
+            }
+        }
+        else {
+            shoppingBaskets.add(basket);
+        }
+        logger.info("Added shopping basket for store {}", basket.getStoreId());
     }
 }
