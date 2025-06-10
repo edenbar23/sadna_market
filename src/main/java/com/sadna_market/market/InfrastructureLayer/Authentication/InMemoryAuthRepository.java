@@ -87,7 +87,9 @@ public class InMemoryAuthRepository implements IAuthRepository {
 
     @Override
     public void clear() {
+        logger.info("Clearing in-memory auth repository");
         username2Password.clear();
+        username2Token.clear();
         logger.info("In-memory auth repository cleared");
     }
 

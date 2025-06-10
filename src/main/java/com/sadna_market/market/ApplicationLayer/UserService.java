@@ -486,6 +486,7 @@ public class UserService {
     // ==================== SYSTEM MANAGEMENT ====================
 
     public void clear() {
+        logger.info("Clearing UserService and its dependencies");
         authentication.clear();
         userAccessService.clear();
     }

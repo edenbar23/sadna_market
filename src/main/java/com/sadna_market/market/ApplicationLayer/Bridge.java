@@ -15,7 +15,7 @@ public class Bridge {
     private final UserService userService;
     private final ProductService productService;
     private final StoreService storeService;
-
+    private final OrderService orderService;
     private final MessageApplicationService messageService;
     private final CheckoutApplicationService checkoutService;
 
@@ -56,10 +56,12 @@ public class Bridge {
             UserService userService,
             ProductService productService,
             StoreService storeService,
+            OrderService orderService,
             MessageApplicationService messageService, CheckoutApplicationService checkoutService) {
         this.userService = userService;
         this.productService = productService;
         this.storeService = storeService;
+        this.orderService = orderService;
         this.messageService = messageService;
         this.checkoutService = checkoutService;
     }
@@ -142,6 +144,10 @@ public class Bridge {
 
     public Response<CartDTO> updateUserCart(String userName, String token, UUID storeId, UUID productId, int quantity){
         return userService.updateCart(userName, token, storeId, productId, quantity);
+    }
+
+    public Response<String> markOrderAsCompleted(String username, String token, UUID orderId){
+        return orderService.markOrderAsCompleted(username, token, orderId);
     }
 
 //    public Response<String> buyUserCart(String userName, String token, PaymentMethod paymentMethod){

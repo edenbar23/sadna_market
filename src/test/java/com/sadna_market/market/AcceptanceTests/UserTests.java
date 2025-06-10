@@ -181,6 +181,7 @@ public class UserTests {
 
     @AfterEach
     void tearDown() {
+
         // Clear system state after each test
         bridge.clear();
     }
@@ -659,6 +660,12 @@ public class UserTests {
 
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
 
+        CheckoutResultDTO checkoutResult = purchaseResponse.getData();
+        List<UUID> orderIds = checkoutResult.getOrderIds();
+        for (UUID id: orderIds) {
+            Response<String> markAsCompletedResponse = bridge.markOrderAsCompleted(testUsername, testToken, id);
+            Assertions.assertFalse(markAsCompletedResponse.isError(), "Marking order as completed should succeed");
+        }
         // Create a rating request
         int rating = 4; // 4 out of 5 stars
         ProductRateRequest rateRequest = new ProductRateRequest(
@@ -914,9 +921,13 @@ public class UserTests {
 
         // Process the checkout
         Response<CheckoutResultDTO> purchaseResponse = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
-
         Assertions.assertFalse(purchaseResponse.isError(), "Purchase should succeed");
-
+        CheckoutResultDTO checkoutResult = purchaseResponse.getData();
+        List<UUID> orderIds = checkoutResult.getOrderIds();
+        for (UUID id: orderIds) {
+            Response<String> markAsCompletedResponse = bridge.markOrderAsCompleted(testUsername, testToken, id);
+            Assertions.assertFalse(markAsCompletedResponse.isError(), "Marking order as completed should succeed");
+        }
         // Create a product review request
         String reviewText = "This product exceeded my expectations. Great value for money!";
 

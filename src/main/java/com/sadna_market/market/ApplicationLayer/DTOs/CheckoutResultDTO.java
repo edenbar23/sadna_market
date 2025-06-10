@@ -47,4 +47,8 @@ public class CheckoutResultDTO {
                 paymentTransactionId,
                 totalAmount);
     }
+
+    public List<UUID> getOrderIds() {
+        return orderIds;
+    }
 }
