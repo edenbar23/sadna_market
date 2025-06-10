@@ -124,17 +124,19 @@ public class SystemAdminTests {
         // Submit the report
         Response<String> reportResponse = bridge.reportViolation(regularUsername, regularToken, reportRequest);
         Assertions.assertFalse(reportResponse.isError(), "Report submission should succeed");
+    }
 
-        // Get the report ID from the response or from retrieving all reports
-        Response<List<Report>> reportsResponse = bridge.getViolationReports(ADMIN_USERNAME, adminToken);
-        Assertions.assertFalse(reportsResponse.isError(), "Getting reports should succeed");
-
-        if (!reportsResponse.getData().isEmpty()) {
-            reportId = reportsResponse.getData().get(0).getReportId();
-        } else {
-            // If no reports were found, create a random UUID
-            reportId = UUID.randomUUID();
-        }
+    private void getReportID(){
+         // Get the report ID from the response or from retrieving all reports
+         Response<List<Report>> reportsResponse = bridge.getViolationReports(ADMIN_USERNAME, adminToken);
+         Assertions.assertFalse(reportsResponse.isError(), "Getting reports should succeed");
+ 
+         if (!reportsResponse.getData().isEmpty()) {
+             reportId = reportsResponse.getData().get(0).getReportId();
+         } else {
+             // If no reports were found, create a random UUID
+             reportId = UUID.randomUUID();
+         }
     }
 
     // POSITIVE TESTS
@@ -165,6 +167,7 @@ public class SystemAdminTests {
     @Test
         //@DisplayName("Admin should be able to reply to a violation report")
     void replyToViolationReportTest() {
+        getReportID();
         String replyMessage = "Thank you for your report. We have addressed the issue.";
         Response<String> replyResponse = bridge.replyToViolationReport(
                 ADMIN_USERNAME,
@@ -267,6 +270,7 @@ public class SystemAdminTests {
     @Test
         //@DisplayName("Non-admin user should not be able to reply to violation report")
     void nonAdminReplyToViolationTest() {
+        getReportID();
         String replyMessage = "I'll pretend to be an admin.";
         Response<String> replyResponse = bridge.replyToViolationReport(
                 regularUsername,
