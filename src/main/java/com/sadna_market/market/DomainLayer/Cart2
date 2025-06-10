@@ -1,0 +1,588 @@
+package com.sadna_market.market.DomainLayer;
+
+// ==========================================
+// ENTITY CLASSES
+// ==========================================
+
+@Entity
+@Table(name = "carts")
+public class Cart {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "session_id")
+    private String sessionId;
+
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CartItem> items = new ArrayList<>();
+
+    @Column(name = "total_amount")
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Constructors
+    public Cart() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Cart(Long userId) {
+        this();
+        this.userId = userId;
+    }
+
+    public Cart(String sessionId) {
+        this();
+        this.sessionId = sessionId;
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+
+    public List<CartItem> getItems() { return items; }
+    public void setItems(List<CartItem> items) { this.items = items; }
+
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    // Helper methods
+    public void calculateTotal() {
+        this.totalAmount = items.stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        this.updatedAt = LocalDateTime.now();
+    }
+}
+
+@Entity
+@Table(name = "cart_items")
+public class CartItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "cart_id")
+    private Cart cart;
+
+    @Column(name = "product_id")
+    private Long productId;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "price")
+    private BigDecimal price;
+
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Column(name = "variants", columnDefinition = "TEXT")
+    private String variants; // JSON string
+
+    @Column(name = "added_at")
+    private LocalDateTime addedAt;
+
+    public CartItem() {
+        this.addedAt = LocalDateTime.now();
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Cart getCart() { return cart; }
+    public void setCart(Cart cart) { this.cart = cart; }
+
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    public String getVariants() { return variants; }
+    public void setVariants(String variants) { this.variants = variants; }
+
+    public LocalDateTime getAddedAt() { return addedAt; }
+    public void setAddedAt(LocalDateTime addedAt) { this.addedAt = addedAt; }
+}
+
+// ==========================================
+// REPOSITORY INTERFACES
+// ==========================================
+
+@Repository
+public interface CartRepository extends JpaRepository<Cart, Long> {
+    Optional<Cart> findByUserId(Long userId);
+    Optional<Cart> findBySessionId(String sessionId);
+    void deleteBySessionId(String sessionId);
+}
+
+@Repository
+public interface CartItemRepository extends JpaRepository<CartItem, Long> {
+    List<CartItem> findByCartId(Long cartId);
+    Optional<CartItem> findByCartIdAndProductIdAndVariants(Long cartId, Long productId, String variants);
+}
+
+// ==========================================
+// SERVICE CLASSES
+// ==========================================
+
+@Service
+@Transactional
+public class CartService {
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static final Logger logger = LoggerFactory.getLogger(CartService.class);
+
+    // Get or create guest cart
+    public Cart getOrCreateGuestCart(String sessionId) {
+        return cartRepository.findBySessionId(sessionId)
+                .orElseGet(() -> {
+                    Cart cart = new Cart(sessionId);
+                    return cartRepository.save(cart);
+                });
+    }
+
+    // Get or create user cart
+    public Cart getOrCreateUserCart(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Cart cart = new Cart(userId);
+                    return cartRepository.save(cart);
+                });
+    }
+
+    // Add item to cart
+    public Cart addToCart(Cart cart, CartItemDto itemDto) {
+        // Check if item already exists
+        Optional<CartItem> existingItem = cartItemRepository
+                .findByCartIdAndProductIdAndVariants(
+                        cart.getId(),
+                        itemDto.getProductId(),
+                        itemDto.getVariants()
+                );
+
+        if (existingItem.isPresent()) {
+            // Update quantity
+            CartItem item = existingItem.get();
+            item.setQuantity(item.getQuantity() + itemDto.getQuantity());
+            item.setAddedAt(LocalDateTime.now());
+            cartItemRepository.save(item);
+        } else {
+            // Create new item
+            CartItem newItem = new CartItem();
+            newItem.setCart(cart);
+            newItem.setProductId(itemDto.getProductId());
+            newItem.setProductName(itemDto.getProductName());
+            newItem.setPrice(itemDto.getPrice());
+            newItem.setQuantity(itemDto.getQuantity());
+            newItem.setVariants(itemDto.getVariants());
+            cartItemRepository.save(newItem);
+
+            cart.getItems().add(newItem);
+        }
+
+        cart.calculateTotal();
+        return cartRepository.save(cart);
+    }
+
+    // Merge guest cart with user cart
+    public Cart mergeGuestCartWithUserCart(Long userId, String sessionId) {
+        logger.info("Merging guest cart with user cart for userId: {} and sessionId: {}", userId, sessionId);
+
+        try {
+            // Get guest cart
+            Optional<Cart> guestCartOpt = cartRepository.findBySessionId(sessionId);
+            if (!guestCartOpt.isPresent() || guestCartOpt.get().getItems().isEmpty()) {
+                logger.info("No guest cart found or cart is empty for sessionId: {}", sessionId);
+                return getOrCreateUserCart(userId);
+            }
+
+            Cart guestCart = guestCartOpt.get();
+            Cart userCart = getOrCreateUserCart(userId);
+
+            // Merge items from guest cart to user cart
+            for (CartItem guestItem : guestCart.getItems()) {
+                mergeCartItem(userCart, guestItem);
+            }
+
+            // Recalculate total and save
+            userCart.calculateTotal();
+            userCart = cartRepository.save(userCart);
+
+            // Delete guest cart after successful merge
+            cartRepository.delete(guestCart);
+
+            logger.info("Successfully merged {} items from guest cart to user cart",
+                    guestCart.getItems().size());
+
+            return userCart;
+
+        } catch (Exception e) {
+            logger.error("Error merging guest cart with user cart", e);
+            throw new CartMergeException("Failed to merge guest cart with user cart", e);
+        }
+    }
+
+    private void mergeCartItem(Cart userCart, CartItem guestItem) {
+        // Find matching item in user cart
+        Optional<CartItem> existingItem = userCart.getItems().stream()
+                .filter(item -> item.getProductId().equals(guestItem.getProductId())
+                        && Objects.equals(item.getVariants(), guestItem.getVariants()))
+                .findFirst();
+
+        if (existingItem.isPresent()) {
+            // Merge quantities
+            CartItem item = existingItem.get();
+            item.setQuantity(item.getQuantity() + guestItem.getQuantity());
+            // Keep the most recent addedAt date
+            if (guestItem.getAddedAt().isAfter(item.getAddedAt())) {
+                item.setAddedAt(guestItem.getAddedAt());
+            }
+            cartItemRepository.save(item);
+        } else {
+            // Create new item in user cart
+            CartItem newItem = new CartItem();
+            newItem.setCart(userCart);
+            newItem.setProductId(guestItem.getProductId());
+            newItem.setProductName(guestItem.getProductName());
+            newItem.setPrice(guestItem.getPrice());
+            newItem.setQuantity(guestItem.getQuantity());
+            newItem.setVariants(guestItem.getVariants());
+            newItem.setAddedAt(guestItem.getAddedAt());
+
+            cartItemRepository.save(newItem);
+            userCart.getItems().add(newItem);
+        }
+    }
+
+    // Get cart summary
+    public CartSummaryDto getCartSummary(Cart cart) {
+        CartSummaryDto summary = new CartSummaryDto();
+        summary.setCartId(cart.getId());
+        summary.setItemCount(cart.getItems().size());
+        summary.setTotalAmount(cart.getTotalAmount());
+        summary.setUpdatedAt(cart.getUpdatedAt());
+
+        List<CartItemDto> itemDtos = cart.getItems().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        summary.setItems(itemDtos);
+
+        return summary;
+    }
+
+    private CartItemDto convertToDto(CartItem item) {
+        CartItemDto dto = new CartItemDto();
+        dto.setId(item.getId());
+        dto.setProductId(item.getProductId());
+        dto.setProductName(item.getProductName());
+        dto.setPrice(item.getPrice());
+        dto.setQuantity(item.getQuantity());
+        dto.setVariants(item.getVariants());
+        dto.setAddedAt(item.getAddedAt());
+        return dto;
+    }
+}
+
+// ==========================================
+// CONTROLLER
+// ==========================================
+
+@RestController
+@RequestMapping("/api/cart")
+public class CartController {
+
+    @Autowired
+    private CartService cartService;
+
+    @Autowired
+    private AuthenticationService authService;
+
+    private static final Logger logger = LoggerFactory.getLogger(CartController.class);
+
+    // Add item to cart (guest or user)
+    @PostMapping("/add")
+    public ResponseEntity<ApiResponse<CartSummaryDto>> addToCart(
+            @RequestBody CartItemDto itemDto,
+            HttpServletRequest request) {
+
+        try {
+            Cart cart;
+            Long userId = authService.getCurrentUserId();
+
+            if (userId != null) {
+                // User is logged in
+                cart = cartService.getOrCreateUserCart(userId);
+            } else {
+                // Guest user
+                String sessionId = getOrCreateSessionId(request);
+                cart = cartService.getOrCreateGuestCart(sessionId);
+            }
+
+            cart = cartService.addToCart(cart, itemDto);
+            CartSummaryDto summary = cartService.getCartSummary(cart);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Item added to cart", summary));
+
+        } catch (Exception e) {
+            logger.error("Error adding item to cart", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Failed to add item to cart", null));
+        }
+    }
+
+    // Get current cart
+    @GetMapping
+    public ResponseEntity<ApiResponse<CartSummaryDto>> getCart(HttpServletRequest request) {
+        try {
+            Cart cart;
+            Long userId = authService.getCurrentUserId();
+
+            if (userId != null) {
+                cart = cartService.getOrCreateUserCart(userId);
+            } else {
+                String sessionId = getOrCreateSessionId(request);
+                cart = cartService.getOrCreateGuestCart(sessionId);
+            }
+
+            CartSummaryDto summary = cartService.getCartSummary(cart);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Cart retrieved", summary));
+
+        } catch (Exception e) {
+            logger.error("Error retrieving cart", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Failed to retrieve cart", null));
+        }
+    }
+
+    // Merge guest cart after login (called automatically after login)
+    @PostMapping("/merge")
+    public ResponseEntity<ApiResponse<CartSummaryDto>> mergeCart(HttpServletRequest request) {
+        try {
+            Long userId = authService.getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(false, "User not authenticated", null));
+            }
+
+            String sessionId = request.getSession().getId();
+            Cart mergedCart = cartService.mergeGuestCartWithUserCart(userId, sessionId);
+            CartSummaryDto summary = cartService.getCartSummary(mergedCart);
+
+            return ResponseEntity.ok(new ApiResponse<>(true, "Cart merged successfully", summary));
+
+        } catch (CartMergeException e) {
+            logger.error("Error merging cart", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Failed to merge cart", null));
+        }
+    }
+
+    private String getOrCreateSessionId(HttpServletRequest request) {
+        HttpSession session = request.getSession(true);
+        return session.getId();
+    }
+}
+
+// ==========================================
+// AUTHENTICATION SERVICE
+// ==========================================
+
+@Service
+public class AuthenticationService {
+
+    @Autowired
+    private CartService cartService;
+
+    // Login method with cart merge
+    public LoginResponse login(LoginRequest loginRequest, HttpServletRequest request) {
+        try {
+            // Authenticate user (your existing logic)
+            User user = authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
+
+            if (user != null) {
+                // Generate JWT token
+                String token = generateJwtToken(user);
+
+                // Merge guest cart with user cart
+                String sessionId = request.getSession().getId();
+                Cart mergedCart = cartService.mergeGuestCartWithUserCart(user.getId(), sessionId);
+
+                // Create response
+                LoginResponse response = new LoginResponse();
+                response.setSuccess(true);
+                response.setToken(token);
+                response.setUser(convertUserToDto(user));
+                response.setCart(cartService.getCartSummary(mergedCart));
+                response.setMessage("Login successful, cart merged");
+
+                return response;
+            } else {
+                return new LoginResponse(false, "Invalid credentials", null, null, null);
+            }
+
+        } catch (Exception e) {
+            logger.error("Login error", e);
+            return new LoginResponse(false, "Login failed", null, null, null);
+        }
+    }
+
+    public Long getCurrentUserId() {
+        // Extract user ID from JWT token in SecurityContext
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            return userPrincipal.getId();
+        }
+        return null;
+    }
+
+    private User authenticateUser(String email, String password) {
+        // Your authentication logic here
+        return null;
+    }
+
+    private String generateJwtToken(User user) {
+        // Your JWT generation logic here
+        return null;
+    }
+
+    private UserDto convertUserToDto(User user) {
+        // Convert User entity to DTO
+        return null;
+    }
+}
+
+// ==========================================
+// DTO CLASSES
+// ==========================================
+
+public class CartItemDto {
+    private Long id;
+    private Long productId;
+    private String productName;
+    private BigDecimal price;
+    private Integer quantity;
+    private String variants;
+    private LocalDateTime addedAt;
+
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    public String getVariants() { return variants; }
+    public void setVariants(String variants) { this.variants = variants; }
+
+    public LocalDateTime getAddedAt() { return addedAt; }
+    public void setAddedAt(LocalDateTime addedAt) { this.addedAt = addedAt; }
+}
+
+public class CartSummaryDto {
+    private Long cartId;
+    private List<CartItemDto> items;
+    private Integer itemCount;
+    private BigDecimal totalAmount;
+    private LocalDateTime updatedAt;
+
+    // Getters and setters
+    public Long getCartId() { return cartId; }
+    public void setCartId(Long cartId) { this.cartId = cartId; }
+
+    public List<CartItemDto> getItems() { return items; }
+    public void setItems(List<CartItemDto> items) { this.items = items; }
+
+    public Integer getItemCount() { return itemCount; }
+    public void setItemCount(Integer itemCount) { this.itemCount = itemCount; }
+
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+}
+
+public class ApiResponse<T> {
+    private boolean success;
+    private String message;
+    private T data;
+
+    public ApiResponse(boolean success, String message, T data) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
+    }
+
+    // Getters and setters
+    public boolean isSuccess() { return success; }
+    public void setSuccess(boolean success) { this.success = success; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public T getData() { return data; }
+    public void setData(T data) { this.data = data; }
+}
+
+// ==========================================
+// EXCEPTION CLASS
+// ==========================================
+
+public class CartMergeException extends RuntimeException {
+    public CartMergeException(String message) {
+        super(message);
+    }
+
+    public CartMergeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
