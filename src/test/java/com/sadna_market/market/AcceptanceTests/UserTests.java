@@ -27,6 +27,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -1099,5 +1101,50 @@ public class UserTests {
         Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, request);
         Assertions.assertTrue(response.isError(), "Checkout should fail if supply fails");
         Assertions.assertTrue(response.getErrorMessage().toLowerCase().contains("external"), "Error message should mention supply");
+    }
+
+    // New Use Case Test
+    @Test
+    void concurrentPurchaseWithLimitedStockTest() {
+        int totalStock = 5;
+        int quantityEachUserWants = 4;
+
+        ProductRequest productRequest = new ProductRequest(
+        productId,
+        PRODUCT_NAME,
+        PRODUCT_CATEGORY,
+        PRODUCT_DESCRIPTION,
+        PRODUCT_PRICE
+        );
+        bridge.editProductDetails(ownerToken, ownerUsername, storeId, productRequest, totalStock);
+
+        String user2 = "secondUser";
+        String pass2 = "Password123!";
+        RegisterRequest registerRequest = new RegisterRequest(user2, pass2, "user2@example.com", "Second", "User");
+        bridge.registerUser(registerRequest);
+        String token2 = bridge.loginUser(user2, pass2).getData();
+
+        bridge.addProductToUserCart(testUsername, testToken, storeId, productId, quantityEachUserWants).isError();
+        bridge.addProductToUserCart(user2, token2, storeId, productId, quantityEachUserWants).isError();
+
+        CreditCardDTO card = new CreditCardDTO("4111111111111111", "John", "12/25", "123");
+        PickupDTO pickup = new PickupDTO("Test Location", "PickupXYZ");
+        CheckoutRequest req1 = new CheckoutRequest();
+        req1.setPaymentMethod(card);
+        req1.setSupplyMethod(pickup);
+        req1.setShippingAddress("123 Test Street");
+
+        Response<CheckoutResultDTO> purchase1 = bridge.processUserCheckout(testUsername, testToken, req1);
+        Assertions.assertFalse(purchase1.isError(), "First user should succeed in purchase");
+
+        CheckoutRequest req2 = new CheckoutRequest();
+        req2.setPaymentMethod(card);
+        req2.setSupplyMethod(pickup);
+        req2.setShippingAddress("123 Test Street");
+
+        Response<CheckoutResultDTO> purchase2 = bridge.processUserCheckout(user2, token2, req2);
+        Assertions.assertTrue(purchase2.isError(), "Second user should fail due to stock");
+        Assertions.assertTrue(purchase2.getErrorMessage().toLowerCase().contains("stock"),
+        "Error should indicate insufficient stock");
     }
 }
