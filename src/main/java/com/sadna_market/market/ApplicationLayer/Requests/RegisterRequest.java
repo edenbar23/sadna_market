@@ -21,6 +21,7 @@ public class RegisterRequest {
     private String lastName;    // User's last name (required)
     private String phoneNumber; // User's phone number (optional)
     private String address;     // User's address (optional)
+    private boolean isAdmin = false; // Flag to indicate if the user is an admin (default: false)
 
     public String getUserName() {
         return username;
@@ -44,6 +45,9 @@ public class RegisterRequest {
     }
     public String getAddress() {
         return address;
+    }
+    public boolean isAdmin() {
+        return isAdmin;
     }
 
     /**
@@ -103,6 +107,10 @@ public class RegisterRequest {
         
         return true;
     }
+
+    public void setIsAdmin() {
+        this.isAdmin = true;
+    }
     
     /**
      * Validates email format using regex pattern
@@ -141,5 +149,9 @@ public class RegisterRequest {
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", address='" + address + '\'' +
                 '}';
+    }
+
+    public boolean getIsAdmin() {
+        return isAdmin;
     }
 }

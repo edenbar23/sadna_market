@@ -49,7 +49,7 @@ public class UserAccessService {
      * 3. The email must be valid.
      * 4. The first name and last name must not be empty.
      */
-    public User registerUser(String username, String password, String email, String firstName, String lastName) {
+    public User registerUser(String username, String password, String email, String firstName, String lastName, boolean isAdmin) {
         logger.info("Registering new user: {}", username);
         if (userRepository.contains(username)) {
             logger.error("Username already exists: {}", username);
@@ -68,6 +68,9 @@ public class UserAccessService {
             throw new IllegalArgumentException("First name and last name must not be empty");
         }
         User user = new User(username, password, email, firstName, lastName);
+        if (isAdmin) {
+            user.setAdmin(true);
+        }
         userRepository.save(user);
 
         // Record subscription
@@ -158,6 +161,12 @@ public class UserAccessService {
         if(userToDelete.equals(adminUser)) {
             throw new IllegalArgumentException("Admin can't delete himself!");
         }
+        User remover = userRepository.findByUsername(adminUser)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + adminUser));
+        if (!remover.isAdmin()){
+            throw new IllegalArgumentException("Only admin can delete users");
+        }
+
         try {
             userRepository.delete(userToDelete);
             // Additional cleanup can happen here
@@ -406,6 +415,11 @@ public class UserAccessService {
     }
 
     public List<Report> getViolationReports(String admin) {
+        User user = userRepository.findByUsername(admin)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + admin));
+        if (!user.isAdmin()){
+            throw new IllegalArgumentException("Only admin can get violation reports");
+        }
         List<Report> reports = reportRepository.getAllReports();
         if (reports.isEmpty()) {
             logger.info("No violation reports found");
@@ -418,10 +432,20 @@ public class UserAccessService {
     }
 
     public double getTransactionsRatePerHour(String admin) {
+        User user = userRepository.findByUsername(admin)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + admin));
+        if (!user.isAdmin()){
+            throw new IllegalArgumentException("Only admin can get transactions rate");
+        }
         return cleanupAndCount(transactionTimestamps);
     }
 
     public double getSubscriptionsRatePerHour(String admin) {
+        User user = userRepository.findByUsername(admin)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + admin));
+        if (!user.isAdmin()){
+            throw new IllegalArgumentException("Only admin can get subscriptions rate");
+        }
         return cleanupAndCount(subscriptionTimestamps);
     }
 
@@ -430,6 +454,12 @@ public class UserAccessService {
         if (!userRepository.contains(user)) {
             logger.info("User not found: {}", user);
             throw new IllegalArgumentException("User not found");
+        }
+        User adminUser = userRepository.findByUsername(admin)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + user));
+        if (!adminUser.isAdmin()) {
+            logger.info("User {} is not an admin", admin);
+            throw new IllegalArgumentException("Only admin can reply to violation reports");
         }
         // check if report exists
         Report report = reportRepository.findById(reportId).orElseThrow(()-> new IllegalArgumentException("report not found!"));
@@ -445,6 +475,12 @@ public class UserAccessService {
         if (!userRepository.contains(addressee)) {
             logger.info("User not found: {}", addressee);
             throw new IllegalArgumentException("User not found");
+        }
+        User adminUser = userRepository.findByUsername(admin)
+                .orElseThrow(() -> new IllegalArgumentException("Admin user not found: " + admin));
+        if (!adminUser.isAdmin()) {
+            logger.info("User {} is not an admin", admin);
+            throw new IllegalArgumentException("Only admin can send messages to users");
         }
         // Publish direct message event instead of direct call
         DomainEventPublisher.publish(
