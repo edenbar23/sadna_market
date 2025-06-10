@@ -395,4 +395,19 @@ public class InventoryManagementService {
 
         return isAvailable;
     }
+
+    /**
+     * Get the available quantity of a product in a specific store
+     * (uses existing storeRepository.getProductQuantity)
+     */
+    public int getAvailableQuantityInStore(UUID storeId, UUID productId) {
+        logger.info("Getting available quantity for product {} in store {}", productId, storeId);
+        try {
+            // Use existing repository method to get current stock
+            return storeRepository.getProductQuantity(storeId, productId);
+        } catch (Exception e) {
+            logger.error("Error getting available product quantity: {}", e.getMessage(), e);
+            return 0;
+        }
+    }
 }

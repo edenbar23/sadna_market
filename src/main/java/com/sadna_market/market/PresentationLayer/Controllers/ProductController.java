@@ -2,6 +2,7 @@ package com.sadna_market.market.PresentationLayer.Controllers;
 
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.StoreProductDTO;
 import com.sadna_market.market.ApplicationLayer.ProductService;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRateRequest;
 import com.sadna_market.market.ApplicationLayer.Requests.ProductRequest;
@@ -159,21 +160,6 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get all products for a specific store
-     */
-    @GetMapping("/store/{storeId}")
-    public ResponseEntity<Response<List<ProductDTO>>> getStoreProducts(@PathVariable UUID storeId) {
-        logger.info("Received request to get all products for store ID: {}", storeId);
-
-        Response<List<ProductDTO>> response = productService.getStoreProducts(storeId);
-
-        if (response.isError()) {
-            logger.error("Error fetching store products: {}", response.getErrorMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-        return ResponseEntity.ok(response);
-    }
 
     @GetMapping("/top-rated")
     public ResponseEntity<Response<List<ProductDTO>>> getStoreProducts() {
@@ -185,6 +171,22 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get all products for a specific store with available inventory
+     */
+    @GetMapping("/store/{storeId}")
+    public ResponseEntity<Response<List<StoreProductDTO>>> getStoreProducts(@PathVariable UUID storeId) {
+        logger.info("Received request to get all products with inventory for store ID: {}", storeId);
+
+        Response<List<StoreProductDTO>> response = productService.getStoreProductsWithInventory(storeId);
+
+        if (response.isError()) {
+            logger.error("Error fetching store products with inventory: {}", response.getErrorMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         return ResponseEntity.ok(response);
     }
 }

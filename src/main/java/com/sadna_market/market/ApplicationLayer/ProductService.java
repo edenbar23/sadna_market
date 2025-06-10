@@ -3,6 +3,7 @@ package com.sadna_market.market.ApplicationLayer;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductRatingDTO;
 import com.sadna_market.market.ApplicationLayer.DTOs.ProductReviewDTO;
+import com.sadna_market.market.ApplicationLayer.DTOs.StoreProductDTO;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.DomainServices.InventoryManagementService;
@@ -330,6 +331,35 @@ public class ProductService {
         } catch (Exception e) {
             logger.error("Error getting top rated products: {}", e.getMessage(), e);
             return Response.error("Failed to get top rated products: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Get store products with available inventory quantities
+     */
+    public Response<List<StoreProductDTO>> getStoreProductsWithInventory(UUID storeId) {
+        logger.info("Getting products with available inventory for store ID: {}", storeId);
+        try {
+            List<Optional<Product>> products = productRepository.findByStoreId(storeId);
+
+            // Convert to StoreProductDTOs with available quantity
+            List<StoreProductDTO> storeProductDTOs = products.stream()
+                    .filter(Optional::isPresent)
+                    .map(productOpt -> {
+                        Product product = productOpt.get();
+
+                        // Get available quantity from inventory service
+                        int availableQuantity = inventoryManagementService.getAvailableQuantityInStore(
+                                storeId, product.getProductId());
+
+                        return new StoreProductDTO(product, availableQuantity);
+                    })
+                    .collect(Collectors.toList());
+
+            return Response.success(storeProductDTOs);
+        } catch (Exception e) {
+            logger.error("Error while getting store products with inventory: {}", e.getMessage(), e);
+            return Response.error("Failed to get store products with inventory: " + e.getMessage());
         }
     }
 }
