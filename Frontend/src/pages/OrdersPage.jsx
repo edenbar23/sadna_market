@@ -1,6 +1,6 @@
 import OrderCard from "../components/OrderCard";
 import { useState, useEffect } from "react";
-import { fetchOrderHistory } from "../api/order";
+import { fetchOrderHistory, markOrderAsCompleted } from "../api/order";
 import { fetchStoreById, rateStore } from "../api/store";
 import { useAuthContext } from "../context/AuthContext";
 import MessageModal from "../components/MessageModal";
@@ -19,6 +19,10 @@ export default function OrdersPage() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
+
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completingOrderId, setCompletingOrderId] = useState(null);
 
   const { user, token } = useAuthContext();
 
@@ -64,6 +68,45 @@ export default function OrdersPage() {
 
     fetchOrders();
   }, [user, token]);
+
+
+  const handleMarkOrderAsCompleted = async (orderId) => {
+    if (!user?.username || !token) {
+      alert('Please login to mark orders as completed');
+      return;
+    }
+
+    setCompletingOrderId(orderId);
+
+    try {
+      const response = await markOrderAsCompleted(orderId, user.username, token);
+
+      if (response.success) {
+        // Update the order status locally
+        setOrders(prevOrders =>
+            prevOrders.map(order =>
+                order.orderId === orderId
+                    ? { ...order, status: 'COMPLETED' }
+                    : order
+            )
+        );
+
+        // Trigger celebration animation
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 4000);
+
+        // Show success message after a brief delay
+        setTimeout(() => {
+          alert('🎉 Order marked as completed! Thank you for shopping with us!');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error marking order as completed:', error);
+      alert(error.message || 'An error occurred while marking the order as completed. Please try again.');
+    } finally {
+      setCompletingOrderId(null);
+    }
+  };
 
   const handleMessageStore = (order) => {
     const store = stores[order.storeId];
@@ -170,6 +213,7 @@ export default function OrdersPage() {
     total: orders.length,
     completed: orders.filter(order => order.status === 'COMPLETED').length,
     pending: orders.filter(order => order.status === 'PENDING').length,
+    shipped: orders.filter(order => order.status === 'SHIPPED').length, // ✅ NEW: Track shipped orders
     totalSpent: orders.reduce((sum, order) => sum + (order.finalPrice || order.totalPrice || 0), 0)
   };
 
@@ -209,6 +253,29 @@ export default function OrdersPage() {
 
   return (
       <div className="orders-page">
+        {showCelebration && (
+            <div className="celebration-overlay">
+              <div className="celebration-content">
+                <div className="celebration-emoji">🎉</div>
+                <h2>Order Completed!</h2>
+                <p>Thank you for confirming delivery!</p>
+                <div className="confetti-container">
+                  {Array.from({ length: 50 }).map((_, i) => (
+                      <div
+                          key={i}
+                          className={`confetti-piece confetti-${i % 6}`}
+                          style={{
+                            left: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 2}s`,
+                            animationDuration: `${2 + Math.random() * 2}s`
+                          }}
+                      ></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+        )}
+
         <div className="orders-page-header">
           <h1 className="orders-title">My Orders</h1>
           <p className="orders-subtitle">Track and manage your order history</p>
@@ -225,8 +292,8 @@ export default function OrdersPage() {
             <div className="stat-label">Completed</div>
           </div>
           <div className="stat-card">
-            <div className="stat-number">{orderStats.pending}</div>
-            <div className="stat-label">Pending</div>
+            <div className="stat-number">{orderStats.shipped}</div>
+            <div className="stat-label">Shipped</div>
           </div>
           <div className="stat-card">
             <div className="stat-number">${orderStats.totalSpent.toFixed(2)}</div>
@@ -239,6 +306,8 @@ export default function OrdersPage() {
             {orders.map((order) => {
               const store = stores[order.storeId];
               const isCompleted = order.status === 'COMPLETED';
+              const isShipped = order.status === 'SHIPPED';
+              const isCompletingThisOrder = completingOrderId === order.orderId;
 
               return (
                   <div key={order.orderId} className="order-card">
@@ -335,13 +404,41 @@ export default function OrdersPage() {
                       >
                         💬 Message {store?.data?.name || store?.name || "Store"}
                       </button>
-                      {isCompleted && (
+
+
+                      {isShipped && (
                           <button
-                              className="rate-store-btn"
-                              onClick={() => handleRateStore(order)}
+                              className="mark-completed-btn"
+                              onClick={() => handleMarkOrderAsCompleted(order.orderId)}
+                              disabled={isCompletingThisOrder}
                           >
-                            ⭐ Rate Store
+                            {isCompletingThisOrder ? (
+                                <>
+                                  <span className="spinner"></span>
+                                  Marking as Completed...
+                                </>
+                            ) : (
+                                <>
+                                  📦➡️✅ Mark as Delivered
+                                </>
+                            )}
                           </button>
+                      )}
+
+                      {isCompleted && (
+                          <>
+                            <button
+                                className="rate-store-btn"
+                                onClick={() => handleRateStore(order)}
+                            >
+                              ⭐ Rate Store
+                            </button>
+
+                            <div className="completed-message">
+                              <span className="celebration-icon">🎉</span>
+                              Order completed! Thank you for your purchase!
+                            </div>
+                          </>
                       )}
                     </div>
                   </div>
