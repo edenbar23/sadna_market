@@ -5,9 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadna_market.market.ApplicationLayer.*;
 import com.sadna_market.market.ApplicationLayer.DTOs.*;
 import com.sadna_market.market.ApplicationLayer.Requests.*;
+import com.sadna_market.market.InfrastructureLayer.ExternalAPI.DummyExternalAPIConfig;
+import com.sadna_market.market.InfrastructureLayer.ExternalAPI.ExternalAPIException;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
+import com.sadna_market.market.InfrastructureLayer.Payment.MockExternalPaymentAPI;
 import com.sadna_market.market.InfrastructureLayer.Supply.PickupDTO;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +20,7 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -29,7 +34,8 @@ import java.util.UUID;
         JpaRepositoriesAutoConfiguration.class
 })
 public class UserTests {
-
+    @MockBean
+    private MockExternalPaymentAPI mockExternalPaymentAPI;
     @Autowired
     private Bridge bridge;
     ObjectMapper objectMapper = new ObjectMapper();
@@ -158,6 +164,12 @@ public class UserTests {
             logger.info("Response was: " + addProductResponse.getData());
             throw new AssertionError("Product ID extraction failed", e);
         }
+    }
+
+    @BeforeEach
+    void setupTestAPI() {
+        mockExternalPaymentAPI.setSimulateFailure(false);
+        mockExternalPaymentAPI.setSimulateUnavailable(false);
     }
 
     @AfterEach
@@ -331,6 +343,51 @@ public class UserTests {
     }
 
     // CART PURCHASE TESTS
+
+        // External Payment System
+    @Test
+    void testFailsWhenPaymentSystemDown() throws ExternalAPIException {
+        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyDouble()
+        )).thenReturn(-1);
+    
+        // Add to cart first
+        bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
+    
+        CreditCardDTO creditCard = new CreditCardDTO("4111111111111111", "John Doe", "12/25", "123");
+        PickupDTO pickup = new PickupDTO("Test Store Location", "Pickup123");
+    
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickup);
+    
+        Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+    
+        Assertions.assertTrue(response.isError(), "Expected failure due to payment system down");
+        Assertions.assertTrue(response.getErrorMessage().toLowerCase().contains("external"));
+    }
+        
+    @Test
+    void testFailsWhenPaymentServiceThrowsException() throws Exception {
+        // Simulate a network or processing exception
+        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyDouble()
+        )).thenThrow(new ExternalAPIException("Payment system down"));
+
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+
+        Response<CheckoutResultDTO> result = bridge.processUserCheckout(
+                testUsername, testToken, checkoutRequest)
+        ;
+
+        Assertions.assertTrue(result.isError());
+    }
 
     @Test
         //@DisplayName("Valid purchase of user cart")
