@@ -4,6 +4,8 @@ import { fetchOrderHistory, markOrderAsCompleted } from "../api/order";
 import { fetchStoreById, rateStore } from "../api/store";
 import { useAuthContext } from "../context/AuthContext";
 import MessageModal from "../components/MessageModal";
+import { rateProduct } from "../api/product";
+
 import "../styles/orders-page.css";
 
 export default function OrdersPage() {
@@ -128,6 +130,16 @@ export default function OrdersPage() {
     setComment("");
   };
 
+  const handleRateProduct = (product, order) => {
+    setSelectedProduct(product);
+    setSelectedOrder(order);
+    setRatingType("product");
+    setShowRatingModal(true);
+    setRating(0);
+    setComment("");
+  };
+
+
   const handleSubmitRating = async () => {
     if (rating === 0) {
       alert('Please select a rating before submitting.');
@@ -147,16 +159,16 @@ export default function OrdersPage() {
         );
         console.log('Store rating submitted successfully:', result);
         alert('Store rating submitted successfully!');
-      } else if (ratingType === 'product') {
-        // TODO: Implement API call to rate product
-        console.log('Rating product:', {
-          productId: selectedProduct.id,
-          rating,
-          comment,
-          userId: user.id
-        });
-        // await rateProduct(selectedProduct.id, { rating, comment, userId: user.id });
-        alert('Product rating functionality coming soon!');
+      } else if (ratingType === "product") {
+        const rateData = {
+          productId: selectedProduct.productId,
+          storeId: selectedOrder.storeId,
+          username: user.username,
+          rating: rating
+        };
+
+          await rateProduct(rateData, token);
+          alert("Product rating submitted successfully!");
       }
 
       // Close modal and reset state
@@ -365,7 +377,7 @@ export default function OrdersPage() {
                                 {isCompleted && (
                                     <button
                                         className="rate-product-btn"
-                                        onClick={() => handleRateProduct(product)}
+                                        onClick={() => handleRateProduct(product, order)}
                                     >
                                       Rate Product
                                     </button>
