@@ -130,8 +130,9 @@ export default function OrdersPage() {
     setComment("");
   };
 
-  const handleRateProduct = (product) => {
+  const handleRateProduct = (product, order) => {
     setSelectedProduct(product);
+    setSelectedOrder(order);
     setRatingType("product");
     setShowRatingModal(true);
     setRating(0);
@@ -159,12 +160,12 @@ export default function OrdersPage() {
         console.log('Store rating submitted successfully:', result);
         alert('Store rating submitted successfully!');
       } else if (ratingType === "product") {
-          const rateData = {
-            productId: selectedProduct.id,
-            storeId: selectedOrder.storeId,
-            username: user.username,
-            rating
-          };
+        const rateData = {
+          productId: selectedProduct.productId,
+          storeId: selectedOrder.storeId,
+          username: user.username,
+          rating: rating
+        };
 
           await rateProduct(rateData, token);
           alert("Product rating submitted successfully!");
@@ -376,7 +377,7 @@ export default function OrdersPage() {
                                 {isCompleted && (
                                     <button
                                         className="rate-product-btn"
-                                        onClick={() => handleRateProduct(product)}
+                                        onClick={() => handleRateProduct(product, order)}
                                     >
                                       Rate Product
                                     </button>
