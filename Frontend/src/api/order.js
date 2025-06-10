@@ -1,4 +1,3 @@
-// Updated order.js API - simplified to use OrderDTO fields directly
 import axios from 'axios';
 import { getProductInfo } from './product';
 
@@ -301,5 +300,88 @@ export const fetchOrderStatus = async (orderId) => {
     } catch (error) {
         console.error('fetchOrderStatus error:', error);
         throw error;
+    }
+};
+
+/**
+ * ✅ NEW FUNCTION: Mark a shipped order as completed
+ * @param {string} orderId - The order UUID as string
+ * @param {string} username - The username of the user
+ * @param {string} token - The authentication token
+ * @returns {Promise<Response>}
+ */
+export const markOrderAsCompleted = async (orderId, username, token) => {
+    try {
+        console.log('Marking order as completed:', orderId, 'for user:', username);
+
+        if (!orderId) {
+            throw new Error('Order ID is required');
+        }
+
+        if (!username) {
+            throw new Error('Username is required');
+        }
+
+        if (!token) {
+            throw new Error('Authentication token is required');
+        }
+
+        // Validate UUID format
+        if (!isValidUUID(orderId)) {
+            throw new Error(`Invalid order ID format: ${orderId}. Expected UUID format.`);
+        }
+
+        const response = await axios.put(
+            `${API_URL}/${orderId}/complete?username=${username}`,
+            {},
+            {
+                headers: {
+                    'Authorization': token,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 10000
+            }
+        );
+
+        console.log('markOrderAsCompleted response:', response.data);
+
+        // Handle your Response<T> structure
+        if (response.data && typeof response.data === 'object') {
+            if (response.data.error === false) {
+                return {
+                    success: true,
+                    message: response.data.value || 'Order marked as completed successfully'
+                };
+            } else if (response.data.error === true) {
+                throw new Error(response.data.errorMessage || 'Failed to mark order as completed');
+            }
+        }
+
+        return {
+            success: true,
+            message: 'Order marked as completed successfully'
+        };
+
+    } catch (error) {
+        console.error('markOrderAsCompleted error:', error);
+
+        // Handle your Response<T> error structure
+        if (error.response?.data?.error === true) {
+            throw new Error(error.response.data.errorMessage || 'Failed to mark order as completed');
+        }
+
+        if (error.response?.status === 401) {
+            throw new Error('Authentication failed. Please log in again.');
+        } else if (error.response?.status === 403) {
+            throw new Error('You can only mark your own orders as completed.');
+        } else if (error.response?.status === 404) {
+            throw new Error('Order not found.');
+        } else if (error.response?.status === 400) {
+            throw new Error('Only shipped orders can be marked as completed.');
+        } else if (error.message) {
+            throw new Error(`Failed to mark order as completed: ${error.message}`);
+        } else {
+            throw new Error('Failed to mark order as completed. Please try again.');
+        }
     }
 };

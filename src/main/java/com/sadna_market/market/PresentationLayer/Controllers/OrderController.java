@@ -75,7 +75,6 @@ public class OrderController {
 //        }
 //    }
 
-    // Optional: Get user order history
     @GetMapping("/history/{username}")
     public ResponseEntity<Response<List<OrderDTO>>> getUserOrderHistory(@PathVariable String username,@RequestHeader("Authorization") String token) {
         logger.info("Fetching order history for user {}", username);
@@ -112,4 +111,41 @@ public class OrderController {
                     .body(Response.error("Failed to get order status: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/{orderId}/complete")
+    public ResponseEntity<Response<String>> markOrderAsCompleted(
+            @PathVariable UUID orderId,
+            @RequestParam String username,
+            @RequestHeader("Authorization") String token) {
+
+        logger.info("User {} requesting to mark order {} as completed", username, orderId);
+
+        try {
+            Response<String> response = orderService.markOrderAsCompleted(username, token, orderId);
+
+            if (response.isError()) {
+                logger.error("Failed to mark order {} as completed: {}", orderId, response.getErrorMessage());
+
+                if (response.getErrorMessage().contains("not found")) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                } else if (response.getErrorMessage().contains("own orders") ||
+                        response.getErrorMessage().contains("token")) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+                } else if (response.getErrorMessage().contains("status")) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                } else {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+                }
+            }
+
+            logger.info("Successfully marked order {} as completed by user {}", orderId, username);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error marking order {} as completed: {}", orderId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Unexpected error: " + e.getMessage()));
+        }
+    }
+
 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -69,6 +70,59 @@ public class OrderService {
         catch (Exception e) {
             logger.error("Error fetching order status", e.getMessage());
             return Response.error("Failed to fetch order history: " + e.getMessage());
+        }
+    }
+
+    public Response<String> markOrderAsCompleted(String username, String token, UUID orderId) {
+        logger.info("User {} attempting to mark order {} as completed", username, orderId);
+
+        try {
+            // Validate authentication token
+            logger.info("Validating token for user: {}", username);
+            authentication.validateToken(username, token);
+
+            // Get the order to verify ownership and status
+            logger.info("Retrieving order {} for validation", orderId);
+            Optional<Order> orderOpt = orderProcessingService.getOrderById(orderId);
+
+            if (orderOpt.isEmpty()) {
+                logger.warn("Order not found: {}", orderId);
+                return Response.error("Order not found");
+            }
+
+            Order order = orderOpt.get();
+
+            // Verify that the user owns this order
+            if (!order.getUserName().equals(username)) {
+                logger.warn("User {} attempted to mark order {} owned by {} as completed",
+                        username, orderId, order.getUserName());
+                return Response.error("You can only mark your own orders as completed");
+            }
+
+            // Verify that the order is in SHIPPED status
+            if (order.getStatus() != OrderStatus.SHIPPED) {
+                logger.warn("Order {} is not in SHIPPED status. Current status: {}",
+                        orderId, order.getStatus());
+                return Response.error("Only shipped orders can be marked as completed. Current status: " +
+                        order.getStatus());
+            }
+
+            // Mark the order as completed using the domain service
+            logger.info("Marking order {} as completed", orderId);
+            boolean success = orderProcessingService.markOrderAsCompleted(orderId);
+
+            if (success) {
+                logger.info("Successfully marked order {} as completed by user {}", orderId, username);
+                return Response.success("Order marked as completed successfully");
+            } else {
+                logger.error("Failed to mark order {} as completed", orderId);
+                return Response.error("Failed to mark order as completed");
+            }
+
+        } catch (Exception e) {
+            logger.error("Error marking order {} as completed by user {}: {}",
+                    orderId, username, e.getMessage());
+            return Response.error("Failed to mark order as completed: " + e.getMessage());
         }
     }
 }
