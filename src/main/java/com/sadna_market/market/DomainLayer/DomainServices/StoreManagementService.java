@@ -185,6 +185,54 @@ public class StoreManagementService {
     }
 
     /**
+     * Closes a store by admin - bypasses founder check
+     * Business rules:
+     * 1. Only system administrators can use this method
+     * 2. The store must be open
+     * 3. Admin can close any store regardless of founder
+     */
+    public void adminCloseStore(String adminUsername, UUID storeId) {
+        logger.debug("Admin '{}' attempting to close store '{}'", adminUsername, storeId);
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isActive()) {
+            logger.error("Store '{}' is already closed", store.getName());
+            throw new StoreAlreadyClosedException("Store is already closed");
+        }
+
+        store.closeStore();
+        storeRepository.save(store);
+
+        logger.info("Store '{}' has been closed by admin '{}'", store.getName(), adminUsername);
+    }
+
+    /**
+     * Reopens a store by admin - bypasses founder check
+     * Business rules:
+     * 1. Only system administrators can use this method
+     * 2. The store must be closed
+     * 3. Admin can reopen any store regardless of founder
+     */
+    public void adminReopenStore(String adminUsername, UUID storeId) {
+        logger.debug("Admin '{}' attempting to reopen store '{}'", adminUsername, storeId);
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (store.isActive()) {
+            logger.error("Store '{}' is already open", store.getName());
+            throw new StoreAlreadyOpenException("Store is already open");
+        }
+
+        store.reopenStore();
+        storeRepository.save(store);
+
+        logger.info("Store '{}' has been reopened by admin '{}'", store.getName(), adminUsername);
+    }
+
+    /**
      * Appoints a new store owner.
      * Business rules:
      * - Appointer must be a store owner

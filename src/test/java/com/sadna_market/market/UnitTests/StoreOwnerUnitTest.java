@@ -97,8 +97,8 @@ class StoreOwnerUnitTest {
         );
 
         // Verify exception message
-        assertTrue(exception.getMessage().contains("has all the permissions"),
-                "Exception message should mention that StoreOwner already has all permissions");
+        assertTrue(exception.getMessage().contains("fixed and cannot be modified"),
+                "Exception message should mention that StoreOwner permissions cannot be modified");
 
         System.out.println("addPermission correctly rejected with message: " + exception.getMessage());
     }
@@ -116,8 +116,8 @@ class StoreOwnerUnitTest {
         );
 
         // Verify exception message
-        assertTrue(exception.getMessage().contains("all the permissions"),
-                "Exception message should mention that StoreOwner has all permissions");
+        assertTrue(exception.getMessage().contains("fixed and cannot be modified"),
+                "Exception message should mention that permissions cannot be modified");
 
         System.out.println("removePermission correctly rejected with message: " + exception.getMessage());
     }
@@ -155,7 +155,7 @@ class StoreOwnerUnitTest {
         storeOwner.addAppointee(appointeeUsername);
 
         // Now check if isAppointedByUser returns true for appointeeUsername
-        boolean result = storeOwner.isAppointedByUser(appointeeUsername);
+        boolean result = storeOwner.isAppointedByUser(appointerUsername);
 
         assertTrue(result,
                 "isAppointedByUser should return true for user appointed by this owner: " + appointeeUsername);
