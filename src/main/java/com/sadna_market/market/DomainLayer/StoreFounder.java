@@ -64,6 +64,7 @@ public class StoreFounder extends UserStoreRoles {
     @Override
     public void removePermission(Permission permission) {
         logger.error("can't remove permission {} from store founder", permission);
+        throw new IllegalStateException("Store founder permissions cannot be removed");
     }
 
     @Override
