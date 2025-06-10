@@ -89,6 +89,7 @@ public class AuthenticationAdapter {
     }
 
     public void clear() {
+        tokenService.clearBlacklist();
         authRepository.clear();
         logger.info("Authentication adapter cleared");
     }
