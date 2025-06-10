@@ -1,5 +1,6 @@
 package com.sadna_market.market.DomainLayer.DomainServices;
 
+import com.sadna_market.market.ApplicationLayer.Requests.CartRequest;
 import com.sadna_market.market.DomainLayer.*;
 import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.InfrastructureLayer.Payment.PaymentMethod;
@@ -182,6 +183,40 @@ public class UserAccessService {
         try {
             User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
             user.login(username,password);
+            userRepository.update(user);
+            logger.info("User {} logged in successfully", username);
+        }
+        catch (Exception e) {
+            logger.error("Failed to login user: {}", username);
+            throw new RuntimeException("Failed to login user: " + username);
+        }
+    }
+
+    public void loginUser(String username, String password, Cart cart) {
+        try {
+            User user = userRepository.findByUsername(username).orElseThrow(()-> new IllegalArgumentException("user not found!"));
+            user.login(username,password);
+            try {
+                Map<UUID, ShoppingBasket> shopBaskets = cart.getShoppingBaskets();
+                for (Map.Entry<UUID, ShoppingBasket> entry : shopBaskets.entrySet()) {
+                    UUID storeId = entry.getKey();
+                    ShoppingBasket basket = entry.getValue();
+                    logger.info("Shopping basket for user {} is {}", username, storeId);
+                    for (Map.Entry<UUID, Integer> productEntry : basket.getProducts().entrySet()) {
+                        UUID productId = productEntry.getKey();
+                        int quantity = productEntry.getValue();
+                        if(storeRepository.hasProductInStock(storeId, productId, quantity)) {
+                            Cart updatedCart = user.addToCart(storeId, productId, quantity);
+                            userRepository.update(user);
+                            logger.info("Product added to cart successfully for user: {}", username);
+                            logger.info("Current Cart: {}", updatedCart.toString());
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                logger.error("Failed to add some of the products to cart: {}", e.getMessage());
+            }
             userRepository.update(user);
             logger.info("User {} logged in successfully", username);
         }

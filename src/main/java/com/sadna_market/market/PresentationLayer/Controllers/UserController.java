@@ -69,6 +69,22 @@ public class UserController {
     }
 
     /**
+     * Login a user with guest cart and get authentication token
+     */
+    @PostMapping("/login-cart")
+    public ResponseEntity<Response<String>> loginUser(
+            @RequestParam String username,
+            @RequestParam String password,
+            @RequestBody CartRequest cart) {
+
+        Response<String> response = userService.loginUser(username, password,cart);
+
+        return response.isError()
+                ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response)
+                : ResponseEntity.ok(response);
+    }
+
+    /**
      * Logout a user
      */
     @PostMapping("/{username}/logout")
