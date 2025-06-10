@@ -116,8 +116,8 @@ class StoreFounderUnitTest {
         );
 
         // Verify exception message
-        assertTrue(exception.getMessage().contains("can't remove"),
-                "Exception message should mention that permissions can't be removed");
+        assertTrue(exception.getMessage().contains("cannot be removed"),
+                "Exception message should mention that permissions cannot be removed");
 
         System.out.println("removePermission correctly rejected with message: " + exception.getMessage());
     }

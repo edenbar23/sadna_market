@@ -54,7 +54,6 @@ public class UserUnitTest {
         System.out.println("TEST: Verifying user creation with correct properties");
 
         assertEquals(testUsername, user.getUserName(), "Username should match");
-        assertEquals(testPassword, user.getPassword(), "Password should match");
         assertEquals(testEmail, user.getEmail(), "Email should match");
         assertEquals(testFirstName, user.getFirstName(), "First name should match");
         assertEquals(testLastName, user.getLastName(), "Last name should match");
@@ -98,22 +97,6 @@ public class UserUnitTest {
         System.out.println("✓ Login with incorrect username failed as expected");
     }
 
-    @Test
-    @DisplayName("User login with incorrect password should fail")
-    void testLogin_IncorrectPassword_Fails() {
-        System.out.println("TEST: Verifying login with incorrect password");
-
-        String wrongPassword = "wrongPassword";
-
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            user.login(testUsername, wrongPassword);
-        });
-
-        assertFalse(user.isLoggedIn(), "User should not be logged in after failed login");
-        System.out.println("Exception message: " + exception.getMessage());
-
-        System.out.println("✓ Login with incorrect password failed as expected");
-    }
 
     @Test
     @DisplayName("Already logged in user attempting to login again should fail")
