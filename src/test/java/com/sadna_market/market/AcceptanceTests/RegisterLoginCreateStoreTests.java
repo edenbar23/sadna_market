@@ -22,9 +22,9 @@ import java.util.UUID;
         HibernateJpaAutoConfiguration.class,
         JpaRepositoriesAutoConfiguration.class
 })
-public class RegistrationAndLoginTests {
+public class RegisterLoginCreateStoreTests {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegistrationAndLoginTests.class);
+    private static final Logger logger = LoggerFactory.getLogger(RegisterLoginCreateStoreTests.class);
     @Autowired
     private Bridge bridge;
     @AfterEach
@@ -172,5 +172,95 @@ public class RegistrationAndLoginTests {
         Assertions.assertNotNull(logoutResponse, "Logout response should not be null");
         Assertions.assertTrue(logoutResponse.isError(), "Logout with mismatched token should fail");
         Assertions.assertNotNull(logoutResponse.getErrorMessage(), "Error message should not be null");
+    }
+
+// Store Creation
+    @Test
+    void storeCreationTest() {
+        String ownerUsername = "storeowner";
+        String ownerPassword = "Password123!";
+        RegisterRequest registerRequest = new RegisterRequest(
+                ownerUsername,
+                ownerPassword,
+                ownerUsername + "@example.com",
+                "Owner",
+                "User"
+        );
+        Response<String> registerResponse = bridge.registerUser(registerRequest);
+        Assertions.assertFalse(registerResponse.isError(), "Store owner registration should succeed");
+
+        Response<String> loginResponse = bridge.loginUser(ownerUsername, ownerPassword);
+        Assertions.assertFalse(loginResponse.isError(), "Store owner login should succeed");
+        String ownerToken = loginResponse.getData();
+
+        StoreRequest storeRequest = new StoreRequest(
+                "My Test Store",
+                "Just a test store",
+                "Somewhere",
+                "store@example.com",
+                "123-456-7890",
+                ownerUsername
+        );
+        Response<?> storeResponse = bridge.createStore(ownerUsername, ownerToken, storeRequest);
+
+        Assertions.assertNotNull(storeResponse, "Store creation response should not be null");
+        Assertions.assertFalse(storeResponse.isError(), "Store creation should succeed");
+    }
+
+    @Test
+    void storeCreationByLoggedOutUserFailsTest() {
+        String username = "logoutowner";
+        String password = "Password123!";
+
+        // Register and login
+        bridge.registerUser(new RegisterRequest(
+                username, password, username + "@example.com", "Log", "Out"
+        ));
+        String token = bridge.loginUser(username, password).getData();
+
+        // Logout the user
+        bridge.logout(username, token);
+
+        // Try to create a store with logged out token
+        StoreRequest storeRequest = new StoreRequest(
+                "Store by LoggedOut", "Desc", "Addr", "email@example.com", "123456", username
+        );
+
+        Response<?> response = bridge.createStore(username, token, storeRequest);
+        Assertions.assertTrue(response.isError(), "Logged-out user should not be able to create a store");
+    }
+
+    @Test
+    void storeCreationWithoutNameFailsTest() {
+        String username = "nonameuser";
+        String password = "Password123!";
+
+        bridge.registerUser(new RegisterRequest(
+                username, password, username + "@example.com", "No", "Name"
+        ));
+        String token = bridge.loginUser(username, password).getData();
+        StoreRequest storeRequest = new StoreRequest(
+                "", "Desc", "Address", "store@example.com", "123456", username
+        );
+        Response<?> response = bridge.createStore(username, token, storeRequest);
+        Assertions.assertTrue(response.isError(), "Store creation without name should fail");
+    }
+
+    @Test
+    void duplicateStoreNameFailsIfNotAllowedTest() {
+        String username = "dupstoreuser";
+        String password = "Password123!";
+
+        bridge.registerUser(new RegisterRequest(username, password, username + "@example.com", "Dup", "User"));
+        String token = bridge.loginUser(username, password).getData();
+        StoreRequest storeRequest = new StoreRequest(
+                "Unique Store", "Desc", "Address", "store@example.com", "123456", username
+        );
+
+        Response<?> firstResponse = bridge.createStore(username, token, storeRequest);
+        Assertions.assertFalse(firstResponse.isError(), "First store creation should succeed");
+
+        Response<?> secondResponse = bridge.createStore(username, token, storeRequest);
+        Assertions.assertTrue(secondResponse.isError(), "Second store creation with same name should fail");
     }
 }
