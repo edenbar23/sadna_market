@@ -20,7 +20,7 @@ guest-registration(u6, *Password123!*, *u6@market.com*, *User*, *Six*);
 login(u2, *Password123!*);
 
 # Step 3: Open store s1 with u2
-open-shop(u2, *s1*, *Store s1 - Sample store created during initialization*, "123 Market Street, Sample City, SC 12345", s1@market.com, *555-STORE-01*);
+open-shop(u2, *s1*, *Store s1 - Sample store created during initialization*, *123 Market Street Sample City SC 12345*, s1@market.com, *555-STORE-01*);
 
 # Step 4: Add Bamba product to store s1 by u2 with price 30 and quantity 20
 add-product(u2, *s1*, *Bamba*, *Delicious peanut snack - crispy and tasty*, *Snacks*, 30.0, 20);

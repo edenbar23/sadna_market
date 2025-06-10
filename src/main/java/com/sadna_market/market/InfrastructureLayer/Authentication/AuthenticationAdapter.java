@@ -18,7 +18,7 @@ public class AuthenticationAdapter {
     public AuthenticationAdapter(IAuthRepository authRepository, TokenService tokenService) {
         this.authRepository = authRepository;
         this.tokenService = tokenService;
-        logger.info("AuthenticationBridge initialized");
+        logger.info("AuthenticationAdapter initialized");
     }
 
     public String createUserSessionToken(String username, String password) {
@@ -35,6 +35,7 @@ public class AuthenticationAdapter {
         authRepository.login(username, password);
         // If login was successful (no exception thrown), generate a token
         String token = tokenService.generateToken(username);
+        authRepository.saveUserToken(username, token);
         logger.info("Authentication successful, token generated for user: {}", username);
         return token;
     }
@@ -71,19 +72,24 @@ public class AuthenticationAdapter {
             logger.error("Token does not belong to user: {}", username);
             throw new IllegalArgumentException("Invalid token");
         }
+
+        String storedToken = authRepository.getUserToken(username);
+        if (storedToken != null && !storedToken.equals(jwt)) {
+            logger.error("Token doesn't match stored token for user: {}", username);
+            throw new IllegalArgumentException("Token doesn't match stored token");
+        }
     }
 
     public void logout(String username, String token) {
         logger.info("Logging out user: {}", username);
         // Add token to blacklist to invalidate it
         tokenService.invalidateToken(token);
-
-
+        authRepository.clearUserToken(username);
         // UserAccessService will mark the user as logged out
     }
 
     public void clear() {
         authRepository.clear();
-        logger.info("Authentication bridge cleared");
+        logger.info("Authentication adapter cleared");
     }
 }
