@@ -3,7 +3,7 @@ import "../index.css";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
-export default function LoginBanner({ onClose }) {
+export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   const { login, loading, error } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -21,11 +21,34 @@ export default function LoginBanner({ onClose }) {
     } catch (err) {
       console.error("Login failed:", err);
     }
+  }
+
+  const handleLoginClick = async () => {
+    if (!username.trim() || !password.trim()) return;
+
+    try {
+      if (onLoginWithCart) {
+        // use fallback to local login if needed
+        await onLoginWithCart(username, password, async (u, p) => {
+          await login(u, p);
+        });
+      } else if (onLogin) {
+        await onLogin(username, password);
+      } else {
+        await login(username, password);
+      }
+
+      onClose(); // Close the banner
+      navigate("/"); // Go home or refresh
+    } catch (err) {
+      console.error("Login failed:", err);
+      // Error is already handled by `useAuth`, no need to set local error state
+    }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleLogin();
+    if (e.key === "Enter") {
+      handleLoginClick();
     }
   };
 
@@ -49,7 +72,7 @@ export default function LoginBanner({ onClose }) {
           />
           <button
               className="login-btn"
-              onClick={handleLogin}
+              onClick={handleLoginClick}
               disabled={loading}
           >
             {loading ? "Logging in..." : "Submit"}
