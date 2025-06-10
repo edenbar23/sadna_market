@@ -9,7 +9,11 @@ import com.sadna_market.market.InfrastructureLayer.ExternalAPI.DummyExternalAPIC
 import com.sadna_market.market.InfrastructureLayer.ExternalAPI.ExternalAPIException;
 import com.sadna_market.market.InfrastructureLayer.Payment.CreditCardDTO;
 import com.sadna_market.market.InfrastructureLayer.Payment.MockExternalPaymentAPI;
+import com.sadna_market.market.InfrastructureLayer.Supply.ExternalSupplyAPI;
 import com.sadna_market.market.InfrastructureLayer.Supply.PickupDTO;
+import com.sadna_market.market.InfrastructureLayer.Supply.ShipmentDetails;
+import com.sadna_market.market.InfrastructureLayer.Supply.StandardShippingDTO;
+
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -24,6 +28,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @SpringBootTest
@@ -36,6 +41,8 @@ import java.util.UUID;
 public class UserTests {
     @MockBean
     private MockExternalPaymentAPI mockExternalPaymentAPI;
+    @MockBean
+    private ExternalSupplyAPI mockSupplyAPI;
     @Autowired
     private Bridge bridge;
     ObjectMapper objectMapper = new ObjectMapper();
@@ -343,51 +350,6 @@ public class UserTests {
     }
 
     // CART PURCHASE TESTS
-
-        // External Payment System
-    @Test
-    void testFailsWhenPaymentSystemDown() throws ExternalAPIException {
-        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
-            Mockito.anyString(),
-            Mockito.anyString(),
-            Mockito.anyString(),
-            Mockito.anyString(),
-            Mockito.anyDouble()
-        )).thenReturn(-1);
-    
-        // Add to cart first
-        bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
-    
-        CreditCardDTO creditCard = new CreditCardDTO("4111111111111111", "John Doe", "12/25", "123");
-        PickupDTO pickup = new PickupDTO("Test Store Location", "Pickup123");
-    
-        CheckoutRequest checkoutRequest = new CheckoutRequest();
-        checkoutRequest.setPaymentMethod(creditCard);
-        checkoutRequest.setShippingAddress("123 Test Street, Test City");
-        checkoutRequest.setSupplyMethod(pickup);
-    
-        Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
-    
-        Assertions.assertTrue(response.isError(), "Expected failure due to payment system down");
-        Assertions.assertTrue(response.getErrorMessage().toLowerCase().contains("external"));
-    }
-        
-    @Test
-    void testFailsWhenPaymentServiceThrowsException() throws Exception {
-        // Simulate a network or processing exception
-        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyDouble()
-        )).thenThrow(new ExternalAPIException("Payment system down"));
-
-        CheckoutRequest checkoutRequest = new CheckoutRequest();
-
-        Response<CheckoutResultDTO> result = bridge.processUserCheckout(
-                testUsername, testToken, checkoutRequest)
-        ;
-
-        Assertions.assertTrue(result.isError());
-    }
 
     @Test
         //@DisplayName("Valid purchase of user cart")
@@ -1039,5 +1001,103 @@ public class UserTests {
         Assertions.assertNotNull(reviewResponse, "Review response should not be null");
         Assertions.assertTrue(reviewResponse.isError(), "Reviewing while logged out should fail");
         Assertions.assertNotNull(reviewResponse.getErrorMessage(), "Response should contain error message");
+    }
+
+    // External Payment System
+        // Payment
+    @Test
+    void testFailsWhenPaymentSystemDown() throws ExternalAPIException {
+        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyDouble()
+        )).thenReturn(-1);
+    
+        // Add to cart first
+        bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
+    
+        CreditCardDTO creditCard = new CreditCardDTO("4111111111111111", "John Doe", "12/25", "123");
+        PickupDTO pickup = new PickupDTO("Test Store Location", "Pickup123");
+    
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+        checkoutRequest.setPaymentMethod(creditCard);
+        checkoutRequest.setShippingAddress("123 Test Street, Test City");
+        checkoutRequest.setSupplyMethod(pickup);
+    
+        Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, checkoutRequest);
+    
+        Assertions.assertTrue(response.isError(), "Expected failure due to payment system down");
+        Assertions.assertTrue(response.getErrorMessage().toLowerCase().contains("external"));
+    }
+        
+    @Test
+    void testFailsWhenPaymentServiceThrowsException() throws Exception {
+        // Simulate a network or processing exception
+        Mockito.when(mockExternalPaymentAPI.sendCreditCardPayment(
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyDouble()
+        )).thenThrow(new ExternalAPIException("Payment system down"));
+
+        CheckoutRequest checkoutRequest = new CheckoutRequest();
+
+        Response<CheckoutResultDTO> result = bridge.processUserCheckout(
+                testUsername, testToken, checkoutRequest)
+        ;
+
+        Assertions.assertTrue(result.isError());
+    }
+
+        // Supply
+
+    @Test
+    void userCheckoutSucceedsWhenSupplySucceeds() throws ExternalAPIException {
+        // simulate valid shipping transaction
+        Mockito.when(mockSupplyAPI.registerPickupRequest(
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any(),
+                Mockito.anyDouble()))
+            .thenReturn(55555);
+
+        Response<String> addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addResponse.isError(), "Adding product should succeed");
+        CreditCardDTO creditCard = new CreditCardDTO("4111111111111111", "John Doe", "12/25", "123");
+        PickupDTO pickup = new PickupDTO("Store Location", "Pickup123");
+    
+        CheckoutRequest request = new CheckoutRequest();
+        request.setPaymentMethod(creditCard);
+        request.setSupplyMethod(pickup);
+        request.setShippingAddress("123 Test Street");
+        Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, request);
+        Assertions.assertFalse(response.isError(), "Checkout should succeed when supply works");
+        Assertions.assertNotNull(response.getData(), "Purchase result should not be null");
+    }
+        
+
+    @Test
+    void userCheckoutFailsWhenSupplyFails() throws ExternalAPIException {
+        // simulate supply failure
+        Mockito.when(mockSupplyAPI.registerPickupRequest(
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any(),
+                Mockito.anyDouble()))
+            .thenReturn(-1);
+
+        Response<String> addResponse = bridge.addProductToUserCart(testUsername, testToken, storeId, productId, PRODUCT_QUANTITY);
+        Assertions.assertFalse(addResponse.isError(), "Adding product should succeed");
+        CreditCardDTO creditCard = new CreditCardDTO("4111111111111111", "John Doe", "12/25", "123");
+        PickupDTO pickup = new PickupDTO("Store Location", "Pickup123");
+
+        CheckoutRequest request = new CheckoutRequest();
+        request.setPaymentMethod(creditCard);
+        request.setSupplyMethod(pickup);
+        request.setShippingAddress("123 Test Street");
+
+        Response<CheckoutResultDTO> response = bridge.processUserCheckout(testUsername, testToken, request);
+        Assertions.assertTrue(response.isError(), "Checkout should fail if supply fails");
+        Assertions.assertTrue(response.getErrorMessage().toLowerCase().contains("external"), "Error message should mention supply");
     }
 }
