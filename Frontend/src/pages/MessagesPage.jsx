@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/messages.css";
 import { useAuthContext } from "../context/AuthContext";
 import { getUserMessages, getUserStoreConversation, sendMessage, replyToMessage, markMessageAsRead } from "../api/message";
-import { fetchStoreById } from "../api/store";
+import { fetchAllStores, fetchStoreById } from "../api/store";
 
 export default function MessagesPage() {
   const { user, token } = useAuthContext();
@@ -14,11 +14,47 @@ export default function MessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
+  const [stores, setStores] = useState([]);
+  const [isLoadingStores, setIsLoadingStores] = useState(false);
 
   // Debug: Component render counter
   const renderRef = React.useRef(0);
   renderRef.current += 1;
   console.log(`🔄 MessagesPage render #${renderRef.current}`);
+
+  // Load all stores when component mounts or when new form is shown
+  useEffect(() => {
+    const loadStores = async () => {
+      if (!token) return;
+
+      setIsLoadingStores(true);
+      try {
+        console.log("🏪 Fetching all stores...");
+        const response = await fetchAllStores(token);
+        console.log("🏪 fetchAllStores response:", response);
+
+        if (response && Array.isArray(response.data)) {
+          setStores(response.data);
+          console.log(`📊 Loaded ${response.data.length} stores`);
+        } else if (response && Array.isArray(response)) {
+          setStores(response);
+          console.log(`📊 Loaded ${response.length} stores`);
+        } else {
+          console.warn("⚠️ Unexpected stores response format:", response);
+          setStores([]);
+        }
+      } catch (err) {
+        console.error("❌ Failed to load stores:", err);
+        setStores([]);
+      } finally {
+        setIsLoadingStores(false);
+      }
+    };
+
+    if (showNewForm) {
+      loadStores();
+    }
+  }, [showNewForm, token]);
 
   // Load user messages when component mounts
   useEffect(() => {
@@ -224,7 +260,7 @@ export default function MessagesPage() {
 
       console.log(`🔄 Updating conversations state at ${timestamp}`);
       setConversations(prevConversations => {
-        console.log(`📊 Previous conversations:`, prevConversations.length);
+        console.log("📊 Previous conversations:", prevConversations.length);
         const updated = prevConversations.map((conv) =>
             conv.id === selectedConv.id
                 ? {
@@ -234,8 +270,8 @@ export default function MessagesPage() {
                 : conv
         );
 
-        console.log(`📊 Updated conversations:`, updated.length);
-        console.log(`💬 Updated selected conv messages count:`,
+        console.log("📊 Updated conversations:", updated.length);
+        console.log("💬 Updated selected conv messages count:",
             updated.find(c => c.id === selectedConv.id)?.messages.length
         );
 
@@ -278,15 +314,21 @@ export default function MessagesPage() {
           token
       );
 
-      // Try to get the store name
+      // Find the store name from the stores list
       let storeName = `Store ${to.substring(0, 8)}...`;
-      try {
-        const storeResponse = await fetchStoreById(to);
-        if (storeResponse && storeResponse.name) {
-          storeName = storeResponse.name;
+      const selectedStore = stores.find(store => store.storeId === to);
+      if (selectedStore && selectedStore.name) {
+        storeName = selectedStore.name;
+      } else {
+        // Fallback: try to get the store name via API
+        try {
+          const storeResponse = await fetchStoreById(to);
+          if (storeResponse && storeResponse.name) {
+            storeName = storeResponse.name;
+          }
+        } catch (err) {
+          console.error("Failed to fetch store name:", err);
         }
-      } catch (err) {
-        console.error("Failed to fetch store name:", err);
       }
 
       // Create a new conversation object
@@ -430,10 +472,10 @@ export default function MessagesPage() {
                   {selectedConv.messages.map((msg, idx) => (
                       <div key={msg.id} className={`message ${msg.sender}`}>
                         <div className="message-content">
-                          <span className="sender">
-                            {msg.sender === "user" ? "You" :
-                                msg.isReply ? (msg.replyAuthor || "Store") : selectedConv.with}
-                          </span>
+                    <span className="sender">
+                      {msg.sender === "user" ? "You" :
+                          msg.isReply ? (msg.replyAuthor || "Store") : selectedConv.with}
+                    </span>
                           <span className="message-text">{msg.text}</span>
                           <span className="time">{msg.time}</span>
                         </div>
@@ -474,12 +516,21 @@ export default function MessagesPage() {
                 </select>
               </label>
               <label>
-                Store ID:
-                <input
+                Store:
+                <select
                     value={newFormData.to}
                     onChange={(e) => setNewFormData({ ...newFormData, to: e.target.value })}
-                    placeholder="Enter store ID"
-                />
+                    disabled={isLoadingStores}
+                >
+                  <option value="">
+                    {isLoadingStores ? "Loading stores..." : "Select a store"}
+                  </option>
+                  {stores.map((store) => (
+                      <option key={store.storeId} value={store.storeId}>
+                        {store.name}
+                      </option>
+                  ))}
+                </select>
               </label>
               <label>
                 Message:
