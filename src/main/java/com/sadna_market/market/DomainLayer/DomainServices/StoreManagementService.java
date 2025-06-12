@@ -35,34 +35,12 @@ public class StoreManagementService {
     @PostConstruct
     public void subscribeToEvents() {
         // Subscribe to store-related events
-        DomainEventPublisher.subscribe(StoreCreatedEvent.class, this::handleStoreCreated);
-        DomainEventPublisher.subscribe(StoreClosedEvent.class, this::handleStoreClosed);
-        DomainEventPublisher.subscribe(StoreReopenedEvent.class, this::handleStoreReopened);
+        //DomainEventPublisher.subscribe(StoreClosedEvent.class, this::handleStoreClosed);
+        //DomainEventPublisher.subscribe(StoreReopenedEvent.class, this::handleStoreReopened);
 
-        logger.info("StoreManagementService subscribed to events");
+       // logger.info("StoreManagementService subscribed to events");
     }
 
-    /**
-     * Event handler for StoreCreatedEvent
-     */
-    private void handleStoreCreated(StoreCreatedEvent event) {
-        logger.info("Handling store creation event for store: {}", event.getStoreName());
-
-        try {
-            createStore(
-                    event.getFounderUsername(),
-                    event.getStoreName(),
-                    event.getDescription(),
-                    event.getAddress(),
-                    event.getEmail(),
-                    event.getPhone()
-            );
-
-            logger.info("Store created successfully through event handler");
-        } catch (Exception e) {
-            logger.error("Error handling store creation event: {}", e.getMessage(), e);
-        }
-    }
 
     /**
      * Event handler for StoreClosedEvent
