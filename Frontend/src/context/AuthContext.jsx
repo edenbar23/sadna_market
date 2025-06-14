@@ -128,51 +128,39 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await userAPI.loginUser(username, password);
 
-      if (response && response.data) {
-        const tokenValue = response.data;
-
-        // Immediately validate the new token by fetching user info
-        const userInfoResponse = await userAPI.returnInfo(username, tokenValue);
-
-        if (userInfoResponse && userInfoResponse.data) {
-          // FIXED: Create user object with proper admin field from backend
-          const userObject = {
-            username,
-            token: tokenValue,
-            isAdmin: userInfoResponse.data.admin, // Use isAdmin from UserDTO
-            stores: userInfoResponse.data.stores || [],
-            // Keep additional user info
-            email: userInfoResponse.data.email,
-            firstName: userInfoResponse.data.firstName,
-            lastName: userInfoResponse.data.lastName,
-            isLoggedIn: userInfoResponse.data.loggedin
-          };
-
-          setToken(tokenValue);
-          setUser(userObject);
-
-          // UPDATED: Security audit on login to check for payment data integrity
-          try {
-            const auditResult = creditCardStorage.securityAudit();
-            console.log(`Payment security audit completed: ${auditResult} storage keys found`);
-
-            // Verify user can access their own payment data
-            const userCards = creditCardStorage.getSavedCards(username);
-            console.log(`User ${username} has ${userCards.length} saved payment methods`);
-          } catch (auditError) {
-            console.warn('Payment security audit failed:', auditError);
-          }
-
-          return response;
-        } else {
-          throw new Error('Failed to validate login');
-        }
-      } else {
+      if (!response || !response.data) {
         throw new Error('Invalid response from server');
       }
+
+      const tokenValue = response.data;
+
+      // Immediately validate the new token by fetching user info
+      const userInfoResponse = await userAPI.returnInfo(username, tokenValue);
+
+      if (!userInfoResponse || !userInfoResponse.data) {
+        throw new Error('Failed to validate login');
+      }
+
+      // Create user object with proper admin field from backend
+      const userObject = {
+        username,
+        token: tokenValue,
+        isAdmin: userInfoResponse.data.admin,
+        stores: userInfoResponse.data.stores || [],
+        email: userInfoResponse.data.email,
+        firstName: userInfoResponse.data.firstName,
+        lastName: userInfoResponse.data.lastName,
+        isLoggedIn: userInfoResponse.data.loggedin
+      };
+
+      setToken(tokenValue);
+      setUser(userObject);
+
+      return response;
     } catch (err) {
       console.error('Login failed:', err);
       clearAuth();
+      // Propagate the error message
       throw err;
     }
   }, [clearAuth]);

@@ -43,13 +43,23 @@ export default function StoreControlPanel({ store, onUpdate, user }) {
             return;
         }
 
+        if (newStoreName === store.name) {
+            setLocalError("New name must be different from current name");
+            return;
+        }
+
         try {
-            await handleUpdateStore(storeId, { ...store, name: newStoreName });
+            const result = await handleUpdateStore(storeId, { name: newStoreName });
+            if (result.error) {
+                setLocalError(result.error);
+                return;
+            }
             setIsRenaming(false);
             // Call the onUpdate function to refresh the list of stores
             if (onUpdate) onUpdate();
         } catch (err) {
-            setLocalError("Failed to rename store");
+            console.error("Rename error:", err);
+            setLocalError(err.message || err.errorMessage || "Failed to rename store");
         }
     };
 
