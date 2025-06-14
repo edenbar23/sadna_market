@@ -577,4 +577,38 @@ public class StoreManagementService {
         Pattern pattern = Pattern.compile(emailRegex);
         return pattern.matcher(email).matches();
     }
+
+    /**
+     * Renames a store.
+     * Business rules:
+     * 1. Only store owners can rename the store
+     * 2. Store must be active
+     * 3. New name must be unique
+     */
+    public void renameStore(String username, UUID storeId, String newName) {
+        logger.debug("User '{}' attempting to rename store '{}' to '{}'", username, storeId, newName);
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+        if (!store.isActive()) {
+            logger.error("Store '{}' is not active", store.getName());
+            throw new StoreNotActiveException("Store is not active");
+        }
+
+        if (!store.isStoreOwner(username)) {
+            logger.error("User '{}' is not a store owner", username);
+            throw new InsufficientPermissionsException("Only store owners can rename the store");
+        }
+
+        if (storeRepository.findByName(newName).isPresent()) {
+            logger.error("Store name '{}' already exists", newName);
+            throw new StoreAlreadyExistsException("Store name already exists: " + newName);
+        }
+
+        store.rename(newName);
+        storeRepository.save(store);
+
+        logger.info("Store '{}' has been renamed to '{}' by '{}'", store.getName(), newName, username);
+    }
 }

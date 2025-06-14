@@ -414,5 +414,48 @@ public class StoreService {
         storeRepository.clear();
     }
 
+    /**
+     * Renames a store
+     * @param username The username of the user attempting to rename the store
+     * @param token The authentication token
+     * @param storeId The ID of the store to rename
+     * @param newName The new name for the store
+     * @return Response containing the updated store information
+     */
+    public Response<StoreDTO> renameStore(String username, String token, UUID storeId, String newName) {
+        logger.info("Renaming store {} to {} by user {}", storeId, newName, username);
+
+        try {
+            // Validate authentication
+            authentication.validateToken(username, token);
+
+            // Perform the rename operation
+            storeManagementService.renameStore(username, storeId, newName);
+
+            // Get updated store info
+            Store store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+
+            return Response.success(new StoreDTO(store));
+        } catch (StoreNotFoundException e) {
+            logger.error("Store not found: {}", e.getMessage());
+            return Response.error("Store not found");
+        } catch (StoreNotActiveException e) {
+            logger.error("Store is not active: {}", e.getMessage());
+            return Response.error("Store is not active");
+        } catch (InsufficientPermissionsException e) {
+            logger.error("Insufficient permissions: {}", e.getMessage());
+            return Response.error("You don't have permission to rename this store");
+        } catch (StoreAlreadyExistsException e) {
+            logger.error("Store name already exists: {}", e.getMessage());
+            return Response.error("A store with this name already exists");
+        } catch (InvalidStoreDataException e) {
+            logger.error("Invalid store data: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error renaming store: {}", e.getMessage());
+            return Response.error("Failed to rename store");
+        }
+    }
 
 }

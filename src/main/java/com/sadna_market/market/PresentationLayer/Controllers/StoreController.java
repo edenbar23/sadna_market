@@ -311,4 +311,24 @@ public class StoreController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Rename a store
+     */
+    @PutMapping("/{storeId}/rename")
+    public ResponseEntity<Response<StoreDTO>> renameStore(
+            @PathVariable UUID storeId,
+            @RequestHeader("Authorization") String token,
+            @RequestParam String username,
+            @RequestParam String newName) {
+
+        logger.info("Renaming store {} to {} by user {}", storeId, newName, username);
+        Response<StoreDTO> response = storeService.renameStore(username, token, storeId, newName);
+
+        if (response.isError()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        return ResponseEntity.ok(response);
+    }
 }
