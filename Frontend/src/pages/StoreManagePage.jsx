@@ -173,14 +173,22 @@ export default function StoreManagePage() {
 
             const formattedData = {
                 productId: productData.id,
-                name: productData.name,
-                description: productData.description || "",
-                category: productData.category || "",
+                name: productData.name.trim(),
+                description: productData.description?.trim() || "",
+                category: productData.category?.trim() || "",
                 price: parseFloat(productData.price),
-                quantity: parseInt(productData.quantity) || 1
+                imageUrl: productData.imageUrl?.trim() || ""
             };
 
-            const result = await handleUpdateProduct(formattedData, formattedData.quantity);
+            const quantity = parseInt(productData.quantity) || 1;
+
+            console.log('Submitting product update with data:', {
+                storeId,
+                formattedData,
+                quantity
+            });
+
+            const result = await handleUpdateProduct(formattedData, quantity);
 
             if (result && result.data) {
                 // Refresh products list
