@@ -4,6 +4,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthContext } from './context/AuthContext';
 import { CartProvider } from './context/CartContext.jsx';
+import LoginError from './components/LoginError';
 
 // Regular Pages
 import MainPage from "./pages/MainPage";
@@ -149,6 +150,9 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+
+                        {/* Login Error Route */}
+                        <Route path="/login-error" element={<LoginError />} />
 
                         {/* 404 Route */}
                         <Route path="*" element={<div>404 Not Found</div>} />

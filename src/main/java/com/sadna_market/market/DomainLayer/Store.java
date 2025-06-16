@@ -6,6 +6,7 @@ import java.util.*;
 import jakarta.persistence.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import com.sadna_market.market.DomainLayer.StoreExceptions.InvalidStoreDataException;
 
 @Entity
 @Table(name = "stores")
@@ -598,5 +599,17 @@ public class Store {
                 ", numberOfOwners=" + ownerUsernames.size() +
                 ", numberOfManagers=" + managerUsernames.size() +
                 '}';
+    }
+
+    public void rename(String newName) {
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new InvalidStoreDataException("Store name cannot be empty");
+        }
+        
+        if (newName.equals(this.name)) {
+            throw new InvalidStoreDataException("New name is the same as current name");
+        }
+        
+        this.name = newName.trim();
     }
 }

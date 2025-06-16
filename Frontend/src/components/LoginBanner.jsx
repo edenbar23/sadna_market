@@ -4,31 +4,24 @@ import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
-  const { login, loading, error } = useAuth();
+  const { login, loading } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      return; // Don't proceed if fields are empty
-    }
-
-    try {
-      await login(username, password);
-      onClose(); // Close banner on success
-      navigate("/"); // Refresh the current page to show logged-in state
-    } catch (err) {
-      console.error("Login failed:", err);
-    }
-  }
-
   const handleLoginClick = async () => {
-    if (!username.trim() || !password.trim()) return;
+    // Clear previous error
+    setError("");
+
+    // Validate inputs
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
+      return;
+    }
 
     try {
       if (onLoginWithCart) {
-        // use fallback to local login if needed
         await onLoginWithCart(username, password, async (u, p) => {
           await login(u, p);
         });
@@ -37,12 +30,11 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
       } else {
         await login(username, password);
       }
-
-      onClose(); // Close the banner
-      navigate("/"); // Go home or refresh
+      onClose();
+      navigate("/");
     } catch (err) {
-      console.error("Login failed:", err);
-      // Error is already handled by `useAuth`, no need to set local error state
+      console.log("Login error:", err);
+      setError("Invalid username or password. Please try again.");
     }
   };
 
@@ -53,33 +45,48 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   };
 
   return (
-      <div className="login-overlay">
-        <div className="login-banner">
-          <h2>Login</h2>
+    <div className="login-overlay">
+      <div className="login-banner">
+        <button className="close-btn" onClick={onClose}>✖</button>
+        <h2>Welcome Back!</h2>
+        {error && (
+          <div className="login-error-box">
+            <div className="error-icon">⚠️</div>
+            <div className="error-message">{error}</div>
+          </div>
+        )}
+        <div className="input-group">
           <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={handleKeyDown}
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setError(""); // Clear error when user types
+            }}
+            onKeyDown={handleKeyDown}
+            className={error ? "input-error" : ""}
           />
           <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKeyDown}
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(""); // Clear error when user types
+            }}
+            onKeyDown={handleKeyDown}
+            className={error ? "input-error" : ""}
           />
-          <button
-              className="login-btn"
-              onClick={handleLoginClick}
-              disabled={loading}
-          >
-            {loading ? "Logging in..." : "Submit"}
-          </button>
-          {error && <div className="error">{error}</div>}
-          <button className="close-btn" onClick={onClose}>✖</button>
         </div>
+        <button
+          className="login-btn"
+          onClick={handleLoginClick}
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Sign In"}
+        </button>
       </div>
+    </div>
   );
 }

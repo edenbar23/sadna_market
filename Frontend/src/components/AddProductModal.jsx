@@ -35,19 +35,57 @@ export default function AddProductModal({ storeId, onClose, onSubmit }) {
     const validateForm = () => {
         const newErrors = {};
 
+        // Name validation
         if (!productData.name.trim()) {
             newErrors.name = "Product name is required";
+        } else if (productData.name.trim().length < 2) {
+            newErrors.name = "Product name must be at least 2 characters long";
         }
 
-        if (!productData.price || isNaN(productData.price) || parseFloat(productData.price) <= 0) {
-            newErrors.price = "Valid price is required";
+        // Price validation
+        if (!productData.price) {
+            newErrors.price = "Price is required";
+        } else if (isNaN(productData.price) || parseFloat(productData.price) <= 0) {
+            newErrors.price = "Price must be a positive number";
+        } else if (parseFloat(productData.price) > 1000000) {
+            newErrors.price = "Price cannot exceed $1,000,000";
         }
 
-        if (!productData.quantity || isNaN(productData.quantity) || parseInt(productData.quantity) < 0) {
-            newErrors.quantity = "Valid quantity is required";
+        // Quantity validation
+        if (!productData.quantity) {
+            newErrors.quantity = "Quantity is required";
+        } else if (isNaN(productData.quantity) || parseInt(productData.quantity) < 0) {
+            newErrors.quantity = "Quantity must be a non-negative number";
+        } else if (parseInt(productData.quantity) > 10000) {
+            newErrors.quantity = "Quantity cannot exceed 10,000";
+        }
+
+        // Category validation (optional but with format check)
+        if (productData.category && productData.category.trim().length > 50) {
+            newErrors.category = "Category cannot exceed 50 characters";
+        }
+
+        // Description validation (optional but with length check)
+        if (productData.description && productData.description.trim().length > 500) {
+            newErrors.description = "Description cannot exceed 500 characters";
+        }
+
+        // Image URL validation (optional but with format check)
+        if (productData.imageUrl && !isValidUrl(productData.imageUrl)) {
+            newErrors.imageUrl = "Please enter a valid URL";
         }
 
         return newErrors;
+    };
+
+    // Helper function to validate URLs
+    const isValidUrl = (url) => {
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
     };
 
     const handleSubmit = async () => {
@@ -63,24 +101,22 @@ export default function AddProductModal({ storeId, onClose, onSubmit }) {
         try {
             // Format the data properly for the backend
             const formattedData = {
-                name: productData.name,
+                name: productData.name.trim(),
                 price: parseFloat(productData.price),
-                category: productData.category,
-                description: productData.description,
-                imageUrl: productData.imageUrl,
-                // We don't include a productId when creating a new product
+                category: productData.category.trim(),
+                description: productData.description.trim(),
+                imageUrl: productData.imageUrl.trim(),
+                quantity: parseInt(productData.quantity)
             };
 
-            // Make sure storeId is a valid UUID string before submitting
-            if (!storeId || storeId === "undefined") {
-                throw new Error("Invalid store ID");
-            }
-
-            await onSubmit(formattedData, parseInt(productData.quantity));
+            await onSubmit(formattedData, formattedData.quantity);
             onClose();
         } catch (error) {
             console.error("Error adding product:", error);
-            setErrors({ form: "Failed to add product. Please try again." });
+            setErrors({ 
+                form: error.message || "Failed to add product. Please check all fields and try again." 
+            });
+        } finally {
             setIsSubmitting(false);
         }
     };

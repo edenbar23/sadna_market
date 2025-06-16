@@ -142,17 +142,21 @@ export default function StoreManagePage() {
                 throw new Error("Invalid store ID");
             }
 
-            await handleAddProduct({
+            const result = await handleAddProduct({
                 ...productData,
                 productId: null // Ensure we don't send undefined as productId
             }, quantity);
 
-            // Refresh products list
-            await loadStoreData();
-            setShowAddProductModal(false);
+            if (result && result.data) {
+                // Refresh products list
+                await loadStoreData();
+                setShowAddProductModal(false);
+            } else {
+                throw new Error("Failed to add product: No response from server");
+            }
         } catch (err) {
             console.error("Failed to add product:", err);
-            // Handle error
+            alert(err.message || "Failed to add product. Please try again.");
         }
     };
 
@@ -167,18 +171,28 @@ export default function StoreManagePage() {
                 throw new Error("Invalid product ID");
             }
 
-            await handleUpdateProduct({
-                ...productData,
-                productId: productData.id // Ensure we set the correct productId field
-            }, productData.quantity);
+            const formattedData = {
+                productId: productData.id,
+                name: productData.name,
+                description: productData.description || "",
+                category: productData.category || "",
+                price: parseFloat(productData.price),
+                quantity: parseInt(productData.quantity) || 1
+            };
 
-            // Refresh products list
-            await loadStoreData();
-            setShowEditProductModal(false);
-            setSelectedProduct(null);
+            const result = await handleUpdateProduct(formattedData, formattedData.quantity);
+
+            if (result && result.data) {
+                // Refresh products list
+                await loadStoreData();
+                setShowEditProductModal(false);
+                setSelectedProduct(null);
+            } else {
+                throw new Error("Failed to update product: No response from server");
+            }
         } catch (err) {
             console.error("Failed to update product:", err);
-            // Handle error
+            alert(err.message || "Failed to update product. Please try again.");
         }
     };
 

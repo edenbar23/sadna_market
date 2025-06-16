@@ -105,13 +105,24 @@ export const createStore = async (storeData, token, username) => {
 };
 
 export const updateStore = async (storeId, storeData, token, username) => {
-  const response = await apiClient.put(`/stores/${storeId}`, {
-    ...storeData,
-    username
-  }, {
-    headers: { Authorization: token }
+  // If only the name is being updated, use the rename endpoint
+  if (Object.keys(storeData).length === 1 && storeData.name) {
+    const response = await apiClient.put(`/stores/${storeId}/rename`, null, {
+      headers: { Authorization: token },
+      params: { 
+        username: username,
+        newName: storeData.name 
+      }
+    });
+    return response;
+  }
+
+  // For other updates, use the general update endpoint
+  const response = await apiClient.put(`/stores/${storeId}`, storeData, {
+    headers: { Authorization: token },
+    params: { username }
   });
-  return response.data;
+  return response;
 };
 
 export const closeStore = async (storeId, token, username) => {

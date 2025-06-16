@@ -17,11 +17,265 @@
 @import './styles/store.css';
 @import './styles/store-manage.css';
 
-
-
+:root {
+  --primary-color: #FF6B6B;
+  --primary-hover: #FF5252;
+  --secondary-color: #4ECDC4;
+  --secondary-hover: #45B7AF;
+  --accent-color: #FFE66D;
+  --accent-hover: #FFD93D;
+  --danger-color: #FF4757;
+  --danger-hover: #FF2E44;
+  --success-color: #2ED573;
+  --success-hover: #26AE60;
+  --text-color: #2D3436;
+  --background-color: #F7F7F7;
+  --card-background: #FFFFFF;
+  --border-radius: 12px;
+  --box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s ease;
+}
 
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+/* Global Button Styles */
+button {
+  padding: 12px 24px;
+  border-radius: var(--border-radius);
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-hover);
+}
+
+/* Accent Button */
+.btn-accent {
+  background-color: var(--accent-color);
+  color: var(--text-color);
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Danger Button */
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-hover);
+}
+
+/* Success Button */
+.btn-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: var(--success-hover);
+}
+
+/* Login Form Styles */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-banner {
+  background: var(--card-background);
+  padding: 40px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  width: 90%;
+  max-width: 450px;
+  position: relative;
+  animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border: 2px solid var(--primary-color);
+}
+
+.login-banner h2 {
+  color: var(--text-color);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.login-banner input {
+  width: 100%;
+  padding: 16px;
+  margin: 12px 0;
+  border: 2px solid #E0E0E0;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  transition: var(--transition);
+  background-color: #F8F9FA;
+}
+
+.login-banner input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.1);
+  outline: none;
+  background-color: white;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 20px;
+  background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+}
+
+.login-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: rotate(90deg);
+}
+
+/* Error Styles */
+.login-error-box {
+  background: linear-gradient(45deg, var(--danger-color), #FF6B6B);
+  color: white;
+  padding: 16px;
+  margin: 16px 0;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);
+}
+
+.error-icon {
+  font-size: 24px;
+  animation: pulse 1s infinite;
+}
+
+.error-message {
+  font-size: 16px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.input-error {
+  border-color: var(--danger-color) !important;
+  background-color: #FFF5F5 !important;
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Notification Styles */
@@ -29,140 +283,41 @@ body {
   position: fixed;
   top: 20px;
   right: 20px;
-  padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  max-width: 400px;
+  padding: 16px 24px;
+  border-radius: var(--border-radius);
+  background: linear-gradient(45deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  box-shadow: var(--box-shadow);
+  z-index: 9999;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   animation: slideIn 0.3s ease-out;
+  max-width: 400px;
 }
 
-.notification.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.notification.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.notification.info {
-  background-color: #d1ecf1;
-  color: #0c5460;
-  border: 1px solid #bee5eb;
+.notification-content {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .notification-close {
   background: none;
   border: none;
-  font-size: 18px;
+  color: white;
+  font-size: 20px;
   cursor: pointer;
-  margin-left: 10px;
-  opacity: 0.7;
+  padding: 4px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: var(--transition);
 }
 
 .notification-close:hover {
   opacity: 1;
+  transform: rotate(90deg);
 }
-
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.modal-window {
-  background: white;
-  padding: 2rem 2.5rem;
-  border-radius: 16px;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 600px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.modal-title {
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.modal-textarea {
-  width: 100%;
-  height: 180px;
-  padding: 1rem;
-  font-size: 1.05rem;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.4;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-}
-
-.modal-send-btn,
-.modal-cancel-btn {
-  padding: 0.6rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.modal-send-btn {
-  background-color: #1e88e5;
-  color: white;
-}
-
-.modal-send-btn:hover {
-  background-color: #1565c0;
-}
-
-.modal-cancel-btn {
-  background-color: #e0e0e0;
-  color: #333;
-}
-
-.modal-cancel-btn:hover {
-  background-color: #ccc;
-}
-
-.modal-success {
-  color: green;
-  text-align: center;
-  font-weight: 500;
-}
-
-.modal-error {
-  color: red;
-  text-align: center;
-  font-weight: 500;
-}
-
 
 @keyframes slideIn {
   from {
@@ -173,4 +328,60 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Login Error Page Styles */
+.login-error-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-error-content {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.3s ease-out;
+  max-width: 400px;
+  width: 90%;
+}
+
+.login-error-content h1 {
+  color: #ff3333;
+  margin-bottom: 20px;
+  font-size: 28px;
+}
+
+.login-error-content p {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.return-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.return-btn:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
