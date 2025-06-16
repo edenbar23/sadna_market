@@ -114,6 +114,9 @@ export function useProductOperations(storeId, user) {
 
         try {
             const token = user.token || localStorage.getItem("authToken");
+            if (!token) {
+                throw new Error("Authentication token is required");
+            }
 
             console.log('Updating product with data:', {
                 storeId,
@@ -129,6 +132,10 @@ export function useProductOperations(storeId, user) {
                 token,
                 user.username
             );
+
+            if (!result) {
+                throw new Error("No response from server");
+            }
 
             console.log('Update product result:', result);
             return result;
