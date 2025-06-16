@@ -284,14 +284,83 @@ export const addProductToStore = async (storeId, productData, quantity, token, u
 };
 
 export const updateProduct = async (storeId, productData, quantity, token, username) => {
-  const response = await apiClient.put(`/products/store/${storeId}`,
-      productData,
+  console.log('API: Updating product with params:', {
+    storeId,
+    productData,
+    quantity,
+    username
+  });
+
+  // Validate inputs
+  if (!storeId) {
+    throw new Error('Store ID is required');
+  }
+  if (!productData) {
+    throw new Error('Product data is required');
+  }
+  if (!productData.productId) {
+    throw new Error('Product ID is required');
+  }
+  if (!productData.name || !productData.name.trim()) {
+    throw new Error('Product name is required');
+  }
+  if (!productData.price || isNaN(parseFloat(productData.price))) {
+    throw new Error('Valid product price is required');
+  }
+  if (!username || !username.trim()) {
+    throw new Error('Username is required');
+  }
+  if (!token) {
+    throw new Error('Authentication token is required');
+  }
+
+  try {
+    // Clean the product data
+    const cleanProductData = {
+      productId: productData.productId,
+      name: productData.name.trim(),
+      description: productData.description?.trim() || "",
+      category: productData.category?.trim() || "",
+      price: parseFloat(productData.price),
+      imageUrl: productData.imageUrl?.trim() || ""
+    };
+
+    const productQuantity = quantity && !isNaN(parseInt(quantity)) ? parseInt(quantity) : 1;
+
+    console.log('API: Sending clean data:', { cleanProductData, productQuantity });
+
+    const response = await apiClient.put(
+      `/products/store/${storeId}`,
+      cleanProductData,
       {
         headers: { Authorization: token },
-        params: { quantity, username }
+        params: { quantity: productQuantity, username: username.trim() }
       }
-  );
-  return response.data;
+    );
+
+    console.log('API: Update product response:', response);
+    return response;
+  } catch (error) {
+    console.error('API: Update product failed:', error);
+
+    // Extract meaningful error message
+    let errorMessage = 'Failed to update product';
+
+    if (error.response?.data?.errorMessage) {
+      errorMessage = error.response.data.errorMessage;
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data) {
+      errorMessage = JSON.stringify(error.response.data);
+    } else if (error.errorMessage) {
+      errorMessage = error.errorMessage;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    console.error('API: Extracted error message:', errorMessage);
+    throw new Error(errorMessage);
+  }
 };
 
 export const deleteProduct = async (storeId, productId, token, username) => {
