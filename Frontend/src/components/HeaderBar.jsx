@@ -33,54 +33,33 @@ function HeaderBar() {
 
   const handleLoginDecision = async (username, password, fallbackLogin) => {
     const hasGuestCartItems =
-        guestCart &&
-        guestCart.baskets &&
-        Object.values(guestCart.baskets).some((store) =>
-            Object.values(store).some((quantity) => quantity > 0)
-        );
+      guestCart &&
+      guestCart.baskets &&
+      Object.values(guestCart.baskets).some((store) =>
+        Object.values(store).some((quantity) => quantity > 0)
+      );
 
     if (hasGuestCartItems) {
       try {
-        // Convert guest cart to the format expected by backend
-        const cartRequest = {
-          baskets: guestCart.baskets // This should match CartRequest structure
-        };
-
-        console.log("Sending cart data to backend:", cartRequest);
-
+        const cartRequest = { baskets: guestCart.baskets };
         const response = await loginUserCart(username, password, cartRequest);
 
-        // Check if login was successful and we got a token
         if (!response.error && response.data) {
-          const token = response.data; // The token is directly in response.data
-
-          // Create minimal user object (AuthContext will fetch full details)
-          const minimalUser = {
-            username,
-            token: token
-          };
-
-          // Save to localStorage
-          localStorage.setItem("token", token);
-          localStorage.setItem("user", JSON.stringify(minimalUser));
-
-          // Clear guest cart since it's been merged
-          // You might want to dispatch a cart clear action here
-
-          // Trigger storage event and reload - AuthContext will handle the rest
+          // Success: reload and close modal
           window.dispatchEvent(new Event("storage"));
           window.location.reload();
+          return response; // Success
         } else {
-          console.error("Login failed, response:", response);
-          alert("Login failed.");
+          // Failure: return response to modal, do NOT close modal
+          return response;
         }
       } catch (err) {
-        console.error("Login with cart failed:", err);
-        alert("Login failed: " + (err.message || "Unknown error"));
+        // Failure: return error to modal, do NOT close modal
+        return err;
       }
     } else {
       // Use fallback login if guest cart is empty
-      fallbackLogin(username, password);
+      return fallbackLogin(username, password);
     }
   };
 
