@@ -28,7 +28,13 @@ export const useAuth = () => {
       const response = await contextLogin(username, password);
       return response;
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Login failed');
+      setError(
+        err?.error ||
+        (typeof err === 'string' && err) ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Login failed'
+      );
       throw err;
     } finally {
       setLoading(false);
