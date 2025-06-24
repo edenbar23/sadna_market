@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../styles/components.css";
 import { rateProduct } from "../api/product";
 import { useAuthContext } from "../context/AuthContext";
+import ErrorAlert from "./ErrorAlert";
 
 export default function OrderCard({ order }) {
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -9,6 +10,7 @@ export default function OrderCard({ order }) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [ratingError, setRatingError] = useState("");
 
   const { user, token } = useAuthContext();
 
@@ -34,12 +36,11 @@ export default function OrderCard({ order }) {
 
   const handleSubmitRating = async () => {
     if (rating === 0) {
-      alert('Please select a rating before submitting.');
+      setRatingError('Please select a rating before submitting.');
       return;
     }
-
     setIsSubmittingRating(true);
-
+    setRatingError("");
     try {
       const rateRequest = {
         productId: selectedProduct.productId,
@@ -48,30 +49,25 @@ export default function OrderCard({ order }) {
         comment: comment,
         username: user.username
       };
-
       const result = await rateProduct(rateRequest, token);
-      console.log('Product rating submitted successfully:', result);
-      
-      // Close modal and reset state
+      if (result && (result.error || (result.data && result.data.error))) {
+        setRatingError(result.error || result.data.error);
+        return;
+      }
       setShowRatingModal(false);
       setSelectedProduct(null);
       setRating(0);
       setComment("");
-      
-      // Show success message
       alert('Product rating submitted successfully!');
     } catch (error) {
       console.error('Failed to submit product rating:', error);
-      
-      // Show more specific error message based on error type
       let errorMessage = 'Failed to submit rating. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      alert(errorMessage);
+      setRatingError(errorMessage);
     } finally {
       setIsSubmittingRating(false);
     }
@@ -162,6 +158,7 @@ export default function OrderCard({ order }) {
                   rows="4"
                 />
               </div>
+              {ratingError && <ErrorAlert message={ratingError} onClose={() => setRatingError("")} />}
             </div>
             <div className="modal-footer">
               <button className="cancel-btn" onClick={handleCloseRatingModal}>
