@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../index.css";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import ErrorAlert from "./ErrorAlert";
 
 export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   const { login, loading } = useAuth();
@@ -11,31 +12,48 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   const navigate = useNavigate();
 
   const handleLoginClick = async () => {
-    // Clear previous error
     setError("");
-
-    // Validate inputs
     if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password");
       return;
     }
-
+    let response;
     try {
       if (onLoginWithCart) {
-        await onLoginWithCart(username, password, async (u, p) => {
-          await login(u, p);
+        response = await onLoginWithCart(username, password, async (u, p) => {
+          return await login(u, p);
         });
       } else if (onLogin) {
-        await onLogin(username, password);
+        response = await onLogin(username, password);
       } else {
-        await login(username, password);
+        response = await login(username, password);
       }
-      onClose();
-      navigate("/");
     } catch (err) {
-      console.log("Login error:", err);
-      setError("Invalid username or password. Please try again.");
+      console.log("[LoginBanner] Login error object:", err);
+      let backendError =
+        (typeof err === 'string' && err) ||
+        err?.error ||
+        err?.response?.data?.error ||
+        err?.message;
+      console.log("[LoginBanner] Extracted backendError from error:", backendError);
+      if (!backendError) {
+        backendError = "Invalid username or password. Please try again.";
+      }
+      setError(backendError);
+      return;
     }
+    // Check for error in response (even if no error was thrown)
+    console.log("[LoginBanner] Login response object:", response);
+    let backendError = response?.error || response?.data?.error;
+    if (backendError) {
+      console.log("[LoginBanner] Extracted backendError from response:", backendError);
+      setError(backendError);
+      return;
+    }
+    // Only close and navigate if login succeeded
+    console.log("[LoginBanner] Login succeeded, closing modal and navigating home", response);
+    onClose();
+    navigate("/");
   };
 
   const handleKeyDown = (e) => {
@@ -50,10 +68,7 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
         <button className="close-btn" onClick={onClose}>✖</button>
         <h2>Welcome Back!</h2>
         {error && (
-          <div className="login-error-box">
-            <div className="error-icon">⚠️</div>
-            <div className="error-message">{error}</div>
-          </div>
+          <ErrorAlert message={error} onClose={() => setError("")} />
         )}
         <div className="input-group">
           <input
