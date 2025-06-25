@@ -12,13 +12,17 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   const navigate = useNavigate();
 
   const handleLoginClick = async () => {
+    // Clear previous error
     setError("");
+
+    // Validate inputs
     if (!username.trim() || !password.trim()) {
       setError("Please enter both username and password");
       return;
     }
-    let response;
+
     try {
+      let response;
       if (onLoginWithCart) {
         response = await onLoginWithCart(username, password, async (u, p) => {
           return await login(u, p);
@@ -28,32 +32,39 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
       } else {
         response = await login(username, password);
       }
-    } catch (err) {
-      console.log("[LoginBanner] Login error object:", err);
-      let backendError =
-        (typeof err === 'string' && err) ||
-        err?.error ||
-        err?.response?.data?.error ||
-        err?.message;
-      console.log("[LoginBanner] Extracted backendError from error:", backendError);
-      if (!backendError) {
-        backendError = "Invalid username or password. Please try again.";
+      // If the response has an error, show it and do not close/navigate
+      if (response && (response.error || (response.data && response.data.error))) {
+        const backendError = response.error || (response.data && response.data.error);
+        setError(backendError || "Invalid username or password. Please try again.");
+        return;
       }
-      setError(backendError);
-      return;
+      // Only close and navigate if login succeeded
+      console.log("[LoginBanner] Login succeeded, closing modal and navigating home", response);
+      onClose();
+      navigate("/");
+    } catch (err) {
+      console.log("Login error:", err);
+      let backendError = "";
+      if (err) {
+        if (typeof err === "string") {
+          backendError = err;
+        } else if (typeof err.errorMessage === "string") {
+          backendError = err.errorMessage;
+        } else if (typeof err.error === "string") {
+          backendError = err.error;
+        } else if (err.response && err.response.data && typeof err.response.data.errorMessage === "string") {
+          backendError = err.response.data.errorMessage;
+        } else if (err.response && err.response.data && typeof err.response.data.error === "string") {
+          backendError = err.response.data.error;
+        } else if (err.message) {
+          backendError = err.message;
+        } else {
+          backendError = JSON.stringify(err);
+        }
+      }
+      setError(backendError || "Invalid username or password. Please try again.");
+      // Do NOT close or navigate on error
     }
-    // Check for error in response (even if no error was thrown)
-    console.log("[LoginBanner] Login response object:", response);
-    let backendError = response?.error || response?.data?.error;
-    if (backendError) {
-      console.log("[LoginBanner] Extracted backendError from response:", backendError);
-      setError(backendError);
-      return;
-    }
-    // Only close and navigate if login succeeded
-    console.log("[LoginBanner] Login succeeded, closing modal and navigating home", response);
-    onClose();
-    navigate("/");
   };
 
   const handleKeyDown = (e) => {
