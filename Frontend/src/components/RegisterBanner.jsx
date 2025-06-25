@@ -56,6 +56,7 @@ export default function RegisterBanner({ onClose, onRegister }) {
     <div className="login-overlay">
       <div className="login-banner">
         <h2>Register</h2>
+        {errorMsg && <ErrorAlert message={errorMsg} onClose={() => setErrorMsg("")} />}
         <input
           type="text"
           placeholder="Username"
@@ -87,7 +88,6 @@ export default function RegisterBanner({ onClose, onRegister }) {
           onChange={(e) => setLastName(e.target.value)}
         />
 
-        {errorMsg && <ErrorAlert message={errorMsg} onClose={() => setErrorMsg("")} />}
         <button className="login-btn" onClick={handleSubmit} disabled={loading}>
           {loading ? "Registering..." : "Submit"}
         </button>
