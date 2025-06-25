@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import FiltersModal from "./FiltersModal";
 import { searchProducts } from "../api/product";
 import "../styles/components.css";
+import ErrorAlert from "./ErrorAlert";
 
 export default function SearchBar({ storeId }) {
   const [query, setQuery] = useState("");
@@ -15,6 +16,7 @@ export default function SearchBar({ storeId }) {
     maxRank: "",
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
@@ -31,9 +33,13 @@ export default function SearchBar({ storeId }) {
 
     try {
       const response = await searchProducts(searchRequest);
+      if (response.error || (response.data && response.data.error)) {
+        setError(response.error || response.data.error);
+        return;
+      }
       navigate(`/search`, { state: { results: response.data } });
     } catch (error) {
-      alert("Failed to fetch search results. Check the console.", error);
+      setError("Failed to fetch search results. Check the console.");
     }
   };
 
@@ -43,6 +49,7 @@ export default function SearchBar({ storeId }) {
 
   return (
       <div className="search-bar-container">
+        {error && <ErrorAlert message={error} onClose={() => setError("")} />}
         <input
             type="text"
             placeholder={storeId ? "Search products in this store..." : "Search products..."}

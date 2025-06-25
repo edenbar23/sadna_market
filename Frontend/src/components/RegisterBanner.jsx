@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../hooks/useAuth"; // Use the same hook
 import "../index.css";
+import ErrorAlert from "./ErrorAlert";
 
 export default function RegisterBanner({ onClose, onRegister }) {
   const [username, setUsername] = useState("");
@@ -8,6 +9,7 @@ export default function RegisterBanner({ onClose, onRegister }) {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { register, loading, error } = useAuth();
 
@@ -27,8 +29,26 @@ export default function RegisterBanner({ onClose, onRegister }) {
         onClose(); // Close the banner
       }
     } catch (err) {
-      // error is handled by useAuth, so no need to rethrow
       console.error("Registration failed:", err);
+      let backendError = "";
+      if (err) {
+        if (typeof err === "string") {
+          backendError = err;
+        } else if (typeof err.errorMessage === "string") {
+          backendError = err.errorMessage;
+        } else if (typeof err.error === "string") {
+          backendError = err.error;
+        } else if (err.response && err.response.data && typeof err.response.data.errorMessage === "string") {
+          backendError = err.response.data.errorMessage;
+        } else if (err.response && err.response.data && typeof err.response.data.error === "string") {
+          backendError = err.response.data.error;
+        } else if (err.message) {
+          backendError = err.message;
+        } else {
+          backendError = JSON.stringify(err);
+        }
+      }
+      setErrorMsg(backendError || "Registration failed. Please try again.");
     }
   };
 
@@ -36,6 +56,7 @@ export default function RegisterBanner({ onClose, onRegister }) {
     <div className="login-overlay">
       <div className="login-banner">
         <h2>Register</h2>
+        {errorMsg && <ErrorAlert message={errorMsg} onClose={() => setErrorMsg("")} />}
         <input
           type="text"
           placeholder="Username"
@@ -67,7 +88,6 @@ export default function RegisterBanner({ onClose, onRegister }) {
           onChange={(e) => setLastName(e.target.value)}
         />
 
-        {error && <p className="error-msg">{error}</p>}
         <button className="login-btn" onClick={handleSubmit} disabled={loading}>
           {loading ? "Registering..." : "Submit"}
         </button>

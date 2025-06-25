@@ -3,6 +3,7 @@ import HorizontalScrollList from "./HorizontalScrollList";
 import ProductCard from "./ProductCard";
 import { fetchTopProducts } from "../api/product";
 import "../index.css";
+import ErrorAlert from "./ErrorAlert";
 
 export default function TopProducts() {
   const [products, setProducts] = useState([]);
@@ -38,7 +39,7 @@ export default function TopProducts() {
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return <ErrorAlert message={error} onClose={() => setError(null)} />;
   }
 
   if (!products.length) {

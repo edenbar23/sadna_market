@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../index.css";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import ErrorAlert from "./ErrorAlert";
 
 export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
   const { login, loading } = useAuth();
@@ -21,20 +22,48 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
     }
 
     try {
+      let response;
       if (onLoginWithCart) {
-        await onLoginWithCart(username, password, async (u, p) => {
-          await login(u, p);
+        response = await onLoginWithCart(username, password, async (u, p) => {
+          return await login(u, p);
         });
       } else if (onLogin) {
-        await onLogin(username, password);
+        response = await onLogin(username, password);
       } else {
-        await login(username, password);
+        response = await login(username, password);
       }
+      // If the response has an error, show it and do not close/navigate
+      if (response && (response.error || (response.data && response.data.error))) {
+        const backendError = response.error || (response.data && response.data.error);
+        setError(backendError || "Invalid username or password. Please try again.");
+        return;
+      }
+      // Only close and navigate if login succeeded
+      console.log("[LoginBanner] Login succeeded, closing modal and navigating home", response);
       onClose();
       navigate("/");
     } catch (err) {
       console.log("Login error:", err);
-      setError("Invalid username or password. Please try again.");
+      let backendError = "";
+      if (err) {
+        if (typeof err === "string") {
+          backendError = err;
+        } else if (typeof err.errorMessage === "string") {
+          backendError = err.errorMessage;
+        } else if (typeof err.error === "string") {
+          backendError = err.error;
+        } else if (err.response && err.response.data && typeof err.response.data.errorMessage === "string") {
+          backendError = err.response.data.errorMessage;
+        } else if (err.response && err.response.data && typeof err.response.data.error === "string") {
+          backendError = err.response.data.error;
+        } else if (err.message) {
+          backendError = err.message;
+        } else {
+          backendError = JSON.stringify(err);
+        }
+      }
+      setError(backendError || "Invalid username or password. Please try again.");
+      // Do NOT close or navigate on error
     }
   };
 
@@ -50,10 +79,7 @@ export default function LoginBanner({ onClose, onLoginWithCart, onLogin }) {
         <button className="close-btn" onClick={onClose}>✖</button>
         <h2>Welcome Back!</h2>
         {error && (
-          <div className="login-error-box">
-            <div className="error-icon">⚠️</div>
-            <div className="error-message">{error}</div>
-          </div>
+          <ErrorAlert message={error} onClose={() => setError("")} />
         )}
         <div className="input-group">
           <input

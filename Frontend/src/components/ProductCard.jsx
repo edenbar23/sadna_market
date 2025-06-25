@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useCart } from "../hooks/useCart";
 import "../styles/components.css";
+import ErrorAlert from "./ErrorAlert";
 
 export default function ProductCard({ product }) {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export default function ProductCard({ product }) {
           >
             {addingToCart ? "Adding..." : "Add to Cart"}
           </button>
-          {error && <p className="error-text">{error}</p>}
+          {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
         </div>
       </div>
   );
