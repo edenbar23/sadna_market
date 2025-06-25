@@ -1,0 +1,186 @@
+# ===================================================================
+# system-config.yml - System Initialization Configuration
+# ===================================================================
+
+initialization:
+  # Mode options: check_only, selective, force_full, reset_and_init
+  mode: "selective"
+
+  # Failure handling: stop, continue, rollback
+  on_failure: "stop"
+
+  # Whether to rollback changes on any failure
+  rollback_on_error: true
+
+  components:
+    # ===============================================
+    # Admin Setup - Creates system administrator
+    # ===============================================
+    admin_setup:
+      enabled: true
+      force: false
+      config:
+        username: "u1"
+        password: "Password123!"
+        email: "u1@market.com"
+        firstName: "System"
+        lastName: "Administrator"
+
+    # ===============================================
+    # User Registration - Creates regular users
+    # ===============================================
+    user_registration:
+      enabled: true
+      force: false
+      depends_on: ["admin_setup"]
+      config:
+        users:
+          - username: "u2"
+            password: "Password123!"
+            email: "u2@market.com"
+            firstName: "User"
+            lastName: "Two"
+          - username: "u3"
+            password: "Password123!"
+            email: "u3@market.com"
+            firstName: "User"
+            lastName: "Three"
+          - username: "u4"
+            password: "Password123!"
+            email: "u4@market.com"
+            firstName: "User"
+            lastName: "Four"
+          - username: "u5"
+            password: "Password123!"
+            email: "u5@market.com"
+            firstName: "User"
+            lastName: "Five"
+          - username: "u6"
+            password: "Password123!"
+            email: "u6@market.com"
+            firstName: "User"
+            lastName: "Six"
+
+    # ===============================================
+    # User Login - Logs in required users
+    # ===============================================
+    user_login:
+      enabled: true
+      force: false
+      depends_on: ["user_registration"]
+      config:
+        logins:
+          - username: "u2"
+            password: "Password123!"
+
+    # ===============================================
+    # Store Creation - Creates stores
+    # ===============================================
+    store_creation:
+      enabled: true
+      force: false
+      depends_on: ["user_login"]
+      config:
+        stores:
+          - name: "s1"
+            owner: "u2"
+            description: "Store s1 - Sample store created during initialization"
+            address: "123 Market Street Sample City SC 12345"
+            email: "s1@market.com"
+            phone: "555-STORE-01"
+
+    # ===============================================
+    # Product Management - Adds products to stores
+    # ===============================================
+    product_management:
+      enabled: true
+      force: false
+      depends_on: ["store_creation"]
+      config:
+        products:
+          - username: "u2"
+            store: "s1"
+            name: "Bamba"
+            description: "Delicious peanut snack - crispy and tasty"
+            category: "Snacks"
+            price: 30.0
+            quantity: 30
+
+    # ===============================================
+    # Role Management - Appoints managers and owners
+    # ===============================================
+    role_management:
+      enabled: true
+      force: false
+      depends_on: ["product_management"]
+      config:
+        # Store managers with specific permissions
+        managers:
+          - appointer: "u2"
+            store: "s1"
+            username: "u3"
+            permissions:
+              - "MANAGE_INVENTORY"
+              - "ADD_PRODUCT"
+              - "REMOVE_PRODUCT"
+              - "UPDATE_PRODUCT"
+
+        # Store owners (full permissions)
+        owners:
+          - appointer: "u2"
+            store: "s1"
+            username: "u4"
+          - appointer: "u2"
+            store: "s1"
+            username: "u5"
+
+    # ===============================================
+    # User Logout - Logs out users when done
+    # ===============================================
+    user_logout:
+      enabled: true
+      force: false
+      depends_on: ["role_management"]
+      config:
+        users:
+          - "u2"
+
+# ===================================================================
+# Alternative configurations for different scenarios
+# ===================================================================
+
+# Uncomment and modify the sections below for different setups:
+
+# For development with more users:
+# user_registration:
+#   config:
+#     users:
+#       # Add users u7, u8, u9, u10 for extended testing
+#       - username: "u7"
+#         password: "Password123!"
+#         email: "u7@market.com"
+#         firstName: "User"
+#         lastName: "Seven"
+
+# For multiple stores scenario:
+# store_creation:
+#   config:
+#     stores:
+#       - name: "s2"
+#         owner: "u3"
+#         description: "Second store for testing"
+#         address: "456 Commerce Ave"
+#         email: "s2@market.com"
+#         phone: "555-STORE-02"
+
+# For testing with different products:
+# product_management:
+#   config:
+#     products:
+#       - username: "u2"
+#         store: "s1"
+#         name: "Bisli"
+#         description: "Crunchy wheat snack"
+#         category: "Snacks"
+#         price: 25.0
+#         quantity: 40
