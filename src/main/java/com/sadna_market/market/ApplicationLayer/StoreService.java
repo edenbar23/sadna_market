@@ -8,6 +8,8 @@ import com.sadna_market.market.DomainLayer.DomainServices.StoreManagementService
 import com.sadna_market.market.DomainLayer.Events.*;
 import com.sadna_market.market.DomainLayer.StoreExceptions.*;
 import com.sadna_market.market.InfrastructureLayer.Authentication.AuthenticationAdapter;
+import com.sadna_market.market.InfrastructureLayer.InMemoryRepos.InMemoryUserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,8 @@ public class StoreService {
     private final IStoreRepository storeRepository;
     private final IOrderRepository orderRepository;
     private final RatingService ratingService;
+    private final IUserRepository userRepository;
+
 
     //req 3.2
     public Response<StoreDTO> createStore(String username, String token, StoreRequest storeRequest) {
@@ -414,6 +418,24 @@ public class StoreService {
         storeRepository.clear();
     }
 
+    public Response<String> changeOwnerPermissions(String updaterUsername, String token, UUID storeId,
+                                               String ownerUsername, PermissionsRequest permissionsRequest) {
+    logger.info("User {} updating permissions for owner {} in store {}", updaterUsername, ownerUsername, storeId);
+
+    try {
+        authentication.validateToken(updaterUsername, token);
+
+        Set<Permission> permissions = permissionsRequest != null ?
+                permissionsRequest.getPermissions() : new HashSet<>();
+
+        storeManagementService.updateManagerPermissions(updaterUsername, storeId, ownerUsername, permissions);
+        return Response.success("Owner permissions updated successfully");
+
+    } catch (Exception e) {
+        logger.error("Error updating owner permissions: {}", e.getMessage(), e);
+        return Response.error("Failed to update owner permissions: " + e.getMessage());
+    }
+}
     /**
      * Renames a store
      * @param username The username of the user attempting to rename the store
@@ -458,4 +480,24 @@ public class StoreService {
         }
     }
 
+    public Response<Set<Permission>> getPermissionsForUser(String requester, String token, UUID storeId, String targetUsername) {
+        try {
+            authentication.validateToken(requester, token);
+            Optional<User> userOpt = userRepository.findByUsername(targetUsername);
+
+            User user = userOpt.get();
+    
+            // Just gather all their permissions for the store (owner or manager)
+            Set<Permission> result = user.getUserStoreRoles().stream()
+                    .filter(role -> role.getStoreId().equals(storeId))
+                    .flatMap(role -> role.getPermissions().stream())
+                    .collect(Collectors.toSet());
+    
+            return Response.success(result);
+    
+        } catch (Exception e) {
+            return Response.error("Failed to get permissions: " + e.getMessage());
+        }
+    }
+    
 }
