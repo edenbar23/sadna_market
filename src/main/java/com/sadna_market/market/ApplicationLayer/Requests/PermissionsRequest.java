@@ -9,10 +9,7 @@ import java.util.Set;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class PermissionsRequest {
     private Set<Permission> permissions;
-
-    public PermissionsRequest(Set<Permission> permissions) {
-        this.permissions = permissions;
-    }
 }

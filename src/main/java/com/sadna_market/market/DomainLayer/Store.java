@@ -612,4 +612,19 @@ public class Store {
         
         this.name = newName.trim();
     }
+
+    public Set<Permission> getPermissionsForUser(String username, Map<String, Set<Permission>> ownerPermissions, Map<String, Set<Permission>> managerPermissions) {
+        storeLock.readLock().lock();
+        try {
+            if (isStoreOwner(username)) {
+                return ownerPermissions.getOrDefault(username, Collections.emptySet());
+            } else if (isStoreManager(username)) {
+                return managerPermissions.getOrDefault(username, Collections.emptySet());
+            }
+            return Collections.emptySet();
+        } finally {
+            storeLock.readLock().unlock();
+        }
+    }
+
 }

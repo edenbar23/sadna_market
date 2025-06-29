@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,9 +41,8 @@ public class StoreController {
         this.messageService = messageService;
     }
 
-    /**
-     * Get all stores
-     */
+    // ───────────── Store CRUD ─────────────
+
     @GetMapping
     public ResponseEntity<Response<List<StoreDTO>>> getAllStores() {
         logger.info("Getting all stores");
@@ -51,13 +51,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get store information by ID
-     */
     @GetMapping("/{storeId}")
     public ResponseEntity<Response<StoreDTO>> getStoreById(@PathVariable UUID storeId) {
         logger.info("Getting store with ID: {}", storeId);
@@ -66,13 +62,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Create a new store
-     */
     @PostMapping
     public ResponseEntity<Response<StoreDTO>> createStore(
             @RequestBody StoreRequest storeRequest,
@@ -85,13 +77,27 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Close a store
-     */
+    @PutMapping("/{storeId}/rename")
+    public ResponseEntity<Response<StoreDTO>> renameStore(
+            @PathVariable UUID storeId,
+            @RequestHeader("Authorization") String token,
+            @RequestParam String username,
+            @RequestParam String newName) {
+
+        logger.info("Renaming store {} to {} by user {}", storeId, newName, username);
+        Response<StoreDTO> response = storeService.renameStore(username, token, storeId, newName);
+
+        if (response.isError()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    // ───────────── Store Status ─────────────
+
     @PostMapping("/{storeId}/close")
     public ResponseEntity<Response<String>> closeStore(
             @PathVariable UUID storeId,
@@ -104,13 +110,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Reopen a store
-     */
     @PostMapping("/{storeId}/reopen")
     public ResponseEntity<Response<String>> reopenStore(
             @PathVariable UUID storeId,
@@ -123,13 +125,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get store status (active/inactive)
-     */
     @GetMapping("/{storeId}/status")
     public ResponseEntity<Response<Boolean>> getStoreStatus(@PathVariable UUID storeId) {
         logger.info("Getting status for store with ID: {}", storeId);
@@ -138,13 +136,11 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get top rated stores
-     */
+    // ───────────── Store Ratings ─────────────
+
     @GetMapping("/top-rated")
     public ResponseEntity<Response<List<Store>>> getTopRatedStores() {
         logger.info("Getting top rated stores");
@@ -153,13 +149,27 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Appoint a new store owner
-     */
+    @PostMapping("/rate")
+    public ResponseEntity<Response<StoreRatingDTO>> rateStore(
+            @RequestBody StoreRateRequest request,
+            @RequestHeader("Authorization") String token) {
+
+        logger.info("Rating store: {} by user: {} with rating: {}",
+                request.getStoreId(), request.getUsername(), request.getRate());
+
+        Response<StoreRatingDTO> response = storeService.rateStore(token, request);
+
+        if (response.isError()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    // ───────────── Store Owners ─────────────
+
     @PostMapping("/{storeId}/owners")
     public ResponseEntity<Response<String>> appointOwner(
             @PathVariable UUID storeId,
@@ -175,13 +185,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Remove a store owner
-     */
     @DeleteMapping("/{storeId}/owners")
     public ResponseEntity<Response<String>> removeOwner(
             @PathVariable UUID storeId,
@@ -197,13 +203,11 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Appoint a new store manager
-     */
+    // ───────────── Store Managers ─────────────
+
     @PostMapping("/{storeId}/managers")
     public ResponseEntity<Response<String>> appointManager(
             @PathVariable UUID storeId,
@@ -220,13 +224,9 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Remove a store manager
-     */
     @DeleteMapping("/{storeId}/managers")
     public ResponseEntity<Response<String>> removeManager(
             @PathVariable UUID storeId,
@@ -242,13 +242,66 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
+    // ───────────── NEW: Update Owner/Manager Permissions ─────────────
+
     /**
-     * Get store messages
+     * Update permissions for a specific store owner
      */
+    @PutMapping("/{storeId}/owners/{ownerUsername}/permissions")
+public ResponseEntity<Response<String>> updateOwnerPermissions(
+        @PathVariable UUID storeId,
+        @PathVariable String ownerUsername,
+        @RequestHeader("Authorization") String token,
+        @RequestBody PermissionsRequest request,
+        @RequestParam(name = "byUser", required = false) String byUser) {
+
+    logger.info("🔧 Incoming request to update owner permissions:");
+    logger.info("   storeId: {}", storeId);
+    logger.info("   ownerUsername: {}", ownerUsername);
+    logger.info("   byUser: {}", byUser);
+    logger.info("   token: {}", token);
+    if (request == null) {
+        logger.warn("   ❗ PermissionsRequest is NULL");
+    } else {
+        logger.info("   permissions: {}", request.getPermissions());
+    }
+
+    Response<String> response = storeService.changePermissions(byUser, token, storeId, ownerUsername, request);
+
+    if (response.isError()) {
+        logger.error("❌ Error: {}", response.getErrorMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    return ResponseEntity.ok(response);
+}
+
+
+    /**
+     * Update permissions for a specific store manager
+     */
+    @PutMapping("/{storeId}/managers/{managerUsername}/permissions")
+    public ResponseEntity<Response<String>> updateManagerPermissions(
+            @PathVariable UUID storeId,
+            @PathVariable String managerUsername,
+            @RequestHeader("Authorization") String token,
+            @RequestBody PermissionsRequest request,
+            @RequestParam(name = "byUser", required = false) String byUser // acting user
+    ) {
+        logger.info("Updating manager permissions for {} in store {} by {}", managerUsername, storeId, byUser);
+        Response<String> response = storeService.changePermissions(byUser, token, storeId, managerUsername, request);
+
+        if (response.isError()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    // ───────────── Store Messages ─────────────
+
     @GetMapping("/{storeId}/messages")
     public ResponseEntity<Response<List<MessageDTO>>> getStoreMessages(
             @PathVariable UUID storeId,
@@ -261,13 +314,11 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get store orders
-     */
+    // ───────────── Store Orders ─────────────
+
     @GetMapping("/{storeId}/orders")
     public ResponseEntity<Response<List<OrderDTO>>> getStoreOrders(
             @PathVariable UUID storeId,
@@ -281,54 +332,30 @@ public class StoreController {
         if (response.isError()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-
         return ResponseEntity.ok(response);
     }
 
-    // Helper method to get store purchase history (since storeService doesn't have this method directly)
-    private Response<List<OrderDTO>> getStorePurchaseHistory(String username, String token, UUID storeId) {
-        // This would typically be implemented in StoreService
-        // For now, return an error that directs to implement this method
-        return Response.error("Store purchase history method needs to be implemented in StoreService");
+    @GetMapping(
+    value = "/{storeId}/permissions/{username}",
+    produces = MediaType.APPLICATION_JSON_VALUE
+)
+public ResponseEntity<Set<Permission>> getPermissionsForUser(
+        @RequestHeader("Authorization") String authorization,
+        @RequestParam("byUser") String requester,
+        @PathVariable UUID storeId,
+        @PathVariable String username) {
+
+            System.out.println("⭐️ [BACKEND] getPermissionsForUser CALLED for user: " + username);        
+    String token = authorization.replace("Bearer ", "");
+    Response<Set<Permission>> response = storeService.getPermissionsForUser(requester, token, storeId, username);
+
+    if (response.isError()) {
+        // Always return JSON, even for errors
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Set.of());
     }
+    // Unwrap the permissions so the frontend gets raw JSON array (["VIEW_STORE_INFO", ...])
+    return ResponseEntity.ok(response.getData());
+}
+    
 
-    /**
-     * Rate a store
-     */
-    @PostMapping("/rate")
-    public ResponseEntity<Response<StoreRatingDTO>> rateStore(
-            @RequestBody StoreRateRequest request,
-            @RequestHeader("Authorization") String token) {
-
-        logger.info("Rating store: {} by user: {} with rating: {}",
-                request.getStoreId(), request.getUsername(), request.getRate());
-
-        Response<StoreRatingDTO> response = storeService.rateStore(token, request);
-
-        if (response.isError()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Rename a store
-     */
-    @PutMapping("/{storeId}/rename")
-    public ResponseEntity<Response<StoreDTO>> renameStore(
-            @PathVariable UUID storeId,
-            @RequestHeader("Authorization") String token,
-            @RequestParam String username,
-            @RequestParam String newName) {
-
-        logger.info("Renaming store {} to {} by user {}", storeId, newName, username);
-        Response<StoreDTO> response = storeService.renameStore(username, token, storeId, newName);
-
-        if (response.isError()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-
-        return ResponseEntity.ok(response);
-    }
 }
