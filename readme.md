@@ -10,39 +10,39 @@
 > file for the main operational service is called
 > application.properties.
 >
-> The configuration filesuse standard Spring Boot properties format,
+> The configuration files use standard Spring Boot properties format,
 > with fields relating to different aspects of the system's operations.
 >
 > The different configuration fields are as follows:
 >
-> • system.init.enabled-enables ordisables system initialization. Set to
-> true to enable initialization. This field is**MANDATORY**for
+> • system.init.enabled - enables or disables system initialization. Set to
+> true to enable initialization. This field is **MANDATORY** for
 > initialization to occur.
 >
-> • system.init.admin.username-the username of the System Administrator.
-> This field is**MANDATORY**when initialization isenabled. Default is
+> • system.init.admin.username - the username of the System Administrator.
+> This field is **MANDATORY** when initialization is enabled. Default is
 > admin.
 >
-> • system.init.admin.password-the password of the System Administrator.
-> This field is**MANDATORY**when initialization isenabled. Must meet
+> • system.init.admin.password - the password of the System Administrator.
+> This field is **MANDATORY** when initialization is enabled. Must meet
 > strength requirements.
 >
-> • system.init.admin.email-the email of the System Administrator. This
-> field is**MANDATORY**when initialization is enabled.
+> • system.init.admin.email - the email of the System Administrator. This
+> field is **MANDATORY** when initialization is enabled.
 >
-> • system.init.initial-state-file-the path to the Initial State file.
+> • system.init.initial-state-file - the path to the Initial State file.
 > If the field exists, the system will initialize with the initial state
-> described in the file. Otherwise, the systemwill initialize without
-> aninitial state.
+> described in the file. Otherwise, the system will initialize without
+> an initial state.
 >
-> • system.init.reset.enabled-if the value of this field istrue, the
+> • system.init.reset.enabled - if the value of this field is true, the
 > system will clear all repositories on initialization. This is useful
-> to be able to run an initial state without worrying aboutcollisions
-> with existing data. If the field is missing it will be falseby
+> to be able to run an initial state without worrying about collisions
+> with existing data. If the field is missing it will be false by
 > default.
 >
-> • spring.datasource.url-the URL of the database. This field
-> is**MANDATORY** as the system cannot operate without a database.
+> • spring.datasource.url - the URL of the database. This field
+> is **MANDATORY** as the system cannot operate without a database.
 >
 > • spring.datasource.username-database username.
 >
@@ -84,9 +84,9 @@
 >
 > spring.profiles.active=dev
 >
-> The above configuration file clears the systemand starts it with the
+> The above configuration file clears the system and starts it with the
 > initial state described in the file init-state.txt. It uses an
-> H2in-memory database and creates a system administratorcalled admin.
+> H2in-memory database and creates a system administrator called admin.
 >
 > \# Enable initialization without reset
 >
@@ -112,7 +112,7 @@
 >
 > The above configuration uses a MySQL database, creates a system
 > administrator called sysadmin, and initializes
-> fromstore-setup.txtwithout clearing existing data.
+> from store-setup.txt without clearing existing data.
 >
 > \# Disable initialization
 >
@@ -127,13 +127,13 @@
 > spring.datasource.password=postgres
 >
 > The above configuration disables initialization and uses an existing
-> PostgreSQL database with existingdata.
+> PostgreSQL database with existing data.
 >
 > **Initial** **State** **Files**
 >
 > The Initial State files describe the initial state used for the
 > initialization of the system. The files can have any name and be
-> located anywhere, as long as they're referenced correctly bythe
+> located anywhere, as long as they're referenced correctly by the
 > configuration file.
 >
 > An initial state is a collection of service commands performed in a
@@ -145,7 +145,7 @@
 > • command-name(param1, param2, param3, ...)-The name of the command
 > followed by parameters in parentheses, separated by commas.
 >
-> • Parameters can be enclosed in \*asterisks\*if they contain spaces or
+> • Parameters can be enclosed in \*asterisks\* if they contain spaces or
 > special characters.
 >
 > • Lines starting with#or//are comments and are ignored.
@@ -183,9 +183,9 @@
 > between commands until explicitly logged out.
 >
 > Store names are resolved to store IDs automatically -you reference
-> stores by their name ascreated in the open-storecommand.
+> stores by their name as created in the open-store command.
 >
-> Permissions for managers are specified as comma-separated valuesfrom
+> Permissions for managers are specified as comma-separated values from
 > the following list:
 >
 > • MANAGE_INVENTORY, ADD_PRODUCT, REMOVE_PRODUCT, UPDATE_PRODUCT
@@ -224,8 +224,8 @@
 > logout(jane_smith);
 >
 > In this example, we register two users, login john_doe, create a store
-> called Electronics Hub, add products to it, then appointjane_smithas
-> amanager with inventory management permissions.
+> called Electronics Hub, add products to it, then appoint jane_smith as
+> a manager with inventory management permissions.
 >
 > \# Multi-store enterprise setup
 >
