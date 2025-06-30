@@ -69,6 +69,13 @@ public class ProductJpaAdapter implements IProductRepository {
 
     @Override
     public UUID addProduct(UUID storeId, String name, String category, String description, double price, boolean isAvailable) {
+       // Prevent adding a product with a duplicate name in the same store
+       boolean exists = productJpaRepository.findByStoreId(storeId).stream()
+       .anyMatch(p -> p.getName().equalsIgnoreCase(name));
+        if (exists) {
+        throw new IllegalArgumentException("Product with the same name already exists in this store");
+        }
+
         Product product = new Product(name, storeId, category, description, price, isAvailable);
         Product savedProduct = productJpaRepository.save(product);
         return savedProduct.getProductId();

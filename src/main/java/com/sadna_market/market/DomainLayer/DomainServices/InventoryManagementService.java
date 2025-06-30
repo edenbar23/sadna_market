@@ -65,6 +65,17 @@ public class InventoryManagementService {
             }
         }
 
+        // Check if product with the same name already exists in the store
+        boolean duplicateName = productRepository.findByStoreId(storeId).stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .anyMatch(p -> p.getName().equalsIgnoreCase(name));
+
+        if (duplicateName) {
+            throw new IllegalArgumentException("Product with the same name already exists in this store");
+        }
+
+
         // Add product to repository
         UUID productId = productRepository.addProduct(
                 storeId,
