@@ -147,7 +147,7 @@ export default function StoreManagePage() {
                 productId: null // Ensure we don't send undefined as productId
             }, quantity);
 
-            if (result && result.data) {
+            if (result) {
                 // Refresh products list
                 await loadStoreData();
                 setShowAddProductModal(false);
@@ -190,7 +190,7 @@ export default function StoreManagePage() {
 
             const result = await handleUpdateProduct(formattedData, quantity);
 
-            if (result && result.data) {
+            if (result) {
                 // Refresh products list
                 await loadStoreData();
                 setShowEditProductModal(false);
