@@ -13,10 +13,21 @@ export default function AdminUsersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all'); // all, admin, regular, active, inactive
 
+//     useEffect(() => {
+//         fetchUsers();
+//     }, [user]);
+
+    // Fetch all users from the server
     useEffect(() => {
         fetchUsers();
-    }, [user]);
 
+        // Auto-refresh every 30 seconds
+        const interval = setInterval(() => {
+            fetchUsers(false); // false = don't show loading spinner
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [user]);
     const fetchUsers = async () => {
         if (!user?.isAdmin) {
             setError('Unauthorized: Admin access required');
