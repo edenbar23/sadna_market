@@ -1,5 +1,6 @@
 package com.sadna_market.market.ApplicationLayer.DTOs;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sadna_market.market.DomainLayer.User;
 import lombok.Getter;
 
@@ -13,10 +14,12 @@ public class UserDTO {
     @Getter
     private String lastName;
     @Getter
+    @JsonProperty("isLoggedIn")  // ← KEY FIX
     private boolean isLoggedIn;
     @Getter
     private int cartItemsCount;
     @Getter
+    @JsonProperty("isAdmin")     // ← KEY FIX
     private boolean isAdmin;
 
     public UserDTO(User user) {
