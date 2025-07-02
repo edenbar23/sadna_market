@@ -36,6 +36,7 @@ public class AddressService {
             }
 
             // Verify user exists
+            
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 

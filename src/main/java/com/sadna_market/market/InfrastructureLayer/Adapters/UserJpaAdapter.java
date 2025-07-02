@@ -1,5 +1,6 @@
 package com.sadna_market.market.InfrastructureLayer.Adapters;
 
+import com.sadna_market.market.DomainLayer.Cart;
 import com.sadna_market.market.DomainLayer.IUserRepository;
 import com.sadna_market.market.DomainLayer.User;
 import com.sadna_market.market.DomainLayer.RoleType;
@@ -157,8 +158,9 @@ public class UserJpaAdapter implements IUserRepository {
             user.getAddressIds().clear();
 
             // Clear cart and its baskets
-            if (user.getCart() != null) {
-                user.getCart().getShoppingBasketsList().clear();
+            Cart userCart = user.getCart();
+            if (userCart != null) {
+                userCart.getShoppingBasketsList().clear();
             }
 
             entityManager.flush();
@@ -254,12 +256,14 @@ public class UserJpaAdapter implements IUserRepository {
                 initializeLazyCollections(user);
 
 
+
                 user.getUserStoreRoles().clear();
                 user.getOrdersHistory().clear();
                 user.getAddressIds().clear();
 
-                if (user.getCart() != null) {
-                    user.getCart().getShoppingBasketsList().clear();
+                Cart userCart = user.getCart();
+                if (userCart != null) {
+                    userCart.getShoppingBasketsList().clear();
                 }
             }
 
@@ -285,9 +289,10 @@ public class UserJpaAdapter implements IUserRepository {
     private void initializeLazyCollections(User user) {
         try {
             // Initialize cart and its shopping baskets
-            if (user.getCart() != null) {
-                user.getCart().getShoppingBasketsList().size(); // Force initialization
-                user.getCart().getShoppingBasketsList().forEach(basket -> {
+            Cart userCart= user.getCart();
+            if (userCart != null) {
+                userCart.getShoppingBasketsList().size(); // Force initialization
+                userCart.getShoppingBasketsList().forEach(basket -> {
                     basket.getProductsList().size(); // Force initialization of products map
                 });
             }

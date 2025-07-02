@@ -48,7 +48,7 @@ public class OrderService {
     }
 
     public Response<List<OrderDTO>> getUserOrderHistory(String username, String token) {
-        logger.info("Fetching order history for user: {}", username);
+        //logger.info("Fetching order history for user: {}", username);
         try {
             logger.info("Validating token for user with username: {}", username);
             authentication.validateToken(username, token);

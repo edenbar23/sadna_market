@@ -51,6 +51,7 @@ public class AuthenticationAdapter {
         return username;
     }
 
+
     public void validateToken(String username, String jwt) {
         logger.info("Validating token for user: {}", username);
         // Check if the user exists
@@ -64,9 +65,10 @@ public class AuthenticationAdapter {
             throw new IllegalArgumentException("Invalid token");
         }
 
+        
         // Then check if the token belongs to the specified user
         String tokenUsername = tokenService.extractUsername(jwt);
-        logger.info("Username extracted from token: {}", tokenUsername);
+        //logger.info("Username extracted from token: {}", tokenUsername);
 
         if (!tokenUsername.equals(username)) {
             logger.error("Token does not belong to user: {}", username);
