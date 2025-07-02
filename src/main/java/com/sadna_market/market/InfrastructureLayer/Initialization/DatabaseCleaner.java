@@ -3,11 +3,15 @@ package com.sadna_market.market.InfrastructureLayer.Initialization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Profile("!test")  // Exclude from test profile
+@ConditionalOnBean(JdbcTemplate.class)  // Only load when JdbcTemplate is available
 public class DatabaseCleaner {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseCleaner.class);
 
