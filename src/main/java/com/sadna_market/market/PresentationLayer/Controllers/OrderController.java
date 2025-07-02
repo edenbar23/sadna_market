@@ -77,7 +77,7 @@ public class OrderController {
 
     @GetMapping("/history/{username}")
     public ResponseEntity<Response<List<OrderDTO>>> getUserOrderHistory(@PathVariable String username,@RequestHeader("Authorization") String token) {
-        logger.info("Fetching order history for user {}", username);
+        //logger.info("Fetching order history for user {}", username);
         try {
             Response<List<OrderDTO>> response = orderService.getUserOrderHistory(username,token);
             if (response.isError()) {
